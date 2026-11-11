@@ -2,7 +2,7 @@
 const SYLLABUS_CONFIG = [
   { 
     topicId: 'CHEM-01', 
-    topicName: 'topic / chapter: CHEM-01 地球', 
+    topicName: 'CHEM-01 地球', 
     chapters: [
       { id: 1, name: '第 1 章：化學導論' }, 
       { id: 2, name: '第 2 章：大氣' }, 
@@ -11,7 +11,7 @@ const SYLLABUS_CONFIG = [
   },
   { 
     topicId: 'CHEM-02', 
-    topicName: 'topic / chapter: CHEM-02 微觀世界 I', 
+    topicName: 'CHEM-02 微觀世界 I', 
     chapters: [
       { id: 4, name: '第 4 章：岩石和礦物' }, 
       { id: 5, name: '第 5 章：原子結構' }, 
@@ -22,7 +22,7 @@ const SYLLABUS_CONFIG = [
   },
   { 
     topicId: 'CHEM-03', 
-    topicName: 'topic / chapter: CHEM-03 金屬', 
+    topicName: 'CHEM-03 金屬', 
     chapters: [
       { id: 9, name: '第 9 章：物質的結構和性質' }, 
       { id: 10, name: '第 10 章：金屬的存在和提取' }, 
@@ -33,7 +33,7 @@ const SYLLABUS_CONFIG = [
   },
   { 
     topicId: 'CHEM-04', 
-    topicName: 'topic / chapter: CHEM-04 酸和鹽基', 
+    topicName: 'CHEM-04 酸和鹽基', 
     chapters: [
       { id: 14, name: '第 14 章：酸和鹼的簡介' }, 
       { id: 15, name: '第 15 章：溶液的濃度' }, 
@@ -44,7 +44,7 @@ const SYLLABUS_CONFIG = [
   },
   { 
     topicId: 'CHEM-05', 
-    topicName: 'topic / chapter: CHEM-05 化石燃料', 
+    topicName: 'CHEM-05 化石燃料', 
     chapters: [
       { id: 19, name: '第 19 章：涉及酸和鹼的容量分析' }, 
       { id: 20, name: '第 20 章：來自化石燃料的烷' }, 
@@ -55,7 +55,7 @@ const SYLLABUS_CONFIG = [
   },
   { 
     topicId: 'CHEM-06', 
-    topicName: 'topic / chapter: CHEM-06 微觀世界 II', 
+    topicName: 'CHEM-06 微觀世界 II', 
     chapters: [
       { id: 24, name: '第 24 章：具有非八隅體結構的簡單分子及簡單分子的形狀' }, 
       { id: 25, name: '第 25 章：鍵與分子的極性' }, 
@@ -65,7 +65,7 @@ const SYLLABUS_CONFIG = [
   },
   { 
     topicId: 'CHEM-07', 
-    topicName: 'topic / chapter: CHEM-07 氧化還原與電解', 
+    topicName: 'CHEM-07 氧化還原與電解', 
     chapters: [
       { id: 28, name: '第 28 章：氧化和還原' }, 
       { id: 29, name: '第 29 章：化學電池' }, 
@@ -76,7 +76,7 @@ const SYLLABUS_CONFIG = [
   },
   { 
     topicId: 'CHEM-08', 
-    topicName: 'topic / chapter: CHEM-08 化學反應與能量', 
+    topicName: 'CHEM-08 化學反應與能量', 
     chapters: [
       { id: 33, name: '第 33 章：化學反應中的能量變化' }, 
       { id: 34, name: '第 34 章：標準反應焓變' }, 
@@ -85,7 +85,7 @@ const SYLLABUS_CONFIG = [
   },
   { 
     topicId: 'CHEM-09', 
-    topicName: 'topic / chapter: CHEM-09 反應速率', 
+    topicName: 'CHEM-09 反應速率', 
     chapters: [
       { id: 36, name: '第 36 章：化學反應的速率' }, 
       { id: 37, name: '第 37 章：影響反應速率的因素' }, 
@@ -95,7 +95,7 @@ const SYLLABUS_CONFIG = [
   },
   { 
     topicId: 'CHEM-10', 
-    topicName: 'topic / chapter: CHEM-10 化學平衡', 
+    topicName: 'CHEM-10 化學平衡', 
     chapters: [
       { id: 40, name: '第 40 章：動態平衡' }, 
       { id: 41, name: '第 41 章：濃度和溫度的變化對化學平衡的影響' },
@@ -104,7 +104,7 @@ const SYLLABUS_CONFIG = [
   },
   { 
     topicId: 'CHEM-11', 
-    topicName: 'topic / chapter: CHEM-11 碳化合物的化學', 
+    topicName: 'CHEM-11 碳化合物的化學', 
     chapters: [
       { id: 43, name: '第 43 章：同分異構' },
       { id: 44, name: '第 44 章：各種官能基的典型化學反應' },
@@ -116,7 +116,7 @@ const SYLLABUS_CONFIG = [
   },
   { 
     topicId: 'CHEM-12', 
-    topicName: 'topic / chapter: CHEM-12 化學規律', 
+    topicName: 'CHEM-12 化學規律', 
     chapters: [
       { id: 49, name: '第 49 章：過渡性金屬的一般性質' },
       { id: 50, name: '第 50 章：工業過程的重要性' }
@@ -124,7 +124,7 @@ const SYLLABUS_CONFIG = [
   },
   { 
     topicId: 'CHEM-13', 
-    topicName: 'topic / chapter: CHEM-13 工業化學', 
+    topicName: 'CHEM-13 工業化學', 
     chapters: [
       { id: 51, name: '第 51 章：速率方程' },
       { id: 52, name: '第 52 章：活化能' },
@@ -135,7 +135,7 @@ const SYLLABUS_CONFIG = [
   },
   { 
     topicId: 'CHEM-14', 
-    topicName: 'topic / chapter: CHEM-14 物料化學', 
+    topicName: 'CHEM-14 物料化學', 
     chapters: [
       { id: 56, name: '第 56 章：合金' }, 
       { id: 57, name: '第 57 章：高分子材料' }, 
@@ -146,7 +146,7 @@ const SYLLABUS_CONFIG = [
   },
   { 
     topicId: 'CHEM-15', 
-    topicName: 'topic / chapter: CHEM-15 分析化學', 
+    topicName: 'CHEM-15 分析化學', 
     chapters: [
       { id: 61, name: '第 61 章：檢測物質中的化學物種' },
       { id: 62, name: '第 62 章：分離和提純的方法' },
@@ -157,9 +157,9 @@ const SYLLABUS_CONFIG = [
   }
 ];
 
-// 2. 全局狀態 (v0.0.43)
+// 2. 全局狀態 (v0.0.44)
 window.chemApp = {
-  version: '0.0.43',
+  version: '0.0.44',
   currentLang: 'e',
   activeChapterId: null,
   questionsDB: {},
@@ -228,7 +228,7 @@ class ChemStorage {
   static getDB() {
     if (!this.dbPromise) {
       this.dbPromise = new Promise((resolve, reject) => {
-        const req = indexedDB.open('HKDSE_CHEM_QB_V43', 1);
+        const req = indexedDB.open('HKDSE_CHEM_QB_V44', 1);
         req.onupgradeneeded = (e) => {
           const db = e.target.result;
           if (!db.objectStoreNames.contains('chapters')) db.createObjectStore('chapters');
@@ -266,23 +266,23 @@ class ChemStorage {
 
   static loadMeta() {
     try {
-      const counts = localStorage.getItem('CHEM_COUNTS_V43');
+      const counts = localStorage.getItem('CHEM_COUNTS_V44');
       if (counts) window.chemApp.chapterCounts = JSON.parse(counts);
-      const ans = localStorage.getItem('CHEM_USER_ANS_V43');
+      const ans = localStorage.getItem('CHEM_USER_ANS_V44');
       if (ans) window.chemApp.userAnswers = JSON.parse(ans);
-      const savedLang = localStorage.getItem('CHEM_LANG_V43');
+      const savedLang = localStorage.getItem('CHEM_LANG_V44');
       if (savedLang === 'c' || savedLang === 'e') window.chemApp.currentLang = savedLang;
-      const streak = localStorage.getItem('CHEM_STREAK_V43');
+      const streak = localStorage.getItem('CHEM_STREAK_V44');
       if (streak) window.chemApp.currentStreak = parseInt(streak, 10);
     } catch (e) {}
   }
 
   static saveMeta() {
     try {
-      localStorage.setItem('CHEM_COUNTS_V43', JSON.stringify(window.chemApp.chapterCounts));
-      localStorage.setItem('CHEM_USER_ANS_V43', JSON.stringify(window.chemApp.userAnswers));
-      localStorage.setItem('CHEM_LANG_V43', window.chemApp.currentLang);
-      localStorage.setItem('CHEM_STREAK_V43', window.chemApp.currentStreak.toString());
+      localStorage.setItem('CHEM_COUNTS_V44', JSON.stringify(window.chemApp.chapterCounts));
+      localStorage.setItem('CHEM_USER_ANS_V44', JSON.stringify(window.chemApp.userAnswers));
+      localStorage.setItem('CHEM_LANG_V44', window.chemApp.currentLang);
+      localStorage.setItem('CHEM_STREAK_V44', window.chemApp.currentStreak.toString());
     } catch (e) {}
 
     if (window.chemApp.currentUser && window.firebaseCloud) {
@@ -542,18 +542,11 @@ function updateTimerDisplay() {
   }
 }
 
-// 6. 視圖切換與全屏佈局控制 (統一右下角按鈕組高度與間距)
+// 6. 視圖切換與全屏佈局控制
 function switchRightPanelToChapterView() {
   let wrapper = document.getElementById('chemChapterViewWrapper');
   if (!wrapper) {
-    let rightMain =
-      document.querySelector('main') ||
-      document.querySelector('.main-content') ||
-      document.querySelector('#mainContent') ||
-      document.querySelector('.content-area') ||
-      document.querySelector('.right-panel') ||
-      document.body;
-
+    let rightMain = document.querySelector('main') || document.body;
     window.chemApp.dashboardNodes = Array.from(rightMain.children);
 
     wrapper = document.createElement('div');
@@ -578,41 +571,35 @@ function switchRightPanelToChapterView() {
             載入檔案
             <input type="file" id="manualDocxInput" accept=".docx" style="display:none;" />
           </label>
-          <button id="reloadChapBtn" class="sound-trigger" style="padding:5px 10px; font-size:11px; border:1px solid #dadce0; border-radius:12px; background:#fff; cursor:pointer; color:#333; font-weight:bold;">重新讀取</button>
-          <button id="backToDashboardBtn" class="sound-trigger" style="padding:5px 10px; font-size:11px; border:1px solid #1a73e8; border-radius:12px; background:#e8f0fe; cursor:pointer; color:#1a73e8; font-weight:bold;">返回首頁</button>
         </div>
       </div>
       <div id="questionList"></div>
-      
-      <!-- 右下角固定按鈕群組 (等高排版，無Emoji) -->
-      <div id="floatingActionGroup" style="position:fixed; bottom:20px; right:20px; z-index:9998; display:flex; flex-direction:column; gap:10px; align-items:flex-end;">
-        <div style="background:#e8f0fe; padding:10px 16px; border-radius:24px; border:1px solid #aecbfa; font-size:13px; font-weight:bold; color:#1a73e8; box-shadow:0 4px 14px rgba(0,0,0,0.15); display:flex; align-items:center; justify-content:center; height:40px; box-sizing:border-box;">
-          Streak: <span id="footerStreakCount" style="margin-left:4px;">${window.chemApp.currentStreak}</span>
-        </div>
-        <button id="endChapterBtn" class="sound-trigger" style="background:#ea4335; color:#fff; border:none; padding:10px 16px; border-radius:24px; font-weight:bold; font-size:13px; box-shadow:0 4px 14px rgba(0,0,0,0.25); cursor:pointer; height:40px; box-sizing:border-box; display:flex; align-items:center; justify-content:center;">結束當前 MC</button>
-      </div>
-
-      <div id="inlineConfirmModal" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.4); z-index:99999; justify-content:center; align-items:center;">
-        <div style="background:#fff; padding:24px 28px; border-radius:20px; width:90%; max-width:320px; text-align:center; box-shadow:0 8px 30px rgba(0,0,0,0.2); border:1px solid #e0e0e0;">
-          <p id="confirmModalText" style="font-size:15px; font-weight:bold; color:#111; margin-bottom:20px; line-height:1.5;">確定要結束當前 MC 練習嗎？</p>
-          <div style="display:flex; gap:12px;">
-            <button id="confirmYesBtn" class="sound-trigger" style="flex:1; background:#ea4335; color:#fff; border:none; padding:10px; border-radius:10px; font-weight:bold; font-size:14px; cursor:pointer;">是</button>
-            <button id="confirmNoBtn" class="sound-trigger" style="flex:1; background:#f1f3f4; color:#333; border:1px solid #ccc; padding:10px; border-radius:10px; font-weight:bold; font-size:14px; cursor:pointer;">否</button>
-          </div>
-        </div>
-      </div>
     `;
 
     rightMain.insertBefore(wrapper, rightMain.firstChild);
 
+    // 確認框 (是/否)
+    const confirmModalHTML = `
+      <div id="inlineConfirmModal" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.4); z-index:99999; justify-content:center; align-items:center;">
+        <div style="background:#fff; padding:24px 28px; border-radius:28px; width:90%; max-width:320px; text-align:center; box-shadow:0 8px 30px rgba(0,0,0,0.2); border:1px solid #e0e0e0;">
+          <p id="confirmModalText" style="font-size:15px; font-weight:bold; color:#111; margin-bottom:20px; line-height:1.5;">確定要結束當前 MC 練習嗎？</p>
+          <div style="display:flex; gap:12px;">
+            <button id="confirmYesBtn" class="sound-trigger" style="flex:1; background:#ea4335; color:#fff; border:none; padding:10px; border-radius:12px; font-weight:bold; font-size:14px; cursor:pointer;">是</button>
+            <button id="confirmNoBtn" class="sound-trigger" style="flex:1; background:#f1f3f4; color:#333; border:1px solid #ccc; padding:10px; border-radius:12px; font-weight:bold; font-size:14px; cursor:pointer;">否</button>
+          </div>
+        </div>
+      </div>
+    `;
+    document.body.insertAdjacentHTML('beforeend', confirmModalHTML);
+
     let endClickCount = 0;
     let endTimer = null;
-    const modal = wrapper.querySelector('#inlineConfirmModal');
-    const modalText = wrapper.querySelector('#confirmModalText');
-    const yesBtn = wrapper.querySelector('#confirmYesBtn');
-    const noBtn = wrapper.querySelector('#confirmNoBtn');
+    const modal = document.getElementById('inlineConfirmModal');
+    const modalText = document.getElementById('confirmModalText');
+    const yesBtn = document.getElementById('confirmYesBtn');
+    const noBtn = document.getElementById('confirmNoBtn');
 
-    wrapper.querySelector('#endChapterBtn').onclick = () => {
+    window.triggerEndChapter = () => {
       SoundFX.playClick();
       endClickCount++;
       if (endClickCount === 1) {
@@ -624,7 +611,9 @@ function switchRightPanelToChapterView() {
         endClickCount = 0;
         modal.style.display = 'none';
         pauseTimer();
-        wrapper.querySelector('#backToDashboardBtn').click();
+        wrapper.style.display = 'none';
+        window.chemApp.dashboardNodes.forEach(n => n.style.display = '');
+        updateDashboardStats();
       }
     };
 
@@ -634,7 +623,9 @@ function switchRightPanelToChapterView() {
       endClickCount = 0;
       modal.style.display = 'none';
       pauseTimer();
-      wrapper.querySelector('#backToDashboardBtn').click();
+      wrapper.style.display = 'none';
+      window.chemApp.dashboardNodes.forEach(n => n.style.display = '');
+      updateDashboardStats();
     };
 
     noBtn.onclick = () => {
@@ -665,27 +656,6 @@ function switchRightPanelToChapterView() {
       tBtn.style.background = '#1a73e8';
     };
 
-    wrapper.querySelector('#backToDashboardBtn').onclick = () => {
-      SoundFX.playClick();
-      pauseTimer();
-      wrapper.style.display = 'none';
-      const actionGroup = document.getElementById('floatingActionGroup');
-      if (actionGroup) actionGroup.style.display = 'none';
-
-      window.chemApp.dashboardNodes.forEach(node => {
-        if (node !== wrapper) node.style.display = '';
-      });
-      const sidebar = document.querySelector('aside') || document.querySelector('.sidebar') || document.querySelector('#sidebar') || document.querySelector('.left-panel');
-      // 返回首頁時不自動顯示左側目錄，除非點擊右下角
-      if (sidebar) sidebar.style.display = 'none'; 
-      updateDashboardStats();
-    };
-
-    wrapper.querySelector('#reloadChapBtn').onclick = () => {
-      SoundFX.playClick();
-      if (window.chemApp.activeChapterId) openChapter(window.chemApp.activeChapterId, true);
-    };
-
     wrapper.querySelector('#manualDocxInput').onchange = async (e) => {
       const file = e.target.files && e.target.files[0];
       if (!file || !window.chemApp.activeChapterId) return;
@@ -700,8 +670,7 @@ function switchRightPanelToChapterView() {
         window.chemApp.chapterCounts[dbKey] = list.length;
         ChemStorage.saveMeta();
         await ChemStorage.saveChapter(dbKey, list);
-        updateCounts();
-        renderQuestions(list, chapId);
+        renderQuestions(list, chapId, true);
       } catch (err) {
         qContainer.innerHTML = `<div style="color:#e53935; padding:32px;">手動解析失敗：${err.message}</div>`;
       }
@@ -712,17 +681,16 @@ function switchRightPanelToChapterView() {
     if (node !== wrapper) node.style.display = 'none';
   });
   wrapper.style.display = 'block';
-  const actionGroup = wrapper.querySelector('#floatingActionGroup');
-  if (actionGroup) actionGroup.style.display = 'flex';
 
-  const sidebar = document.querySelector('aside') || document.querySelector('.sidebar') || document.querySelector('#sidebar') || document.querySelector('.left-panel');
-  if (sidebar) sidebar.style.display = 'none';
+  // 開啟章節時自動顯示右下角的 Streak 與結束按鈕群組
+  const actionGroup = document.getElementById('floatingActionGroup');
+  if (actionGroup) actionGroup.style.display = 'flex';
 
   return wrapper;
 }
 
-// 7. 開啟章節 (重置答案狀態，不讀取之前的作答)
-async function openChapter(chapId, bypassCache = false) {
+// 7. 開啟章節
+async function openChapter(chapId) {
   window.chemApp.activeChapterId = chapId;
   const lookup = CHAPTER_MAP[chapId];
   if (!lookup) return;
@@ -734,43 +702,31 @@ async function openChapter(chapId, bypassCache = false) {
     tBtn.style.background = '#1a73e8';
   }
 
-  document.querySelectorAll('.chapter-item').forEach(el => {
-    el.classList.remove('active');
-    el.style.background = 'transparent';
-    el.style.color = '#555';
-    el.style.fontWeight = 'normal';
-  });
-  const activeEl = document.getElementById(`chap-item-${chapId}`);
-  if (activeEl) {
-    activeEl.classList.add('active');
-    activeEl.style.background = '#e8f0fe';
-    activeEl.style.color = '#1a73e8';
-    activeEl.style.fontWeight = 'bold';
-  }
-
   const wrapper = switchRightPanelToChapterView();
   const titleEl = wrapper.querySelector('#currentChapterTitle');
   const container = wrapper.querySelector('#questionList');
-
   if (titleEl) titleEl.textContent = lookup.chapter.name;
 
   const dbKey = `${window.chemApp.currentLang}_${chapId}`;
 
-  // 強制每次進入章節都是乾淨的狀態，不主動帶入歷史綠色/紅色選取
-  if (!bypassCache) {
-    if (window.chemApp.questionsDB[dbKey] && window.chemApp.questionsDB[dbKey].length > 0) {
-      renderQuestions(window.chemApp.questionsDB[dbKey], chapId, true);
-      return;
-    }
-    const cachedList = await ChemStorage.loadChapter(dbKey);
-    if (cachedList && cachedList.length > 0) {
-      window.chemApp.questionsDB[dbKey] = cachedList;
-      window.chemApp.chapterCounts[dbKey] = cachedList.length;
-      ChemStorage.saveMeta();
-      updateCounts();
-      renderQuestions(cachedList, chapId, true);
-      return;
-    }
+  container.innerHTML = `
+    <div style="text-align:center; padding:56px 20px; background:#fff; border-radius:20px; border:1px solid #e0e0e0; color:#555;">
+      <div style="font-size:15px; font-weight:bold; color:#1a73e8; margin-bottom:8px;">正在從 GitHub 載入並解析題庫...</div>
+    </div>
+  `;
+
+  // 直接從快取或網路讀取，但渲染時強制傳入 true 進行重置，不顯示上次的選擇
+  if (window.chemApp.questionsDB[dbKey] && window.chemApp.questionsDB[dbKey].length > 0) {
+    renderQuestions(window.chemApp.questionsDB[dbKey], chapId, true);
+    return;
+  }
+  const cachedList = await ChemStorage.loadChapter(dbKey);
+  if (cachedList && cachedList.length > 0) {
+    window.chemApp.questionsDB[dbKey] = cachedList;
+    window.chemApp.chapterCounts[dbKey] = cachedList.length;
+    ChemStorage.saveMeta();
+    renderQuestions(cachedList, chapId, true);
+    return;
   }
 
   const pad = String(chapId).padStart(2, '0');
@@ -780,13 +736,6 @@ async function openChapter(chapId, bypassCache = false) {
     `./docs/chemqb_ch${chapId}_mcq_${lang}.docx`,
     `docs/chemqb_ch${pad}_mcq_${lang}.docx`
   ];
-
-  container.innerHTML = `
-    <div style="text-align:center; padding:56px 20px; background:#fff; border-radius:20px; border:1px solid #e0e0e0; color:#555;">
-      <div style="font-size:15px; font-weight:bold; color:#1a73e8; margin-bottom:8px;">正在從 GitHub 載入並解析題庫...</div>
-      <div style="font-size:12px; color:#888;">目標檔案：<code>./docs/chemqb_ch${pad}_mcq_${lang}.docx</code></div>
-    </div>
-  `;
 
   let arrayBuffer = null;
   for (const u of candidateUrls) {
@@ -802,7 +751,7 @@ async function openChapter(chapId, bypassCache = false) {
   if (!arrayBuffer) {
     container.innerHTML = `
       <div style="text-align:center; padding:48px 24px; background:#fff; border-radius:20px; border:1px solid #ffcdd2; color:#c62828;">
-        <div style="font-size:16px; font-weight:bold; margin-bottom:10px;">找不到遠端題庫檔案：<code>chemqb_ch${pad}_mcq_${lang}.docx</code></div>
+        <div style="font-size:16px; font-weight:bold; margin-bottom:10px;">找不到遠端題庫檔案</div>
       </div>
     `;
     return;
@@ -814,15 +763,14 @@ async function openChapter(chapId, bypassCache = false) {
     window.chemApp.chapterCounts[dbKey] = list.length;
     ChemStorage.saveMeta();
     await ChemStorage.saveChapter(dbKey, list);
-    updateCounts();
     renderQuestions(list, chapId, true);
   } catch (err) {
-    container.innerHTML = `<div style="color:#e53935; padding:32px; background:#fff; border-radius:20px;">解析 DOCX 失敗：${err.message}</div>`;
+    container.innerHTML = `<div style="color:#e53935; padding:32px; background:#fff; border-radius:20px;">解析失敗：${err.message}</div>`;
   }
 }
 
-// 8. 渲染題目卡片 (強制清除狀態)
-function renderQuestions(qList, chapId, resetState = false) {
+// 8. 渲染題目卡片 (強制重置答案狀態)
+function renderQuestions(qList, chapId, resetState = true) {
   const wrapper = switchRightPanelToChapterView();
   const container = wrapper.querySelector('#questionList');
   const chapStats = wrapper.querySelector('#chapterStats');
@@ -910,15 +858,6 @@ function renderQuestions(qList, chapId, resetState = false) {
       expPanel.style.display = 'block';
     };
 
-    // 如果未強制重置，才顯示歷史作答（因為需求說再打開同課題要重置，所以這裡預設不會執行 applyAnswerUI）
-    if (!resetState) {
-      const savedRecord = window.chemApp.userAnswers[q.id];
-      if (savedRecord) {
-        const chosen = typeof savedRecord === 'string' ? savedRecord : savedRecord.chosen;
-        if (chosen) applyAnswerUI(chosen, false);
-      }
-    }
-
     optBtns.forEach(btn => {
       btn.addEventListener('click', () => {
         const chosen = btn.dataset.opt;
@@ -927,12 +866,10 @@ function renderQuestions(qList, chapId, resetState = false) {
         
         const existing = window.chemApp.userAnswers[q.id];
         
-        // 確保每一題只加一次「已作答」，若為新題目則不重複計算
         if (!existing) {
           if (isCorrect) window.chemApp.currentStreak++;
           else window.chemApp.currentStreak = 0;
         } else {
-          // 若重複點選，依然檢查對錯來重置 Streak，但不會增加總答題數
           const wasCorrect = typeof existing === 'object' ? existing.correct : false;
           if (wasCorrect !== isCorrect) {
             if (isCorrect) window.chemApp.currentStreak++;
@@ -947,7 +884,6 @@ function renderQuestions(qList, chapId, resetState = false) {
         if (footerStreak) footerStreak.textContent = window.chemApp.currentStreak;
 
         applyAnswerUI(chosen, true);
-        updateDashboardStats();
       });
     });
 
@@ -961,202 +897,219 @@ function renderQuestions(qList, chapId, resetState = false) {
   });
 }
 
-// 9. 首頁大改版 (顯示每日清單與課題完成度)
-function updateCounts() {
-  for (let i = 1; i <= 65; i++) {
-    const key = `${window.chemApp.currentLang}_${i}`;
-    const len = window.chemApp.chapterCounts[key] ?? (window.chemApp.questionsDB[key] || []).length;
-    const badge = document.getElementById(`badge-${i}`);
-    if (badge) {
-      badge.textContent = `${len} 題`;
-      badge.style.color = len > 0 ? '#1a73e8' : '#aaa';
-      badge.style.fontWeight = len > 0 ? 'bold' : 'normal';
-    }
-  }
-  updateDashboardStats();
-}
-
+// 9. 首頁大改版 (還原手繪草稿版面)
 function updateDashboardStats() {
-  try {
-    let totalQ = 0;
-    for (let i = 1; i <= 65; i++) {
-      const key = `${window.chemApp.currentLang}_${i}`;
-      totalQ += window.chemApp.chapterCounts[key] || 0;
+  const rightMain = document.querySelector('main') || document.body;
+  
+  // 找出並隱藏章節介面
+  const wrapper = document.getElementById('chemChapterViewWrapper');
+  if (wrapper) wrapper.style.display = 'none';
+
+  // 隱藏右下角 action group
+  const actionGroup = document.getElementById('floatingActionGroup');
+  if (actionGroup) actionGroup.style.display = 'none';
+
+  // 隱藏/清理舊有的雜亂佈局
+  Array.from(rightMain.children).forEach(child => {
+    if (child.id !== 'chemChapterViewWrapper' && child.tagName !== 'SCRIPT') {
+      child.style.display = 'none';
     }
-    const records = Object.values(window.chemApp.userAnswers).map(v =>
-      typeof v === 'string' ? { chosen: v, correct: false, date: '' } : v
-    );
-    const answeredCount = records.length;
-    const wrongCount = records.filter(r => !r.correct).length;
-    const correctCount = records.filter(r => r.correct).length;
-    const rate = answeredCount > 0 ? Math.round((correctCount / answeredCount) * 100) : 0;
-    const todayStr = new Date().toISOString().slice(0, 10);
-    const todayCount = records.filter(r => r.date === todayStr).length;
+  });
 
-    // 清除首頁多餘的按鈕與提示（移除 class 為 .header-message 或 #redundantHeader）
-    document.querySelectorAll('.header-message, #redundantHeader').forEach(el => el.remove());
+  let dashboardEl = document.getElementById('chemDashboardHome');
+  if (!dashboardEl) {
+    dashboardEl = document.createElement('div');
+    dashboardEl.id = 'chemDashboardHome';
+    dashboardEl.style.cssText = 'width:100%; max-width:600px; margin:0 auto; padding:16px; box-sizing:border-box; font-family:sans-serif;';
+    rightMain.appendChild(dashboardEl);
+  }
+  dashboardEl.style.display = 'block';
 
-    const setIfExist = (id, val) => {
-      const el = document.getElementById(id);
-      if (el) el.textContent = val;
-    };
-    setIfExist('totalQuestionsCount', totalQ);
-    setIfExist('statTotalQuestions', totalQ);
-    setIfExist('statAnswered', answeredCount);
-    setIfExist('statMasteryRate', `${rate}%`);
-    setIfExist('statWrong', wrongCount);
-    setIfExist('statToday', todayCount);
+  // 計算所有數據
+  const recordsArr = Object.values(window.chemApp.userAnswers).map(v => typeof v === 'string' ? { chosen: v, correct: false, date: '' } : v);
+  const totalAnswered = recordsArr.length;
+  const correctCount = recordsArr.filter(r => r.correct).length;
+  const wrongCount = recordsArr.filter(r => !r.correct).length;
+  const masteryRate = totalAnswered > 0 ? Math.round((correctCount / totalAnswered) * 100) : 0;
+  
+  const todayStr = new Date().toISOString().slice(0, 10);
+  
+  const dateMap = {};
+  recordsArr.forEach(r => {
+    if (r.date) dateMap[r.date] = (dateMap[r.date] || 0) + 1;
+  });
+  const sortedDates = Object.keys(dateMap).sort().reverse();
+  const dailyListHtml = sortedDates.length === 0 
+    ? `<div style="font-size:13px; color:#888;">尚無作答記錄，快去開始練習吧！</div>`
+    : sortedDates.map(d => `
+      <div style="display:flex; justify-content:space-between; align-items:center; padding:10px 14px; background:#fff; border-radius:12px; margin-bottom:8px; border:1px solid #eee;">
+        <span style="font-weight:bold; color:#333; font-size:14px;">${d}</span>
+        <span style="color:#1a73e8; font-weight:bold; font-size:14px;">答了: ${dateMap[d]} 題</span>
+      </div>
+    `).join('');
 
-    document.querySelectorAll('.stat-answered, #statAnswered, [id*="Answered"]').forEach(el => {
-      el.textContent = answeredCount;
-    });
+  // 計算最近課題 (Recent Topic)
+  let recentTopicName = "尚未選擇課題";
+  if (window.chemApp.activeChapterId && CHAPTER_MAP[window.chemApp.activeChapterId]) {
+    const chInfo = CHAPTER_MAP[window.chemApp.activeChapterId];
+    recentTopicName = `${chInfo.topic.topicName.replace('topic / chapter: ', '')} - ${chInfo.chapter.name}`;
+  }
 
-    // 每日練習記錄列表
-    let dailyListEl = document.getElementById('dailyActivityList');
-    if (!dailyListEl) {
-      // 移除最近 12 週練習記錄，替換成新的清單與進度
-      const oldHistoryCards = Array.from(document.querySelectorAll('div')).filter(el => (el.textContent || '').includes('最近 12 週練習記錄'));
-      oldHistoryCards.forEach(card => {
-        if (card.id !== 'dailyActivityList' && card.parentElement) {
-          card.parentElement.innerHTML = `
-            <div style="background:#fff; border-radius:16px; padding:18px 20px; margin-top:20px; border:1px solid #e0e0e0; display:flex; flex-direction:column; gap:20px;">
-              <div>
-                <h3 style="margin:0 0 12px 0; font-size:15px; color:#111;">每日練習記錄</h3>
-                <div id="dailyActivityList" style="display:flex; flex-direction:column; gap:8px; max-height:160px; overflow-y:auto;"></div>
-              </div>
-              <hr style="border:none; border-top:1px dashed #ddd; margin:0;"/>
-              <div>
-                <h3 style="margin:0 0 12px 0; font-size:15px; color:#111;">課題完成度預測</h3>
-                <div id="topicProgressList" style="display:flex; flex-direction:column; gap:8px; max-height:160px; overflow-y:auto;"></div>
-              </div>
-            </div>
-          `;
-        }
-      });
-      dailyListEl = document.getElementById('dailyActivityList');
-    }
+  const userIdDisplay = window.chemApp.currentUser 
+    ? window.chemApp.currentUser.email.split('@')[0].toUpperCase() 
+    : "GUEST";
 
-    if (dailyListEl) {
-      const dateMap = {};
-      records.forEach(r => {
-        if (r.date) {
-          dateMap[r.date] = (dateMap[r.date] || 0) + 1;
-        }
-      });
+  // 重構首頁 HTML (對應圖三草稿)
+  dashboardEl.innerHTML = `
+    <!-- 頂部列 -->
+    <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:2px solid #1a73e8; padding-bottom:12px; margin-bottom:20px;">
+      <h1 style="margin:0; font-size:18px; color:#1a73e8; font-weight:bold; font-style:italic;">CHEM QB</h1>
+      <span style="font-weight:bold; color:#555; font-size:14px;">${todayStr}</span>
+      <div style="display:flex; align-items:center; gap:8px;">
+        <span style="font-size:13px; font-weight:bold; color:#333;">USER: [ ${userIdDisplay} ]</span>
+        <button id="homeLogoutBtn" class="sound-trigger" style="background:#fff; border:1px solid #ea4335; color:#ea4335; padding:4px 8px; border-radius:6px; font-weight:bold; font-size:11px; cursor:pointer;">登出</button>
+      </div>
+    </div>
 
-      const sortedDates = Object.keys(dateMap).sort().reverse();
-      if (sortedDates.length === 0) {
-        dailyListEl.innerHTML = `<div style="font-size:13px; color:#888;">尚無作答記錄，快去開始練習吧！</div>`;
-      } else {
-        dailyListEl.innerHTML = sortedDates.map(d => `
-          <div style="display:flex; justify-content:space-between; align-items:center; padding:8px 12px; background:#f8f9fa; border-radius:8px; font-size:13px;">
-            <span style="font-weight:bold; color:#333;">📅 ${d}</span>
-            <span style="background:#e8f0fe; color:#1a73e8; padding:2px 8px; border-radius:10px; font-weight:bold;">已做 ${dateMap[d]} 題</span>
-          </div>
-        `).join('');
-      }
-    }
+    <!-- Recent Topic 區塊 -->
+    <div style="background:#fff; border:2px solid #e0e0e0; border-radius:16px; padding:16px; margin-bottom:20px; box-shadow:0 4px 12px rgba(0,0,0,0.05);">
+      <div style="font-size:13px; color:#e67c73; font-weight:bold; margin-bottom:6px;">Recent topic / Chapter</div>
+      <div style="font-size:16px; font-weight:bold; color:#111; margin-bottom:16px;">${recentTopicName}</div>
+      
+      <div style="display:flex; justify-content:space-between; gap:8px; text-align:center;">
+        <div style="flex:1;">
+          <div style="font-size:12px; color:#888; font-weight:bold;">已答題數</div>
+          <div style="font-size:18px; font-weight:bold; color:#1a73e8; margin-top:4px;">${totalAnswered}</div>
+        </div>
+        <div style="flex:1;">
+          <div style="font-size:12px; color:#888; font-weight:bold;">答對題數</div>
+          <div style="font-size:18px; font-weight:bold; color:#34a853; margin-top:4px;">${correctCount}</div>
+        </div>
+        <div style="flex:1;">
+          <div style="font-size:12px; color:#888; font-weight:bold;">答錯題數</div>
+          <div style="font-size:18px; font-weight:bold; color:#ea4335; margin-top:4px;">${wrongCount}</div>
+        </div>
+        <div style="flex:1;">
+          <div style="font-size:12px; color:#888; font-weight:bold;">完成率</div>
+          <div style="font-size:18px; font-weight:bold; color:#fbbc05; margin-top:4px;">${masteryRate}%</div>
+        </div>
+      </div>
+    </div>
 
-    // 計算各課題的完成度 (Topic Progress)
-    let topicProgressEl = document.getElementById('topicProgressList');
-    if (topicProgressEl) {
-      const topicStats = SYLLABUS_CONFIG.map(t => {
-        let tTotal = 0;
-        let tAns = 0;
-        t.chapters.forEach(c => {
-          const k = `${window.chemApp.currentLang}_${c.id}`;
-          const qCount = window.chemApp.chapterCounts[k] || 0;
-          tTotal += qCount;
-          // 找所有 id 後面帶著 _ch[chapterId] 的答題紀錄
-          const ansCount = Object.keys(window.chemApp.userAnswers).filter(ansId => ansId.endsWith(`_ch${c.id}`)).length;
-          tAns += ansCount;
-        });
-        return { name: t.topicName.replace('topic / chapter: ', ''), total: tTotal, ans: tAns };
-      }).filter(t => t.total > 0).sort((a, b) => (b.ans / b.total) - (a.ans / a.total)); // 依完成度排序
+    <!-- 每日練習記錄 -->
+    <div style="background:#f8f9fa; border:2px solid #e0e0e0; border-radius:16px; padding:16px; margin-bottom:20px;">
+      <h3 style="margin:0 0 12px 0; font-size:15px; color:#333;">每日練習記錄</h3>
+      <div style="max-height:180px; overflow-y:auto; padding-right:4px;">
+        ${dailyListHtml}
+      </div>
+    </div>
 
-      if (topicStats.length === 0) {
-        topicProgressEl.innerHTML = `<div style="font-size:13px; color:#888;">暫無課題數據</div>`;
-      } else {
-        topicProgressEl.innerHTML = topicStats.slice(0, 5).map(t => {
-          const pct = Math.round((t.ans / t.total) * 100);
-          return `
-            <div style="display:flex; flex-direction:column; gap:4px; padding:8px 12px; background:#f8f9fa; border-radius:8px; font-size:12px;">
-              <div style="display:flex; justify-content:space-between; align-items:center;">
-                <span style="font-weight:bold; color:#333;">${t.name}</span>
-                <span style="color:#1a73e8; font-weight:bold;">還差 ${100 - pct}%</span>
-              </div>
-              <div style="width:100%; background:#e0e0e0; height:6px; border-radius:3px; overflow:hidden;">
-                <div style="width:${pct}%; background:#34a853; height:100%;"></div>
-              </div>
-            </div>
-          `;
-        }).join('');
-      }
-    }
-  } catch (e) {}
+    <!-- 語言切換卡片 -->
+    <div style="background:#fff; border:2px solid #e0e0e0; border-radius:16px; padding:16px; display:flex; justify-content:space-between; align-items:center;">
+      <span style="font-weight:bold; font-size:14px; color:#333;">MC 語言 (Stay tuned)</span>
+      <div style="display:flex; background:#f1f3f4; border-radius:20px; padding:4px;">
+        <button id="langEnBtn" class="sound-trigger" style="border:none; background:${window.chemApp.currentLang === 'e' ? '#1a73e8' : 'transparent'}; color:${window.chemApp.currentLang === 'e' ? '#fff' : '#555'}; font-weight:bold; padding:6px 12px; border-radius:16px; font-size:13px; cursor:pointer;">英</button>
+        <button id="langZhBtn" class="sound-trigger" style="border:none; background:${window.chemApp.currentLang === 'c' ? '#1a73e8' : 'transparent'}; color:${window.chemApp.currentLang === 'c' ? '#fff' : '#555'}; font-weight:bold; padding:6px 12px; border-radius:16px; font-size:13px; cursor:pointer;">中</button>
+      </div>
+    </div>
+  `;
+
+  dashboardEl.querySelector('#homeLogoutBtn').onclick = async () => {
+    SoundFX.playClick();
+    const { getAuth, signOut } = await import("https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js");
+    const auth = getAuth();
+    signOut(auth);
+  };
+
+  dashboardEl.querySelector('#langEnBtn').onclick = () => {
+    SoundFX.playClick();
+    window.chemApp.currentLang = 'e';
+    ChemStorage.saveMeta();
+    updateDashboardStats();
+  };
+  dashboardEl.querySelector('#langZhBtn').onclick = () => {
+    SoundFX.playClick();
+    window.chemApp.currentLang = 'c';
+    ChemStorage.saveMeta();
+    updateDashboardStats();
+  };
 }
 
-// 10. 左側選單渲染
-function renderSidebar() {
-  let container = document.getElementById('topicListContainer');
-  if (!container) {
-    const sidebarEl = document.querySelector('aside') || document.querySelector('.sidebar') || document.querySelector('#sidebar') || document.querySelector('.left-panel') || document.body;
-    container = document.createElement('div');
-    container.id = 'topicListContainer';
-    sidebarEl.insertBefore(container, sidebarEl.firstChild);
+// 10. 大圓角置中懸浮目錄 Modal (取代左側欄)
+function renderCenterDirectoryModal() {
+  let modal = document.getElementById('centerDirectoryModal');
+  if (!modal) {
+    modal = document.createElement('div');
+    modal.id = 'centerDirectoryModal';
+    modal.style.cssText = 'display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.5); z-index:99999; justify-content:center; align-items:center; padding:20px; box-sizing:border-box;';
+    document.body.appendChild(modal);
   }
-  container.innerHTML = '';
+
+  let contentHtml = `
+    <div style="background:#fff; width:100%; max-width:400px; height:80vh; max-height:600px; border-radius:28px; box-shadow:0 12px 40px rgba(0,0,0,0.2); display:flex; flex-direction:column; overflow:hidden;">
+      <div style="padding:18px 24px; background:#1a73e8; color:#fff; display:flex; justify-content:space-between; align-items:center;">
+        <h2 style="margin:0; font-size:18px;">選擇 Topic / Chapter</h2>
+        <button id="closeDirModalBtn" class="sound-trigger" style="background:transparent; border:none; color:#fff; font-size:24px; cursor:pointer; line-height:1;">&times;</button>
+      </div>
+      <div style="flex:1; overflow-y:auto; padding:16px 20px; background:#f4f6f9;">
+  `;
 
   SYLLABUS_CONFIG.forEach(topic => {
-    const groupEl = document.createElement('div');
-    groupEl.className = 'topic-group';
-    groupEl.style.cssText = 'margin-bottom:4px; border-bottom:1px solid #f0f0f0;';
-
-    const headerEl = document.createElement('div');
-    headerEl.className = 'topic-header sound-trigger';
-    headerEl.style.cssText = 'cursor:pointer; font-weight:bold; padding:10px 12px; background:#fafafa; display:flex; justify-content:space-between; align-items:center; user-select:none; font-size:13px; color:#333;';
-    headerEl.innerHTML = `<span>${topic.topicName}</span><span class="toggle-icon" style="font-size:11px; color:#888;">▼</span>`;
-
-    const cList = document.createElement('div');
-    cList.className = 'chapter-list';
-    cList.style.display = 'none';
-
-    headerEl.onclick = () => {
-      SoundFX.playClick();
-      const isHidden = (cList.style.display === 'none');
-      cList.style.display = isHidden ? 'block' : 'none';
-      headerEl.querySelector('.toggle-icon').textContent = isHidden ? '▼' : '▶';
-    };
-
+    const topicNameClean = topic.topicName.replace('topic / chapter: ', '');
+    contentHtml += `
+      <div style="background:#fff; border-radius:16px; margin-bottom:12px; border:1px solid #e0e0e0; overflow:hidden;">
+        <div class="dir-topic-header sound-trigger" style="padding:14px 16px; background:#fafafa; font-weight:bold; font-size:14px; color:#333; cursor:pointer; display:flex; justify-content:space-between; align-items:center;">
+          ${topicNameClean} <span style="font-size:12px; color:#888;">▼</span>
+        </div>
+        <div class="dir-chapter-list" style="display:none; flex-direction:column;">
+    `;
     topic.chapters.forEach(ch => {
-      const it = document.createElement('div');
-      it.className = 'chapter-item sound-trigger';
-      it.id = `chap-item-${ch.id}`;
-      it.style.cssText = 'padding:8px 12px 8px 24px; cursor:pointer; display:flex; justify-content:space-between; font-size:12px; color:#555; border-top:1px solid #f8f8f8;';
-      it.innerHTML = `<span>${ch.name}</span><span class="chapter-badge" id="badge-${ch.id}" style="color:#aaa;">0 題</span>`;
-
-      it.onclick = (e) => {
-        e.stopPropagation();
-        SoundFX.playClick();
-        openChapter(ch.id);
-        const sidebar = document.querySelector('aside') || document.querySelector('.sidebar') || document.querySelector('#sidebar') || document.querySelector('.left-panel');
-        if (sidebar) sidebar.style.display = 'none';
-      };
-      cList.appendChild(it);
+      contentHtml += `
+          <div class="dir-chapter-item sound-trigger" data-chid="${ch.id}" style="padding:12px 16px 12px 24px; border-top:1px solid #f0f0f0; font-size:13px; color:#555; cursor:pointer; display:flex; justify-content:space-between;">
+            <span>${ch.name}</span>
+            <span style="color:#1a73e8; font-weight:bold;">進入</span>
+          </div>
+      `;
     });
+    contentHtml += `</div></div>`;
+  });
 
-    groupEl.appendChild(headerEl);
-    groupEl.appendChild(cList);
-    container.appendChild(groupEl);
+  contentHtml += `</div></div>`;
+  modal.innerHTML = contentHtml;
+
+  modal.querySelector('#closeDirModalBtn').onclick = () => {
+    SoundFX.playClick();
+    modal.style.display = 'none';
+  };
+
+  modal.querySelectorAll('.dir-topic-header').forEach(header => {
+    header.onclick = (e) => {
+      SoundFX.playClick();
+      const list = e.currentTarget.nextElementSibling;
+      const arrow = e.currentTarget.querySelector('span');
+      const isHidden = (list.style.display === 'none');
+      list.style.display = isHidden ? 'flex' : 'none';
+      arrow.textContent = isHidden ? '▼' : '▶';
+    };
+  });
+
+  modal.querySelectorAll('.dir-chapter-item').forEach(item => {
+    item.onclick = (e) => {
+      SoundFX.playClick();
+      const chId = parseInt(e.currentTarget.getAttribute('data-chid'), 10);
+      modal.style.display = 'none';
+      openChapter(chId);
+    };
   });
 }
 
-// 11. 初始化與註冊系統 / Firebase
+// 11. 初始化與註冊系統
 document.addEventListener('DOMContentLoaded', () => {
   ChemStorage.loadMeta();
+  renderCenterDirectoryModal();
 
   document.addEventListener('click', (e) => {
-    const target = e.target.closest('button, .sound-trigger, input[type="file"]');
+    const target = e.target.closest('button, .sound-trigger, input[type="file"], .dir-topic-header, .dir-chapter-item');
     if (target && !target.id.includes('timerToggleBtn') && !target.id.includes('timerResetBtn') && !target.classList.contains('opt-act-btn') && !target.classList.contains('peek-ans-btn')) {
       SoundFX.playClick();
     }
@@ -1209,7 +1162,7 @@ document.addEventListener('DOMContentLoaded', () => {
         
         authOverlay.innerHTML = `
           <div style="background:#fff; padding:32px 40px; border-radius:24px; box-shadow:0 8px 30px rgba(0,0,0,0.12); width:100%; max-width:400px; text-align:center; border:1px solid #e0e0e0;">
-            <h2 style="margin-bottom:8px; color:#1a73e8; font-size:22px;">DSE Chemistry 題庫系統</h2>
+            <h2 style="margin-bottom:8px; color:#1a73e8; font-size:22px; font-weight:bold; font-style:italic;">CHEM QB</h2>
             <p style="font-size:13px; color:#666; margin-bottom:24px;">請登入或註冊您的學生 ID (格式如: 5a1, 5b35)</p>
             
             <div style="display:flex; flex-direction:column; gap:14px; text-align:left;">
@@ -1282,7 +1235,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             try {
               await createUserWithEmailAndPassword(auth, syntheticEmail, pass);
-              alert('註冊成功！');
+              // 註冊成功後自動觸發登入狀態變更
             } catch (e) {
               errMsg.textContent = '註冊失敗：' + e.message;
             }
@@ -1301,48 +1254,6 @@ document.addEventListener('DOMContentLoaded', () => {
           window.chemApp.currentUser = user;
           authOverlay.style.display = 'none';
           
-          // 登入後首頁預設隱藏側邊目錄
-          const sidebar = document.querySelector('aside') || document.querySelector('.sidebar') || document.querySelector('#sidebar') || document.querySelector('.left-panel');
-          if (sidebar) sidebar.style.display = 'none'; 
-          
-          renderSidebar();
-          updateCounts();
-
-          const navRight = document.querySelector('.nav-right');
-          if (navRight && !document.getElementById('topUserDisplayBar')) {
-            navRight.innerHTML = '';
-            navRight.style.cssText = 'display:flex; align-items:center; gap:8px; flex-wrap:nowrap; justify-content:flex-end; white-space:nowrap;';
-
-            const userBar = document.createElement('div');
-            userBar.id = 'topUserDisplayBar';
-            userBar.style.cssText = 'display:inline-flex; align-items:center; gap:8px; font-size:12px; white-space:nowrap;';
-            const displayId = user.email.split('@')[0].toUpperCase();
-            userBar.innerHTML = `
-              <span style="font-weight:bold; color:#1a73e8; background:#e8f0fe; padding:4px 10px; border-radius:12px; border:1px solid #aecbfa;">用戶: ${displayId}</span>
-              <button id="returnHomeBtn" class="sound-trigger" style="background:#1a73e8; color:#fff; border:none; padding:5px 12px; border-radius:12px; cursor:pointer; font-weight:bold;">返回首頁</button>
-              <button id="logoutBtn" class="sound-trigger" style="background:#ea4335; color:#fff; border:none; padding:5px 10px; border-radius:12px; cursor:pointer; font-weight:bold;">登出</button>
-            `;
-            navRight.appendChild(userBar);
-
-            userBar.querySelector('#returnHomeBtn').onclick = () => {
-              SoundFX.playClick();
-              const wrapper = document.getElementById('chemChapterViewWrapper');
-              if (wrapper) wrapper.style.display = 'none';
-              const actionGroup = document.getElementById('floatingActionGroup');
-              if (actionGroup) actionGroup.style.display = 'none';
-              window.chemApp.dashboardNodes.forEach(node => {
-                if (node !== wrapper) node.style.display = '';
-              });
-              if (sidebar) sidebar.style.display = 'none';
-              updateDashboardStats();
-            };
-
-            userBar.querySelector('#logoutBtn').onclick = () => {
-              SoundFX.playClick();
-              signOut(auth);
-            };
-          }
-
           try {
             const docSnap = await getDoc(doc(db, "users_progress", user.uid));
             if (docSnap.exists()) {
@@ -1351,14 +1262,39 @@ document.addEventListener('DOMContentLoaded', () => {
               if (data.counts) window.chemApp.chapterCounts = data.counts;
               if (data.streak !== undefined) window.chemApp.currentStreak = data.streak;
               ChemStorage.saveMeta();
-              updateCounts();
             }
           } catch (e) {}
+
+          updateDashboardStats();
+
+          // 顯示右下角目錄按鈕與 Streak 群組
+          const floatGroup = document.getElementById('floatingActionGroup');
+          if (!floatGroup) {
+            const grp = document.createElement('div');
+            grp.id = 'floatingActionGroup';
+            grp.style.cssText = 'position:fixed; bottom:20px; right:20px; z-index:9998; display:flex; flex-direction:column; gap:10px; align-items:flex-end;';
+            grp.innerHTML = `
+              <div id="footerStreakBox" style="display:none; background:#e8f0fe; padding:10px 16px; border-radius:24px; border:1px solid #aecbfa; font-size:13px; font-weight:bold; color:#1a73e8; box-shadow:0 4px 14px rgba(0,0,0,0.15); align-items:center; justify-content:center; height:40px; box-sizing:border-box;">
+                Streak: <span id="footerStreakCount" style="margin-left:4px;">${window.chemApp.currentStreak}</span>
+              </div>
+              <button id="mobileToggleSidebarBtn" class="sound-trigger" style="background:#1a73e8; color:#fff; border:none; padding:10px 16px; border-radius:24px; font-weight:bold; font-size:13px; box-shadow:0 4px 14px rgba(0,0,0,0.25); cursor:pointer; height:40px; box-sizing:border-box; display:flex; align-items:center; justify-content:center;">目錄選單</button>
+            `;
+            document.body.appendChild(grp);
+
+            grp.querySelector('#mobileToggleSidebarBtn').onclick = () => {
+              SoundFX.playClick();
+              const m = document.getElementById('centerDirectoryModal');
+              if (m) m.style.display = 'flex';
+            };
+          } else {
+            floatGroup.style.display = 'flex';
+          }
+
         } else {
           window.chemApp.currentUser = null;
           authOverlay.style.display = 'flex';
-          const userBar = document.getElementById('topUserDisplayBar');
-          if (userBar) userBar.remove();
+          const fg = document.getElementById('floatingActionGroup');
+          if (fg) fg.style.display = 'none';
         }
       });
     } catch (e) {}
@@ -1366,36 +1302,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
   loadFirebaseSDK();
 
-  if (!document.getElementById('mobileToggleSidebarBtn')) {
-    const floatBtn = document.createElement('button');
-    floatBtn.id = 'mobileToggleSidebarBtn';
-    floatBtn.innerHTML = '目錄選單';
-    floatBtn.style.cssText = 'position:fixed; bottom:20px; right:20px; z-index:9999; background:#1a73e8; color:#fff; border:none; padding:10px 16px; border-radius:24px; font-weight:bold; font-size:13px; box-shadow:0 4px 14px rgba(0,0,0,0.25); cursor:pointer; display:block; height:40px; box-sizing:border-box;';
-
-    floatBtn.onclick = () => {
-      SoundFX.playClick();
-      const sidebar = document.querySelector('aside') || document.querySelector('.sidebar') || document.querySelector('#sidebar') || document.querySelector('.left-panel');
-      if (sidebar) {
-        const isHidden = (sidebar.style.display === 'none' || window.getComputedStyle(sidebar).display === 'none');
-        sidebar.style.display = isHidden ? 'block' : 'none';
-        if (isHidden) {
-          sidebar.style.position = 'fixed';
-          sidebar.style.zIndex = '9998';
-          sidebar.style.background = '#fff';
-          sidebar.style.width = '85%';
-          sidebar.style.height = '100vh';
-          sidebar.style.top = '0';
-          sidebar.style.left = '0';
-          sidebar.style.overflowY = 'auto';
-          sidebar.style.boxShadow = '4px 0 15px rgba(0,0,0,0.2)';
-        }
-      }
-    };
-    document.body.appendChild(floatBtn);
-  }
-
+  // 清除舊版的 header 與 sidebars，保持畫面純淨
   const mainHeader = document.querySelector('header') || document.querySelector('.header') || document.querySelector('.top-nav');
-  if (mainHeader) {
-    mainHeader.style.cssText = 'display:flex; justify-content:space-between; align-items:center; padding:8px 12px; flex-wrap:nowrap; overflow:hidden;';
-  }
+  if (mainHeader) mainHeader.remove();
+  
+  const sidebar = document.querySelector('aside') || document.querySelector('.sidebar') || document.querySelector('#sidebar') || document.querySelector('.left-panel');
+  if (sidebar) sidebar.remove();
 });
