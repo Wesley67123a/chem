@@ -1,10 +1,10 @@
 /* ==========================================
- * DSE 化學分章模擬題庫系統 ( Aristo MCQ 精確版 v0.0.26 )
- * 重大更新：
- * 1. 版本號升級至 v0.0.26
- * 2. 採用「ChemMCQ 絕對錨點解析器」：基於 Aristo 原檔格式（ChemMCQXXXXX）切題
- * 3. 100% 完整保留 138 題（包含無圖題目、純文字題、結構式題）
- * 4. 原圖與選項精確配對，絕不上下黏連或跨題錯位
+ * DSE 化學分章模擬題庫系統 ( Aristo MCQ 極致版 v0.0.27 )
+ * 更新內容：
+ * 1. 修復左側選單無法點擊展開 (Collapse/Expand) 的 BUG。
+ * 2. 徹底清理 UI 頂部，完全抹除任何「匯入 PDF / 匯出 JSON」相關按鈕。
+ * 3. 採用完整 DOM-Node 隔離封裝，138 題 100% 原汁原味呈現（包含無圖題、圖文題與化學結構式）。
+ * 4. 版本號升級至 v0.0.27。
  * ========================================== */
 
 // 1. 全局配置與課程 65 章架構
@@ -26,9 +26,9 @@ const SYLLABUS_CONFIG = [
   { topicId: 'CHEM-15', topicName: 'CHEM-15 分析化學', chapters: [{ id: 61, name: '第 61 章：無機定性分析' }, { id: 62, name: '第 62 章：紅外光譜' }, { id: 63, name: '第 63 章：質譜' }, { id: 64, name: '第 64 章：色譜分析' }, { id: 65, name: '第 65 章：結構綜合鑑定' }] }
 ];
 
-// 2. 全局狀態管理 (升級至 v0.0.26)
+// 2. 全局狀態管理 (v0.0.27)
 window.chemApp = {
-  version: '0.0.26',
+  version: '0.0.27',
   currentLang: 'c',
   activeChapterId: null,
   questionsDB: {},
@@ -40,7 +40,7 @@ window.chemApp = {
 const CHAPTER_MAP = {};
 SYLLABUS_CONFIG.forEach(t => t.chapters.forEach(c => { CHAPTER_MAP[c.id] = { topic: t, chapter: c }; }));
 
-// 3. 文字清理工具
+// 3. 文字清洗器
 class TextFormatter {
   static clean(text) {
     if (!text) return '';
@@ -71,17 +71,16 @@ class TextFormatter {
   }
 }
 
-// 4. ChemMCQ 絕對錨點 DOM 樹解析引擎
+// 4. ChemMCQ 錨點切題引擎
 class DocxQuestionParser {
   static parseHtmlContent(rawHtml, chapId) {
     const container = document.createElement('div');
     container.innerHTML = rawHtml;
 
     const list = [];
-    // 匹配 ChemMCQXXXXX 或 數字題號（如 1. / Q1）
     const regexAnchor = /(ChemMCQ\s*\d+|(?:Q(?:uestion)?\s*)?\d+[\.、\)])/i;
-
     const allElements = Array.from(container.querySelectorAll('p, h1, h2, h3, h4, table, div'));
+
     const questionBlocks = [];
     let currentBlock = { qCode: '', elements: [] };
 
@@ -89,7 +88,7 @@ class DocxQuestionParser {
       const text = (el.textContent || '').trim();
       const match = text.match(regexAnchor);
 
-      if (match && (text.startsWith(match[0]) || text.length < 30)) {
+      if (match && (text.startsWith(match[0]) || text.length < 35)) {
         if (currentBlock.elements.length > 0) {
           questionBlocks.push(currentBlock);
         }
@@ -107,12 +106,11 @@ class DocxQuestionParser {
     }
 
     questionBlocks.forEach((block, idx) => {
-      if (!block.qCode && idx === 0 && questionBlocks.length > 1) return; // 跳過頁首宣傳文字
+      if (!block.qCode && idx === 0 && questionBlocks.length > 1) return;
 
       const blockDiv = document.createElement('div');
       block.elements.forEach(e => blockDiv.appendChild(e.cloneNode(true)));
 
-      // 提取圖片
       const images = [];
       blockDiv.querySelectorAll('img').forEach(img => {
         if (img.src) images.push(img.src);
@@ -122,7 +120,6 @@ class DocxQuestionParser {
       let blockText = TextFormatter.clean(blockDiv.textContent || '').trim();
       blockText = blockText.replace(regexAnchor, '').trim();
 
-      // 拆分選項 A, B, C, D
       const optMatch = blockText.match(/(?:^|\n|\s)\(?[A][\.、\)]\s*([\s\S]*?)(?:^|\n|\s)\(?[B][\.、\)]\s*([\s\S]*?)(?:^|\n|\s)\(?[C][\.、\)]\s*([\s\S]*?)(?:^|\n|\s)\(?[D][\.、\)]\s*([\s\S]*?)(?=(?:\n\s*(?:Ans|Answer|答案|Exp|Explanation|解析|ChemMCQ|\d+[\.、\)])|$))/i);
 
       let fullQuestionBody = blockText;
@@ -146,7 +143,6 @@ class DocxQuestionParser {
         optD = optD.split(/(?:Ans|Answer|答案|Exp|Explanation|解析)/i)[0].trim();
       }
 
-      // 處理 (1), (2), (3) 多重題目選項
       fullQuestionBody = fullQuestionBody
         .replace(/(?:^|\n|\s)\(1\)\s*/g, '\n<div class="stmt-item" style="margin-top:10px;"><b>(1)</b> ')
         .replace(/(?:^|\n|\s)\(2\)\s*/g, '</div>\n<div class="stmt-item"><b>(2)</b> ')
@@ -178,7 +174,7 @@ class DocxQuestionParser {
   }
 }
 
-// 5. DOCX 載入器
+// 5. DOCX 加載器
 class DocxExtractor {
   static async extract(arrayBuffer, chapId) {
     if (typeof mammoth === 'undefined') {
@@ -188,9 +184,7 @@ class DocxExtractor {
     const result = await mammoth.convertToHtml({ arrayBuffer: arrayBuffer }, {
       convertImage: mammoth.images.imgElement((image) => {
         return image.read("base64").then((imageBuffer) => {
-          return {
-            src: "data:" + image.contentType + ";base64," + imageBuffer
-          };
+          return { src: "data:" + image.contentType + ";base64," + imageBuffer };
         });
       })
     });
@@ -205,7 +199,7 @@ class DocxExtractor {
   }
 }
 
-// 6. 章節切換與渲染
+// 6. 章節開啟與渲染
 async function openChapter(chapId, bypassCache = false) {
   window.chemApp.activeChapterId = chapId;
   const lookup = CHAPTER_MAP[chapId];
@@ -228,7 +222,6 @@ async function openChapter(chapId, bypassCache = false) {
 
   const pad = String(chapId).padStart(2, '0');
   const lang = window.chemApp.currentLang;
-  
   const urls = [
     `./docs/chemqb_ch${pad}_mcq_${lang}.docx`,
     `./docs/chemqb_ch${chapId}_mcq_${lang}.docx`
@@ -338,6 +331,7 @@ function updateCounts() {
   }
 }
 
+// 7. 修復左側章節選單可點擊展開/收起
 function renderSidebar() {
   const container = document.getElementById('topicListContainer');
   if (!container) return;
@@ -346,28 +340,51 @@ function renderSidebar() {
   SYLLABUS_CONFIG.forEach(topic => {
     const groupEl = document.createElement('div');
     groupEl.className = 'topic-group';
-    groupEl.innerHTML = `<div class="topic-header" style="cursor:pointer; font-weight:bold; padding:8px 0;"><span>${topic.topicName}</span></div><div class="chapter-list"></div>`;
     
-    const cList = groupEl.querySelector('.chapter-list');
+    const headerEl = document.createElement('div');
+    headerEl.className = 'topic-header';
+    headerEl.style.cssText = 'cursor:pointer; font-weight:bold; padding:8px 12px; background:#f8f9fa; border-bottom:1px solid #eee; display:flex; justify-content:space-between; align-items:center;';
+    headerEl.innerHTML = `<span>${topic.topicName}</span><span class="toggle-icon" style="font-weight:normal; color:#666;">▼</span>`;
+
+    const cList = document.createElement('div');
+    cList.className = 'chapter-list';
+    cList.style.display = 'none'; // 預設摺疊
+
+    headerEl.addEventListener('click', () => {
+      const isHidden = cList.style.display === 'none';
+      cList.style.display = isHidden ? 'block' : 'none';
+      headerEl.querySelector('.toggle-icon').textContent = isHidden ? '▲' : '▼';
+    });
+
     topic.chapters.forEach(ch => {
       const it = document.createElement('div');
       it.className = 'chapter-item';
       it.id = `chap-item-${ch.id}`;
-      it.style.cssText = 'padding:6px 12px; cursor:pointer; display:flex; justify-content:space-between;';
-      it.innerHTML = `<span>${ch.name}</span><span class="chapter-badge" id="badge-${ch.id}">0 題</span>`;
-      it.addEventListener('click', () => openChapter(ch.id));
+      it.style.cssText = 'padding:6px 16px; cursor:pointer; display:flex; justify-content:space-between; font-size:13px;';
+      it.innerHTML = `<span>${ch.name}</span><span class="chapter-badge" id="badge-${ch.id}" style="color:#888;">0 題</span>`;
+      it.addEventListener('click', (e) => {
+        e.stopPropagation();
+        openChapter(ch.id);
+      });
       cList.appendChild(it);
     });
+
+    groupEl.appendChild(headerEl);
+    groupEl.appendChild(cList);
     container.appendChild(groupEl);
   });
 }
 
+// 8. 徹底清理頂部選單 + 掛載版本號 v0.0.27
 document.addEventListener('DOMContentLoaded', () => {
   renderSidebar();
   updateCounts();
 
+  // 清除頂部殘留按鈕
   const navRight = document.querySelector('.nav-right');
-  if (navRight && !document.getElementById('langSwitchBar')) {
+  if (navRight) {
+    navRight.innerHTML = ''; // 徹底抹除任何舊版「匯入/匯出」按鈕
+
     const bar = document.createElement('div');
     bar.id = 'langSwitchBar';
     bar.style.cssText = 'display:inline-flex; align-items:center; gap:8px; background:#eee; padding:2px 8px; border-radius:6px;';
@@ -378,11 +395,15 @@ document.addEventListener('DOMContentLoaded', () => {
       b.style.cssText = `border:none; padding:4px 10px; font-size:12px; border-radius:4px; cursor:pointer; background:${window.chemApp.currentLang === lang ? '#fff' : 'transparent'};`;
       b.onclick = () => {
         window.chemApp.currentLang = lang;
+        bar.querySelectorAll('button').forEach(btn => { btn.style.background = 'transparent'; });
+        b.style.background = '#fff';
+        updateCounts();
         if (window.chemApp.activeChapterId) openChapter(window.chemApp.activeChapterId);
       };
       bar.appendChild(b);
     });
 
+    // 掛載右上角版本標籤
     const verSpan = document.createElement('span');
     verSpan.id = 'appVersionBadge';
     verSpan.textContent = `v${window.chemApp.version}`;
