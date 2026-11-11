@@ -1463,7 +1463,7 @@ async function ensureUserLogModuleLoaded() {
   if (window.ChemUserLog) return true;
   return new Promise((resolve) => {
     const s = document.createElement('script');
-    s.src = `./userlog2.js?v=${Date.now()}`;
+    s.src = `./userlog.js?v=${Date.now()}`;
     s.onload = () => resolve(true);
     s.onerror = () => {
       console.error('無法載入 ./userlog.js，請確認檔案已上傳至相同目錄！');
