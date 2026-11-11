@@ -157,9 +157,9 @@ const SYLLABUS_CONFIG = [
   }
 ];
 
-// 2. 全局狀態 (v0.0.37)
+// 2. 全局狀態 (v0.0.38)
 window.chemApp = {
-  version: '0.0.37',
+  version: '0.0.38',
   currentLang: 'e',
   activeChapterId: null,
   questionsDB: {},
@@ -173,7 +173,7 @@ window.chemApp = {
 };
 
 const CHAPTER_MAP = {};
-SYLLAPUS_CONFIG.forEach(t => t.chapters.forEach(c => { CHAPTER_MAP[c.id] = { topic: t, chapter: c }; }));
+SYLLABUS_CONFIG.forEach(t => t.chapters.forEach(c => { CHAPTER_MAP[c.id] = { topic: t, chapter: c }; }));
 
 // 2.1 網頁音效系統 (Web Audio API)
 class SoundFX {
@@ -221,13 +221,13 @@ class SoundFX {
   }
 }
 
-// 2.2 Firebase 雲端與本機儲存引擎
+// 2.2 IndexedDB + Firebase 雲端與本機儲存引擎
 class ChemStorage {
   static dbPromise = null;
   static getDB() {
     if (!this.dbPromise) {
       this.dbPromise = new Promise((resolve, reject) => {
-        const req = indexedDB.open('HKDSE_CHEM_QB_V37', 1);
+        const req = indexedDB.open('HKDSE_CHEM_QB_V38', 1);
         req.onupgradeneeded = (e) => {
           const db = e.target.result;
           if (!db.objectStoreNames.contains('chapters')) db.createObjectStore('chapters');
@@ -265,23 +265,22 @@ class ChemStorage {
 
   static loadMeta() {
     try {
-      const counts = localStorage.getItem('CHEM_COUNTS_V37');
+      const counts = localStorage.getItem('CHEM_COUNTS_V38');
       if (counts) window.chemApp.chapterCounts = JSON.parse(counts);
-      const ans = localStorage.getItem('CHEM_USER_ANS_V37');
+      const ans = localStorage.getItem('CHEM_USER_ANS_V38');
       if (ans) window.chemApp.userAnswers = JSON.parse(ans);
-      const savedLang = localStorage.getItem('CHEM_LANG_V37');
+      const savedLang = localStorage.getItem('CHEM_LANG_V38');
       if (savedLang === 'c' || savedLang === 'e') window.chemApp.currentLang = savedLang;
     } catch (e) {}
   }
 
   static saveMeta() {
     try {
-      localStorage.setItem('CHEM_COUNTS_V37', JSON.stringify(window.chemApp.chapterCounts));
-      localStorage.setItem('CHEM_USER_ANS_V37', JSON.stringify(window.chemApp.userAnswers));
-      localStorage.setItem('CHEM_LANG_V37', window.chemApp.currentLang);
+      localStorage.setItem('CHEM_COUNTS_V38', JSON.stringify(window.chemApp.chapterCounts));
+      localStorage.setItem('CHEM_USER_ANS_V38', JSON.stringify(window.chemApp.userAnswers));
+      localStorage.setItem('CHEM_LANG_V38', window.chemApp.currentLang);
     } catch (e) {}
 
-    // 如果用戶已登入 Firebase，同時同步到雲端
     if (window.chemApp.currentUser && window.firebaseCloud) {
       window.firebaseCloud.syncToCloud(window.chemApp.currentUser.uid, window.chemApp.userAnswers, window.chemApp.chapterCounts);
     }
@@ -920,10 +919,16 @@ function updateDashboardStats() {
   } catch (e) {}
 }
 
-// 10. 左側選單渲染
+// 10. 左側選單渲染（確保自動找尋或建立 #topicListContainer）
 function renderSidebar() {
-  const container = document.getElementById('topicListContainer');
-  if (!container) return;
+  let container = document.getElementById('topicListContainer');
+  if (!container) {
+    // 如果網頁原生的 topicListContainer 尚未加載，自動在側邊欄或左側面板建立一個
+    const sidebarEl = document.querySelector('aside') || document.querySelector('.sidebar') || document.querySelector('#sidebar') || document.querySelector('.left-panel') || document.body;
+    container = document.createElement('div');
+    container.id = 'topicListContainer';
+    sidebarEl.insertBefore(container, sidebarEl.firstChild);
+  }
   container.innerHTML = '';
 
   SYLLABUS_CONFIG.forEach(topic => {
@@ -997,122 +1002,6 @@ document.addEventListener('DOMContentLoaded', () => {
   renderSidebar();
   updateCounts();
 
-  // 動態引入 Firebase SDK 並初始化雲端同步
-  const loadFirebaseSDK = async () => {
-    try {
-      const { initializeApp } = await import("https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js");
-      const { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged } = await import("https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js");
-      const { getFirestore, doc, setDoc, getDoc } = await import("https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js");
-
-      const firebaseConfig = {
-        apiKey: "AIzaSyDzNzFelR1DLNgVcK-u3_U2s_zmtIrxu1w",
-        authDomain: "chem-b49bf.firebaseapp.com",
-        projectId: "chem-b49bf",
-        storageBucket: "chem-b49bf.firebasestorage.app",
-        messagingSenderId: "702426481564",
-        appId: "1:702426481564:web:987522a34c6c4e54d6fe59",
-        measurementId: "G-9EB0718DGR"
-      };
-
-      const app = initializeApp(firebaseConfig);
-      const auth = getAuth(app);
-      const db = getFirestore(app);
-
-      window.firebaseCloud = {
-        async syncToCloud(uid, answers, counts) {
-          try {
-            await setDoc(doc(db, "users_progress", uid), {
-              answers: answers,
-              counts: counts,
-              lastUpdated: new Date().toISOString()
-            }, { merge: true });
-          } catch (e) {}
-        }
-      };
-
-      // 建立頂部導覽列的登入/註冊 UI
-      const navRight = document.querySelector('.nav-right');
-      if (navRight) {
-        const authContainer = document.createElement('div');
-        authContainer.id = 'authBarContainer';
-        authContainer.style.cssText = 'display:inline-flex; align-items:center; gap:6px; margin-left:8px; font-size:11px;';
-        
-        authContainer.innerHTML = `
-          <div id="authLoggedOut" style="display:flex; gap:4px; align-items:center;">
-            <input type="email" id="authEmail" placeholder="電子郵件" style="padding:3px 6px; font-size:11px; border:1px solid #ccc; border-radius:6px; width:90px;" />
-            <input type="password" id="authPass" placeholder="密碼" style="padding:3px 6px; font-size:11px; border:1px solid #ccc; border-radius:6px; width:70px;" />
-            <button id="btnLogin" class="sound-trigger" style="background:#1a73e8; color:#fff; border:none; padding:3px 8px; border-radius:6px; cursor:pointer; font-weight:bold;">登入</button>
-            <button id="btnRegister" class="sound-trigger" style="background:#34a853; color:#fff; border:none; padding:3px 8px; border-radius:6px; cursor:pointer; font-weight:bold;">註冊</button>
-          </div>
-          <div id="authLoggedIn" style="display:none; gap:6px; align-items:center;">
-            <span id="userEmailDisplay" style="color:#1a73e8; font-weight:bold; max-width:100px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;"></span>
-            <button id="btnLogout" class="sound-trigger" style="background:#ea4335; color:#fff; border:none; padding:3px 8px; border-radius:6px; cursor:pointer; font-weight:bold;">登出</button>
-          </div>
-        `;
-        navRight.appendChild(authContainer);
-
-        const emailInput = authContainer.querySelector('#authEmail');
-        const passInput = authContainer.querySelector('#authPass');
-        const loggedOutDiv = authContainer.querySelector('#authLoggedOut');
-        const loggedInDiv = authContainer.querySelector('#authLoggedIn');
-        const userEmailSpan = authContainer.querySelector('#userEmailDisplay');
-
-        authContainer.querySelector('#btnLogin').onclick = async () => {
-          SoundFX.playClick();
-          try {
-            const res = await signInWithEmailAndPassword(auth, emailInput.value, passInput.value);
-            alert("登入成功！");
-          } catch (e) {
-            alert("登入失敗：" + e.message);
-          }
-        };
-
-        authContainer.querySelector('#btnRegister').onclick = async () => {
-          SoundFX.playClick();
-          try {
-            const res = await createUserWithEmailAndPassword(auth, emailInput.value, passInput.value);
-            alert("註冊並登入成功！");
-          } catch (e) {
-            alert("註冊失敗：" + e.message);
-          }
-        };
-
-        authContainer.querySelector('#btnLogout').onclick = async () => {
-          SoundFX.playClick();
-          await signOut(auth);
-          alert("已登出");
-        };
-
-        onAuthStateChanged(auth, async (user) => {
-          if (user) {
-            window.chemApp.currentUser = user;
-            loggedOutDiv.style.display = 'none';
-            loggedInDiv.style.display = 'flex';
-            userEmailSpan.textContent = user.email;
-
-            // 從雲端下載記錄
-            try {
-              const docSnap = await getDoc(doc(db, "users_progress", user.uid));
-              if (docSnap.exists()) {
-                const data = docSnap.data();
-                if (data.answers) window.chemApp.userAnswers = data.answers;
-                if (data.counts) window.chemApp.chapterCounts = data.counts;
-                ChemStorage.saveMeta();
-                updateCounts();
-              }
-            } catch (e) {}
-          } else {
-            window.chemApp.currentUser = null;
-            loggedOutDiv.style.display = 'flex';
-            loggedInDiv.style.display = 'none';
-          }
-        });
-      }
-    } catch (e) {}
-  };
-
-  loadFirebaseSDK();
-
   document.addEventListener('click', (e) => {
     const target = e.target.closest('button, .sound-trigger, input[type="file"]');
     if (target && !target.id.includes('timerToggleBtn') && !target.id.includes('timerResetBtn') && !target.classList.contains('opt-act-btn') && !target.classList.contains('peek-ans-btn')) {
@@ -1148,8 +1037,121 @@ document.addEventListener('DOMContentLoaded', () => {
     document.body.appendChild(floatBtn);
   }
 
+  const loadFirebaseSDK = async () => {
+    try {
+      const { initializeApp } = await import("https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js");
+      const { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged } = await import("https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js");
+      const { getFirestore, doc, setDoc, getDoc } = await import("https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js");
+
+      const firebaseConfig = {
+        apiKey: "AIzaSyDzNzFelR1DLNgVcK-u3_U2s_zmtIrxu1w",
+        authDomain: "chem-b49bf.firebaseapp.com",
+        projectId: "chem-b49bf",
+        storageBucket: "chem-b49bf.firebasestorage.app",
+        messagingSenderId: "702426481564",
+        appId: "1:702426481564:web:987522a34c6c4e54d6fe59",
+        measurementId: "G-9EB0718DGR"
+      };
+
+      const app = initializeApp(firebaseConfig);
+      const auth = getAuth(app);
+      const db = getFirestore(app);
+
+      window.firebaseCloud = {
+        async syncToCloud(uid, answers, counts) {
+          try {
+            await setDoc(doc(db, "users_progress", uid), {
+              answers: answers,
+              counts: counts,
+              lastUpdated: new Date().toISOString()
+            }, { merge: true });
+          } catch (e) {}
+        }
+      };
+
+      const navRight = document.querySelector('.nav-right');
+      if (navRight) {
+        const authContainer = document.createElement('div');
+        authContainer.id = 'authBarContainer';
+        authContainer.style.cssText = 'display:inline-flex; align-items:center; gap:6px; margin-left:8px; font-size:11px;';
+        
+        authContainer.innerHTML = `
+          <div id="authLoggedOut" style="display:flex; gap:4px; align-items:center;">
+            <input type="email" id="authEmail" placeholder="電子郵件" style="padding:3px 6px; font-size:11px; border:1px solid #ccc; border-radius:6px; width:90px;" />
+            <input type="password" id="authPass" placeholder="密碼" style="padding:3px 6px; font-size:11px; border:1px solid #ccc; border-radius:6px; width:70px;" />
+            <button id="btnLogin" class="sound-trigger" style="background:#1a73e8; color:#fff; border:none; padding:3px 8px; border-radius:6px; cursor:pointer; font-weight:bold;">登入</button>
+            <button id="btnRegister" class="sound-trigger" style="background:#34a853; color:#fff; border:none; padding:3px 8px; border-radius:6px; cursor:pointer; font-weight:bold;">註冊</button>
+          </div>
+          <div id="authLoggedIn" style="display:none; gap:6px; align-items:center;">
+            <span id="userEmailDisplay" style="color:#1a73e8; font-weight:bold; max-width:100px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;"></span>
+            <button id="btnLogout" class="sound-trigger" style="background:#ea4335; color:#fff; border:none; padding:3px 8px; border-radius:6px; cursor:pointer; font-weight:bold;">登出</button>
+          </div>
+        `;
+        navRight.appendChild(authContainer);
+
+        const emailInput = authContainer.querySelector('#authEmail');
+        const passInput = authContainer.querySelector('#authPass');
+        const loggedOutDiv = authContainer.querySelector('#authLoggedOut');
+        const loggedInDiv = authContainer.querySelector('#authLoggedIn');
+        const userEmailSpan = authContainer.querySelector('#userEmailDisplay');
+
+        authContainer.querySelector('#btnLogin').onclick = async () => {
+          SoundFX.playClick();
+          try {
+            await signInWithEmailAndPassword(auth, emailInput.value, passInput.value);
+            alert("登入成功！");
+          } catch (e) {
+            alert("登入失敗：" + e.message);
+          }
+        };
+
+        authContainer.querySelector('#btnRegister').onclick = async () => {
+          SoundFX.playClick();
+          try {
+            await createUserWithEmailAndPassword(auth, emailInput.value, passInput.value);
+            alert("註冊並登入成功！");
+          } catch (e) {
+            alert("註冊失敗：" + e.message);
+          }
+        };
+
+        authContainer.querySelector('#btnLogout').onclick = async () => {
+          SoundFX.playClick();
+          await signOut(auth);
+          alert("已登出");
+        };
+
+        onAuthStateChanged(auth, async (user) => {
+          if (user) {
+            window.chemApp.currentUser = user;
+            loggedOutDiv.style.display = 'none';
+            loggedInDiv.style.display = 'flex';
+            userEmailSpan.textContent = user.email;
+
+            try {
+              const docSnap = await getDoc(doc(db, "users_progress", user.uid));
+              if (docSnap.exists()) {
+                const data = docSnap.data();
+                if (data.answers) window.chemApp.userAnswers = data.answers;
+                if (data.counts) window.chemApp.chapterCounts = data.counts;
+                ChemStorage.saveMeta();
+                updateCounts();
+              }
+            } catch (e) {}
+          } else {
+            window.chemApp.currentUser = null;
+            loggedOutDiv.style.display = 'flex';
+            loggedInDiv.style.display = 'none';
+          }
+        });
+      }
+    } catch (e) {}
+  };
+
+  loadFirebaseSDK();
+
   const navRight = document.querySelector('.nav-right');
-  if (navRight) {
+  if (navRight && !document.getElementById('langSwitchBar')) {
     const bar = document.createElement('div');
     bar.id = 'langSwitchBar';
     bar.style.cssText = 'display:inline-flex; align-items:center; gap:4px; background:#f1f3f4; padding:2px 6px; border-radius:16px; white-space:nowrap;';
