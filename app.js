@@ -1,7 +1,7 @@
 /**
  * ============================================================================
  * HKDSE Chemistry Question Bank - Main UI & Material You Engine (app.js)
- * Version: 0.0.48 (Complete Standalone File - Paired with userlog.js v3.0.0)
+ * Version: 0.0.49 (Clean Top Bar, Mute Toggle & Discreet Admin Access)
  * ============================================================================
  */
 
@@ -172,10 +172,11 @@ SYLLABUS_CONFIG.forEach(t => t.chapters.forEach(c => { CHAPTER_MAP[c.id] = { top
 window.SYLLABUS_CONFIG = SYLLABUS_CONFIG;
 window.CHAPTER_MAP = CHAPTER_MAP;
 
-// 2. 全局 UI 狀態
+// 2. 全局 UI 狀態 (含靜音記憶狀態)
 window.chemApp = {
-  version: '0.0.48',
+  version: '0.0.49',
   currentLang: localStorage.getItem('CHEM_LANG_V47') || 'e',
+  isMuted: localStorage.getItem('CHEM_MUTED_V49') === '1',
   activeChapterId: null,
   currentView: 'home', // 'home' | 'chapter'
   questionsDB: {},
@@ -195,7 +196,7 @@ const FIREBASE_CONFIG = {
   measurementId: "G-9EB0718DGR"
 };
 
-// 3. 網頁音效系統
+// 3. 網頁音效系統 (支援一鍵靜音切換)
 class SoundFX {
   static audioCtx = null;
   static getContext() {
@@ -205,7 +206,18 @@ class SoundFX {
     }
     return this.audioCtx;
   }
+
+  static toggleMute() {
+    window.chemApp.isMuted = !window.chemApp.isMuted;
+    localStorage.setItem('CHEM_MUTED_V49', window.chemApp.isMuted ? '1' : '0');
+    updateMuteButtonsUI();
+    if (!window.chemApp.isMuted) {
+      this.playClick();
+    }
+  }
+
   static playClick(isCorrect = null) {
+    if (window.chemApp && window.chemApp.isMuted) return;
     try {
       const ctx = this.getContext();
       if (!ctx) return;
@@ -241,7 +253,71 @@ class SoundFX {
   }
 }
 
-// 4. IndexedDB 題庫快取引擎
+function updateMuteButtonsUI() {
+  const muted = window.chemApp.isMuted;
+  document.querySelectorAll('.chem-mute-toggle-btn').forEach(btn => {
+    btn.textContent = muted ? '靜音中' : '音效: 開';
+    btn.style.background = muted ? '#fce8e6' : '#f1f3f4';
+    btn.style.color = muted ? '#c5221f' : '#444';
+    btn.style.borderColor = muted ? '#f5c2c7' : '#dadce0';
+  });
+}
+
+// 4. 低調乾淨的 Admin 驗證窗口 (不顯示密碼、不顯示任何功能說明)
+function openDiscreetAdminModal() {
+  if (window.ChemUserLog && window.ChemUserLog.isAdminMode) {
+    window.ChemUserLog.openAdminPanel();
+    return;
+  }
+
+  let pwdModal = document.getElementById('chemAdminPassModal');
+  if (!pwdModal) {
+    pwdModal = document.createElement('div');
+    pwdModal.id = 'chemAdminPassModal';
+    pwdModal.style.cssText =
+      'position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.48); z-index:100001; display:none; justify-content:center; align-items:center; padding:16px; box-sizing:border-box; font-family:sans-serif;';
+    document.body.appendChild(pwdModal);
+  }
+
+  pwdModal.innerHTML = `
+    <div style="background:#fff; width:100%; max-width:320px; padding:24px 26px; border-radius:26px; box-shadow:0 12px 36px rgba(0,0,0,0.22); text-align:center; border:1px solid #e0e0e0;">
+      <h3 style="margin:0 0 16px 0; color:#222; font-size:17px; font-weight:700;">Admin</h3>
+      <input type="password" id="adminLocalPassInput" placeholder="Password" style="width:100%; padding:10px 14px; border:1px solid #dadce0; border-radius:12px; font-size:14px; box-sizing:border-box; margin-bottom:8px; outline:none;" />
+      <div id="adminLocalPassErr" style="color:#ea4335; font-size:12px; font-weight:bold; min-height:18px; margin-bottom:10px;"></div>
+      <div style="display:flex; gap:10px;">
+        <button id="adminPassCancelBtn" style="flex:1; background:#f1f3f4; color:#333; border:none; padding:10px; border-radius:12px; font-weight:bold; font-size:13px; cursor:pointer;">取消</button>
+        <button id="adminPassConfirmBtn" style="flex:1; background:#1a73e8; color:#fff; border:none; padding:10px; border-radius:12px; font-weight:bold; font-size:13px; cursor:pointer;">進入</button>
+      </div>
+    </div>
+  `;
+
+  pwdModal.style.display = 'flex';
+  const inputEl = pwdModal.querySelector('#adminLocalPassInput');
+  const errEl = pwdModal.querySelector('#adminLocalPassErr');
+  inputEl.focus();
+
+  const verify = () => {
+    SoundFX.playClick();
+    if (inputEl.value === '2007Wesley') {
+      pwdModal.style.display = 'none';
+      if (window.ChemUserLog) window.ChemUserLog.openAdminPanel();
+    } else {
+      errEl.textContent = '驗證失敗';
+    }
+  };
+
+  pwdModal.querySelector('#adminPassConfirmBtn').onclick = verify;
+  inputEl.onkeydown = e => { if (e.key === 'Enter') verify(); };
+  pwdModal.querySelector('#adminPassCancelBtn').onclick = () => {
+    SoundFX.playClick();
+    pwdModal.style.display = 'none';
+  };
+  pwdModal.onclick = e => {
+    if (e.target === pwdModal) pwdModal.style.display = 'none';
+  };
+}
+
+// 5. IndexedDB 題庫快取引擎
 class ChemChapterCache {
   static dbPromise = null;
   static getDB() {
@@ -284,7 +360,7 @@ class ChemChapterCache {
   }
 }
 
-// 5. 深度穿透式 DOM 切題引擎 (含終極灰色方塊拔除)
+// 6. 深度穿透式 DOM 切題引擎 (含終極灰色方塊拔除)
 class DocxQuestionParser {
   static cleanInlineNoise(htmlStr) {
     return htmlStr
@@ -512,7 +588,7 @@ class DocxQuestionParser {
   }
 }
 
-// 6. DOCX 載入器
+// 7. DOCX 載入器
 class DocxExtractor {
   static async ensureMammoth() {
     if (typeof mammoth !== 'undefined') return;
@@ -550,7 +626,7 @@ class DocxExtractor {
   }
 }
 
-// 7. 計時器控制函數
+// 8. 計時器控制函數
 function startTimer() {
   if (window.chemApp.isTimerRunning) return;
   window.chemApp.isTimerRunning = true;
@@ -580,7 +656,7 @@ function updateTimerDisplay() {
   }
 }
 
-// 8. 右下角懸浮按鈕組 (Streak、結束當前 MC、目錄選單 — 高度 40px 與間距 10px 對齊，無 Emoji)
+// 9. 右下角懸浮按鈕組
 function ensureFloatingActionGroup() {
   let grp = document.getElementById('floatingActionGroup');
   if (!grp) {
@@ -643,7 +719,7 @@ function updateFloatingButtonsVisibility() {
   }
 }
 
-// 9. 「結束當前 MC」雙重確認內嵌彈窗（「是」與「否」均需按兩次確認）
+// 10. 「結束當前 MC」雙重確認內嵌彈窗
 function openEndChapterConfirmModal() {
   let modal = document.getElementById('inlineConfirmModal');
   if (!modal) {
@@ -717,7 +793,7 @@ function openEndChapterConfirmModal() {
   modal.style.display = 'flex';
 }
 
-// 10. 視圖切換：回到首頁 vs. 進入章節練習
+// 11. 視圖切換：回到首頁 vs. 進入章節練習 (優化後的雙層清爽頂部列)
 function showHomeView() {
   window.chemApp.currentView = 'home';
   pauseTimer();
@@ -742,32 +818,48 @@ function switchRightPanelToChapterView() {
   let wrapper = document.getElementById('chemChapterViewWrapper');
 
   if (!wrapper) {
+    const muted = window.chemApp.isMuted;
     wrapper = document.createElement('div');
     wrapper.id = 'chemChapterViewWrapper';
-    wrapper.style.cssText = 'width: 100%; max-width: 780px; margin: 0 auto; padding: 8px 10px 140px 10px; box-sizing: border-box;';
+    wrapper.style.cssText = 'width: 100%; max-width: 780px; margin: 0 auto; padding: 8px 12px 140px 12px; box-sizing: border-box;';
 
     wrapper.innerHTML = `
-      <div id="chapterHeaderBar" style="display:flex; flex-wrap:nowrap; justify-content:space-between; align-items:center; gap:8px; background:#fff; padding:12px 16px; border-radius:24px; border:1px solid #e0e0e0; margin-bottom:14px; box-shadow:0 2px 8px rgba(0,0,0,0.04); overflow-x:auto;">
-        <div style="display:flex; align-items:center; gap:10px; flex-wrap:nowrap; white-space:nowrap;">
-          <h2 id="currentChapterTitle" style="margin:0; font-size:15px; color:#111; font-family:'Times New Roman', 'Noto Serif TC', serif;">請選擇章節</h2>
-          <div style="display:flex; align-items:center; gap:6px; background:#f8f9fa; padding:4px 10px; border-radius:20px; border:1px solid #dadce0; font-size:12px;">
-            計時 <span id="chapterTimerDisplay" style="font-family:monospace; font-weight:bold; font-size:12px; color:#1a73e8;">00:00</span>
-            <button id="timerToggleBtn" class="sound-trigger" style="border:none; background:#1a73e8; color:#fff; font-size:11px; padding:3px 8px; border-radius:10px; cursor:pointer; font-weight:bold;">開始</button>
-            <button id="timerResetBtn" class="sound-trigger" style="border:none; background:#e0e0e0; color:#333; font-size:11px; padding:3px 8px; border-radius:10px; cursor:pointer; font-weight:bold;">重置</button>
+      <div id="chapterHeaderBar" class="m3-card" style="background:#fff; padding:12px 16px; border-radius:22px; border:1px solid #e0e0e0; margin-bottom:14px; box-shadow:0 2px 8px rgba(0,0,0,0.04); display:flex; flex-direction:column; gap:10px;">
+        <!-- 第一層：返回、章節標題、靜音與載入檔案 -->
+        <div style="display:flex; justify-content:space-between; align-items:center; gap:8px; flex-wrap:wrap;">
+          <div style="display:flex; align-items:center; gap:8px; min-width:0; flex:1;">
+            <button id="backHomeTopBtn" class="sound-trigger" style="padding:6px 12px; font-size:12px; border:1px solid #d2e3fc; border-radius:14px; background:#e8f0fe; color:#1a73e8; font-weight:bold; cursor:pointer; white-space:nowrap;">
+              &lsaquo; 首頁
+            </button>
+            <h2 id="currentChapterTitle" style="margin:0; font-size:15px; color:#111; font-weight:700; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">請選擇章節</h2>
+          </div>
+          <div style="display:flex; align-items:center; gap:6px; white-space:nowrap;">
+            <button class="chem-mute-toggle-btn" style="padding:5px 10px; font-size:11px; border:1px solid ${muted ? '#f5c2c7' : '#dadce0'}; border-radius:12px; background:${muted ? '#fce8e6' : '#f1f3f4'}; color:${muted ? '#c5221f' : '#444'}; font-weight:bold; cursor:pointer;">
+              ${muted ? '靜音中' : '音效: 開'}
+            </button>
+            <label style="padding:5px 10px; font-size:11px; border:1px solid #dadce0; border-radius:12px; background:#f8f9fa; cursor:pointer; color:#444; font-weight:bold;" class="sound-trigger">
+              載入 .docx
+              <input type="file" id="manualDocxInput" accept=".docx" style="display:none;" />
+            </label>
           </div>
         </div>
-        <div style="display:flex; align-items:center; gap:6px; flex-wrap:nowrap; white-space:nowrap;">
-          <span id="chapterStats" style="font-size:12px; color:#555; font-weight:bold;"></span>
-          <label style="padding:5px 10px; font-size:11px; border:1px solid #dadce0; border-radius:12px; background:#f8f9fa; cursor:pointer; color:#333; font-weight:bold;" class="sound-trigger">
-            載入檔案
-            <input type="file" id="manualDocxInput" accept=".docx" style="display:none;" />
-          </label>
-          <button id="backHomeTopBtn" class="sound-trigger" style="padding:5px 12px; font-size:11px; border:1px solid #1a73e8; border-radius:12px; background:#e8f0fe; color:#1a73e8; font-weight:bold; cursor:pointer;">返回首頁 (保留作答)</button>
+
+        <!-- 第二層：計時器與題數統計 -->
+        <div style="display:flex; justify-content:space-between; align-items:center; padding-top:8px; border-top:1px solid #f1f3f4; font-size:12px;">
+          <div style="display:flex; align-items:center; gap:6px;">
+            <span style="color:#666; font-weight:bold;">計時</span>
+            <span id="chapterTimerDisplay" style="font-family:monospace; font-weight:bold; font-size:13px; color:#1a73e8; background:#f8fafd; padding:2px 8px; border-radius:8px; border:1px solid #e0e0e0;">00:00</span>
+            <button id="timerToggleBtn" style="border:none; background:#1a73e8; color:#fff; font-size:11px; padding:4px 10px; border-radius:10px; cursor:pointer; font-weight:bold;">開始</button>
+            <button id="timerResetBtn" style="border:none; background:#f1f3f4; color:#444; font-size:11px; padding:4px 10px; border-radius:10px; cursor:pointer; font-weight:bold;">重置</button>
+          </div>
+          <span id="chapterStats" style="font-size:12px; color:#666; font-weight:bold;"></span>
         </div>
       </div>
       <div id="questionList"></div>
     `;
     rightMain.appendChild(wrapper);
+
+    wrapper.querySelector('.chem-mute-toggle-btn').onclick = () => SoundFX.toggleMute();
 
     const tBtn = wrapper.querySelector('#timerToggleBtn');
     const rBtn = wrapper.querySelector('#timerResetBtn');
@@ -818,12 +910,13 @@ function switchRightPanelToChapterView() {
     };
   }
 
+  updateMuteButtonsUI();
   wrapper.style.display = 'block';
   updateFloatingButtonsVisibility();
   return wrapper;
 }
 
-// 11. 開啟章節並載入題庫
+// 12. 開啟章節並載入題庫
 async function openChapter(chapId) {
   window.chemApp.activeChapterId = chapId;
   const lookup = CHAPTER_MAP[chapId];
@@ -888,7 +981,7 @@ async function openChapter(chapId) {
     container.innerHTML = `
       <div style="text-align:center; padding:48px 24px; background:#fff; border-radius:24px; border:1px solid #ffcdd2; color:#c62828;">
         <div style="font-size:16px; font-weight:bold; margin-bottom:10px;">找不到遠端題庫檔案 (ch${pad}_mcq_${lang}.docx)</div>
-        <div style="font-size:13px; color:#555;">可點擊右上方「載入檔案」手動選擇 .docx 題庫練習。</div>
+        <div style="font-size:13px; color:#555;">可點擊右上方「載入 .docx」手動選擇題庫練習。</div>
       </div>
     `;
     return;
@@ -906,7 +999,7 @@ async function openChapter(chapId) {
   }
 }
 
-// 12. 渲染題目卡片（未按「結束當前 MC」前，換瀏覽器或重新登入皆自動恢復作答狀態）
+// 13. 渲染題目卡片
 function renderQuestions(qList, chapId) {
   const wrapper = switchRightPanelToChapterView();
   const container = wrapper.querySelector('#questionList');
@@ -1027,7 +1120,7 @@ function renderQuestions(qList, chapId) {
   });
 }
 
-// 13. 首頁 Dashboard 渲染
+// 14. 首頁 Dashboard 渲染 (清爽極簡頂部導覽列 + 靜音按鍵)
 function renderHomeDashboard() {
   let rightMain = document.getElementById('chemAppRootContainer') || document.body;
   let dashboardEl = document.getElementById('chemDashboardHome');
@@ -1062,12 +1155,20 @@ function renderHomeDashboard() {
     ? `${rt.topicName} — ${rt.chapterName}`
     : '尚未選擇課題（請點右下角「目錄選單」開始）';
 
-  const cloudBadge =
+  const cloudDotColor =
     summary.cloudStatus === 'synced'
-      ? `<span style="font-size:11px; color:#137333; background:#e6f4ea; padding:3px 8px; border-radius:10px; font-weight:bold;">☁️ 雲端已同步</span>`
+      ? '#34a853'
       : summary.cloudStatus === 'error'
-      ? `<span title="${summary.cloudErrorMsg || ''}" style="font-size:11px; color:#c5221f; background:#fce8e6; padding:3px 8px; border-radius:10px; font-weight:bold;">⚠️ 雲端權限未開</span>`
-      : `<span style="font-size:11px; color:#666; background:#f1f3f4; padding:3px 8px; border-radius:10px;">連線中...</span>`;
+      ? '#ea4335'
+      : '#fbbc05';
+  const cloudDotTitle =
+    summary.cloudStatus === 'synced'
+      ? '雲端已同步'
+      : summary.cloudStatus === 'error'
+      ? `雲端未連線: ${summary.cloudErrorMsg || ''}`
+      : '雲端連線中...';
+
+  const muted = window.chemApp.isMuted;
 
   const dailyListHtml =
     summary.dailyList.length === 0
@@ -1088,22 +1189,26 @@ function renderHomeDashboard() {
           .join('');
 
   dashboardEl.innerHTML = `
-    <!-- 頂部大圓角導覽列 -->
-    <div style="background:#fff; border:1.5px solid #dbe2ef; border-radius:28px; padding:11px 18px; margin-top:4px; margin-bottom:18px; box-shadow:0 4px 14px rgba(26,115,232,0.07); display:flex; justify-content:space-between; align-items:center; flex-wrap:nowrap; gap:8px; overflow-x:auto; white-space:nowrap;">
-      <div style="display:flex; align-items:center; gap:8px;">
-        <span style="font-size:17px; color:#1a73e8; font-weight:800; font-style:italic;">CHEM QB</span>
-        ${cloudBadge}
+    <!-- 優化後清爽頂部導覽列：左邊品牌+學號，右邊靜音+Admin+登出 -->
+    <div style="background:#fff; border:1px solid #e0e0e0; border-radius:24px; padding:10px 16px; margin-top:4px; margin-bottom:16px; box-shadow:0 2px 10px rgba(0,0,0,0.04); display:flex; justify-content:space-between; align-items:center; gap:8px; flex-wrap:wrap;">
+      <div style="display:flex; align-items:center; gap:10px;">
+        <span style="font-size:16px; color:#1a73e8; font-weight:800; font-style:italic; letter-spacing:0.3px;">CHEM QB</span>
+        <span style="display:inline-flex; align-items:center; gap:5px; font-size:12px; font-weight:700; color:#1a73e8; background:#e8f0fe; padding:4px 10px; border-radius:12px;" title="${cloudDotTitle}">
+          <span style="width:7px; height:7px; border-radius:50%; background:${cloudDotColor}; display:inline-block;"></span>
+          ${summary.studentId}
+        </span>
       </div>
-      <span style="font-weight:bold; color:#555; font-size:13px; background:#f4f6f9; padding:4px 10px; border-radius:12px;">${todayStr}</span>
       <div style="display:flex; align-items:center; gap:6px;">
-        <span style="font-size:12px; font-weight:bold; color:#1a73e8; background:#e8f0fe; padding:4px 10px; border-radius:12px; border:1px solid #aecbfa;">USER: [ ${summary.studentId} ]</span>
-        <button id="homeAdminBtn" class="sound-trigger" style="background:#111827; color:#fff; border:none; padding:5px 10px; border-radius:12px; font-weight:bold; font-size:11px; cursor:pointer;">Admin</button>
-        <button id="homeLogoutBtn" class="sound-trigger" style="background:#fff; border:1px solid #ea4335; color:#ea4335; padding:4px 10px; border-radius:12px; font-weight:bold; font-size:11px; cursor:pointer;">登出</button>
+        <button id="homeMuteBtn" class="chem-mute-toggle-btn" style="background:${muted ? '#fce8e6' : '#f1f3f4'}; color:${muted ? '#c5221f' : '#444'}; border:1px solid ${muted ? '#f5c2c7' : '#dadce0'}; padding:5px 10px; border-radius:12px; font-weight:bold; font-size:11px; cursor:pointer;">
+          ${muted ? '靜音中' : '音效: 開'}
+        </button>
+        <button id="homeAdminBtn" class="sound-trigger" style="background:#f1f3f4; color:#555; border:1px solid #dadce0; padding:5px 10px; border-radius:12px; font-weight:bold; font-size:11px; cursor:pointer;">Admin</button>
+        <button id="homeLogoutBtn" class="sound-trigger" style="background:#fff; border:1px solid #f5c2c7; color:#ea4335; padding:5px 10px; border-radius:12px; font-weight:bold; font-size:11px; cursor:pointer;">登出</button>
       </div>
     </div>
 
     <!-- Recent Topic / Chapter 卡片 -->
-    <div class="m3-card" style="background:#fff; border:2px solid #e0e0e0; border-radius:24px; padding:18px 20px; margin-bottom:16px; box-shadow:0 4px 12px rgba(0,0,0,0.04);">
+    <div class="m3-card" style="background:#fff; border:1px solid #e0e0e0; border-radius:24px; padding:18px 20px; margin-bottom:16px; box-shadow:0 4px 12px rgba(0,0,0,0.04);">
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px; flex-wrap:wrap; gap:6px;">
         <span style="font-size:13px; color:#e67c73; font-weight:bold;">Recent topic / Chapter</span>
         ${
@@ -1146,12 +1251,12 @@ function renderHomeDashboard() {
     </div>
 
     <!-- 每日練習記錄卡片 -->
-    <div class="m3-card" style="background:#f8f9fa; border:2px solid #e0e0e0; border-radius:24px; padding:18px 20px; margin-bottom:16px;">
+    <div class="m3-card" style="background:#f8f9fa; border:1px solid #e0e0e0; border-radius:24px; padding:18px 20px; margin-bottom:16px;">
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; flex-wrap:wrap; gap:8px;">
         <h3 style="margin:0; font-size:15px; color:#222;">每日練習記錄</h3>
         <div style="display:flex; align-items:center; gap:6px;">
           <input type="date" id="homeQuickDatePicker" value="${todayStr}" style="padding:4px 8px; border:1px solid #ccc; border-radius:10px; font-size:12px; cursor:pointer; background:#fff;" />
-          <button id="openFullDailyInspectorBtn" class="sound-trigger" style="background:#e8f0fe; color:#1a73e8; border:1px solid #aecbfa; padding:5px 10px; border-radius:10px; font-size:12px; font-weight:bold; cursor:pointer;">查看紀錄 / 登入時間</button>
+          <button id="openFullDailyInspectorBtn" class="sound-trigger" style="background:#e8f0fe; color:#1a73e8; border:1px solid #aecbfa; padding:5px 10px; border-radius:10px; font-size:12px; font-weight:bold; cursor:pointer;">查看明細</button>
         </div>
       </div>
       <div style="max-height:175px; overflow-y:auto; padding-right:2px;">
@@ -1160,7 +1265,7 @@ function renderHomeDashboard() {
     </div>
 
     <!-- MC 語言切換卡片 -->
-    <div class="m3-card" style="background:#fff; border:2px solid #e0e0e0; border-radius:24px; padding:14px 20px; margin-bottom:16px; display:flex; justify-content:space-between; align-items:center;">
+    <div class="m3-card" style="background:#fff; border:1px solid #e0e0e0; border-radius:24px; padding:14px 20px; margin-bottom:16px; display:flex; justify-content:space-between; align-items:center;">
       <span style="font-weight:bold; font-size:14px; color:#333;">MC 語言 <span style="color:#888; font-weight:normal; font-size:12px;">(Stay tuned)</span></span>
       <div style="display:flex; background:#f1f3f4; border-radius:20px; padding:4px; gap:4px;">
         <button id="langEnBtn" class="sound-trigger" style="border:none; background:${window.chemApp.currentLang === 'e' ? '#1a73e8' : 'transparent'}; color:${window.chemApp.currentLang === 'e' ? '#fff' : '#555'}; font-weight:bold; padding:6px 14px; border-radius:16px; font-size:13px; cursor:pointer;">英</button>
@@ -1169,7 +1274,7 @@ function renderHomeDashboard() {
     </div>
 
     <!-- 底部總覽卡片 -->
-    <div class="m3-card" style="background:#fff; border:2px solid #e0e0e0; border-radius:24px; padding:18px 16px; text-align:center; display:flex; justify-content:space-around; align-items:center; flex-wrap:wrap; gap:10px;">
+    <div class="m3-card" style="background:#fff; border:1px solid #e0e0e0; border-radius:24px; padding:18px 16px; text-align:center; display:flex; justify-content:space-around; align-items:center; flex-wrap:wrap; gap:10px;">
       <div>
         <div style="font-size:12px; color:#e67c73; font-weight:bold;">總 Topic</div>
         <div style="font-size:22px; font-weight:bold; color:#222; margin-top:2px;">15</div>
@@ -1189,6 +1294,8 @@ function renderHomeDashboard() {
     </div>
   `;
 
+  dashboardEl.querySelector('#homeMuteBtn').onclick = () => SoundFX.toggleMute();
+
   const resumeBtn = dashboardEl.querySelector('#resumeRecentChapBtn');
   if (resumeBtn && rt.chapId) {
     resumeBtn.onclick = () => {
@@ -1199,7 +1306,7 @@ function renderHomeDashboard() {
 
   dashboardEl.querySelector('#homeAdminBtn').onclick = () => {
     SoundFX.playClick();
-    if (window.ChemUserLog) window.ChemUserLog.promptAdminAccess();
+    openDiscreetAdminModal();
   };
 
   dashboardEl.querySelector('#homeLogoutBtn').onclick = () => {
@@ -1245,7 +1352,7 @@ function renderHomeDashboard() {
   };
 }
 
-// 14. 螢幕正中央 28px 圓角 Topic / Chapter 目錄卡片
+// 15. 螢幕正中央 28px 圓角 Topic / Chapter 目錄卡片
 function renderCenterDirectoryModal() {
   let modal = document.getElementById('centerDirectoryModal');
   if (!modal) {
@@ -1329,7 +1436,7 @@ function renderCenterDirectoryModal() {
   });
 }
 
-// 15. 全屏登入 / 註冊閘道
+// 16. 全屏登入 / 註冊閘道 (移除所有 Admin/Wesley 字眼提示，僅留低調接口)
 function ensureAuthOverlay() {
   let authOverlay = document.getElementById('chemAuthOverlay');
   if (authOverlay) return authOverlay;
@@ -1339,21 +1446,21 @@ function ensureAuthOverlay() {
   authOverlay.style.cssText = 'position:fixed; top:0; left:0; width:100vw; height:100vh; background:#f4f6f9; z-index:99999; display:flex; justify-content:center; align-items:center; padding:16px; box-sizing:border-box; font-family:sans-serif;';
 
   authOverlay.innerHTML = `
-    <div style="background:#fff; padding:32px 34px; border-radius:28px; box-shadow:0 10px 34px rgba(0,0,0,0.12); width:100%; max-width:400px; text-align:center; border:1px solid #e0e0e0;">
+    <div style="background:#fff; padding:32px 34px; border-radius:28px; box-shadow:0 10px 34px rgba(0,0,0,0.12); width:100%; max-width:390px; text-align:center; border:1px solid #e0e0e0;">
       <h2 style="margin:0 0 6px 0; color:#1a73e8; font-size:24px; font-weight:800; font-style:italic;">CHEM QB</h2>
-      <p style="font-size:13px; color:#666; margin:0 0 22px 0;">請登入或註冊學生 ID (5A/B/C/D + 1~35)</p>
+      <p style="font-size:13px; color:#666; margin:0 0 22px 0;">請輸入學生 ID 登入或註冊</p>
       
       <div style="display:flex; flex-direction:column; gap:14px; text-align:left;">
         <div>
-          <label style="font-size:12px; font-weight:bold; color:#333; display:block; margin-bottom:4px;">用戶 ID (5a/b/c/d + 1~35 或 Admin)</label>
-          <input type="text" id="customUserIdInput" placeholder="例如: 5A1 或 5D28" style="width:100%; padding:11px 14px; border:1px solid #ccc; border-radius:12px; font-size:14px; box-sizing:border-box;" />
+          <label style="font-size:12px; font-weight:bold; color:#333; display:block; margin-bottom:4px;">學生 ID (5A / 5B / 5C / 5D + 班號)</label>
+          <input type="text" id="customUserIdInput" placeholder="例如: 5A1" style="width:100%; padding:11px 14px; border:1px solid #ccc; border-radius:12px; font-size:14px; box-sizing:border-box;" />
         </div>
         <div>
-          <label style="font-size:12px; font-weight:bold; color:#333; display:block; margin-bottom:4px;">密碼 (沒有限制)</label>
+          <label style="font-size:12px; font-weight:bold; color:#333; display:block; margin-bottom:4px;">密碼</label>
           <input type="password" id="customUserPassInput" placeholder="輸入密碼" style="width:100%; padding:11px 14px; border:1px solid #ccc; border-radius:12px; font-size:14px; box-sizing:border-box;" />
         </div>
         <div id="confirmPassGroup" style="display:none;">
-          <label style="font-size:12px; font-weight:bold; color:#333; display:block; margin-bottom:4px;">確認密碼 (雙重驗證)</label>
+          <label style="font-size:12px; font-weight:bold; color:#333; display:block; margin-bottom:4px;">確認密碼</label>
           <input type="password" id="customUserPassConfirmInput" placeholder="再次輸入相同密碼" style="width:100%; padding:11px 14px; border:1px solid #ccc; border-radius:12px; font-size:14px; box-sizing:border-box;" />
         </div>
 
@@ -1365,9 +1472,9 @@ function ensureAuthOverlay() {
 
       <div id="authErrorMsg" style="color:#ea4335; font-size:12px; margin-top:14px; font-weight:bold; min-height:18px; line-height:1.4;"></div>
 
-      <div style="margin-top:14px; padding-top:12px; border-top:1px dashed #e0e0e0; display:flex; justify-content:center;">
-        <button id="loginOverlayAdminBtn" class="sound-trigger" style="background:transparent; border:none; color:#666; font-size:12px; font-weight:bold; cursor:pointer; text-decoration:underline;">
-          Admin 管理員快速入口 (Wesley)
+      <div style="margin-top:12px; padding-top:10px; border-top:1px solid #f1f3f4; display:flex; justify-content:flex-end;">
+        <button id="loginOverlayAdminBtn" class="sound-trigger" style="background:transparent; border:none; color:#9aa0a6; font-size:11px; cursor:pointer; padding:2px 6px;">
+          Admin
         </button>
       </div>
     </div>
@@ -1403,14 +1510,14 @@ function ensureAuthOverlay() {
   const submitAuth = async () => {
     SoundFX.playClick();
     errMsg.style.color = '#1a73e8';
-    errMsg.textContent = '正在連線雲端驗證中...';
+    errMsg.textContent = '正在驗證中...';
 
     if (!window.ChemUserLog) {
       await ensureUserLogModuleLoaded();
     }
     if (!window.ChemUserLog) {
       errMsg.style.color = '#ea4335';
-      errMsg.textContent = '找不到 userlog.js！請確認 GitHub 根目錄已有 userlog.js。';
+      errMsg.textContent = '找不到 userlog.js！';
       return;
     }
 
@@ -1440,13 +1547,13 @@ function ensureAuthOverlay() {
 
   authOverlay.querySelector('#loginOverlayAdminBtn').onclick = () => {
     SoundFX.playClick();
-    if (window.ChemUserLog) window.ChemUserLog.promptAdminAccess();
+    openDiscreetAdminModal();
   };
 
   return authOverlay;
 }
 
-// 16. 自動載入 style.css 與 userlog.js (免改 index.html)
+// 17. 自動載入 style.css 與 userlog.js
 function ensureStyleCssLoaded() {
   if (document.querySelector('link[href*="style.css"]')) return;
   const link = document.createElement('link');
@@ -1471,7 +1578,6 @@ async function ensureUserLogModuleLoaded() {
   return false;
 }
 
-// 徹底清除舊版 HTML 骨架，只顯示新版介面
 function cleanLegacyPageLayout() {
   Array.from(document.body.children).forEach(child => {
     if (
@@ -1498,7 +1604,7 @@ function cleanLegacyPageLayout() {
   }
 }
 
-// 17. 主程式啟動入口
+// 18. 主程式啟動入口
 async function bootChemApp() {
   ensureStyleCssLoaded();
   cleanLegacyPageLayout();
@@ -1511,6 +1617,7 @@ async function bootChemApp() {
       target &&
       !target.classList.contains('opt-act-btn') &&
       !target.classList.contains('peek-ans-btn') &&
+      !target.classList.contains('chem-mute-toggle-btn') &&
       target.id !== 'timerToggleBtn' &&
       target.id !== 'timerResetBtn'
     ) {
@@ -1521,6 +1628,9 @@ async function bootChemApp() {
   await ensureUserLogModuleLoaded();
 
   if (window.ChemUserLog) {
+    // 強制覆蓋 userlog.js 內原本帶有密碼提示的彈窗函數
+    window.ChemUserLog.promptAdminAccess = openDiscreetAdminModal;
+
     window.ChemUserLog.onAuthChange((user, isAdmin) => {
       if (user) {
         authOverlay.style.display = 'none';
