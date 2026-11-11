@@ -1,7 +1,7 @@
 /**
  * ============================================================================
  * HKDSE Chemistry Question Bank - Main UI & Material You Engine (app.js)
- * Version: 0.0.49 (Clean Top Bar, Mute Toggle & Discreet Admin Access)
+ * Version: 0.0.51 (Hard Option Lock + Multi-Recent Topics with Question Numbers)
  * ============================================================================
  */
 
@@ -172,9 +172,9 @@ SYLLABUS_CONFIG.forEach(t => t.chapters.forEach(c => { CHAPTER_MAP[c.id] = { top
 window.SYLLABUS_CONFIG = SYLLABUS_CONFIG;
 window.CHAPTER_MAP = CHAPTER_MAP;
 
-// 2. 全局 UI 狀態 (含靜音記憶狀態)
+// 2. 全局 UI 狀態
 window.chemApp = {
-  version: '0.0.49',
+  version: '0.0.51',
   currentLang: localStorage.getItem('CHEM_LANG_V47') || 'e',
   isMuted: localStorage.getItem('CHEM_MUTED_V49') === '1',
   activeChapterId: null,
@@ -183,7 +183,8 @@ window.chemApp = {
   chapterCounts: {},
   timerSeconds: 0,
   timerInterval: null,
-  isTimerRunning: false
+  isTimerRunning: false,
+  showAllRecentTopics: false
 };
 
 const FIREBASE_CONFIG = {
@@ -195,6 +196,23 @@ const FIREBASE_CONFIG = {
   appId: "1:702426481564:web:987522a34c6c4e54d6fe59",
   measurementId: "G-9EB0718DGR"
 };
+
+// 輔助函式：從題目編號 (如 ChemMCQ44001 或 Q12) 精準提取「第幾題」數字
+function extractQuestionOrderNumber(qNumDisplay, qId, fallbackIdx = null) {
+  const raw = String(qNumDisplay || qId || '').split('_ch')[0];
+  // 匹配 ChemMCQ + 章節 + 3位題號 (例如 ChemMCQ44001 -> 001 -> 第 1 題)
+  const mcqMatch = raw.match(/ChemMCQ\d+?(\d{3})$/i);
+  if (mcqMatch) return parseInt(mcqMatch[1], 10);
+
+  // 匹配末尾數字
+  const numMatch = raw.match(/(\d+)$/);
+  if (numMatch) {
+    const n = parseInt(numMatch[1], 10);
+    if (n > 1000) return n % 1000;
+    return n;
+  }
+  return fallbackIdx || 1;
+}
 
 // 3. 網頁音效系統 (支援一鍵靜音切換)
 class SoundFX {
@@ -263,7 +281,7 @@ function updateMuteButtonsUI() {
   });
 }
 
-// 4. 低調乾淨的 Admin 驗證窗口 (不顯示密碼、不顯示任何功能說明)
+// 4. 低調乾淨的 Admin 驗證窗口
 function openDiscreetAdminModal() {
   if (window.ChemUserLog && window.ChemUserLog.isAdminMode) {
     window.ChemUserLog.openAdminPanel();
@@ -360,7 +378,7 @@ class ChemChapterCache {
   }
 }
 
-// 6. 深度穿透式 DOM 切題引擎 (含終極灰色方塊拔除)
+// 6. 深度穿透式 DOM 切題引擎
 class DocxQuestionParser {
   static cleanInlineNoise(htmlStr) {
     return htmlStr
@@ -578,6 +596,7 @@ class DocxQuestionParser {
       resultList.push({
         id: `${qDisplay}_ch${chapId}`,
         qNumDisplay: qDisplay,
+        qOrder: idx + 1,
         htmlContent: stemDiv.innerHTML,
         answer: answerLetter || 'A',
         explanationHtml: expDiv.innerHTML.trim()
@@ -756,7 +775,7 @@ function openEndChapterConfirmModal() {
       if (yesCount === 1) {
         renderModalStep(
           '請再按一次「是」確認結束 (1/2)',
-          '結束後將儲存雲端進度，並清空本課題當次選項與 Streak。'
+          '結束後將儲存雲端進度，並解鎖清空本課題當次選項與 Streak。'
         );
       } else if (yesCount >= 2) {
         modal.style.display = 'none';
@@ -778,7 +797,7 @@ function openEndChapterConfirmModal() {
       if (noCount === 1) {
         renderModalStep(
           '請再按一次「否」返回繼續作答 (1/2)',
-          '取消結束，保留目前所有作答選項與 Streak。'
+          '取消結束，保留目前所有鎖定作答選項與 Streak。'
         );
       } else if (noCount >= 2) {
         modal.style.display = 'none';
@@ -788,12 +807,12 @@ function openEndChapterConfirmModal() {
 
   renderModalStep(
     '確定要結束當前 MC 練習嗎？',
-    '若未結束直接登出或關閉，下次登入會自動保留當次作答。'
+    '結束後才會解鎖並清空本課題當次已選答案。'
   );
   modal.style.display = 'flex';
 }
 
-// 11. 視圖切換：回到首頁 vs. 進入章節練習 (優化後的雙層清爽頂部列)
+// 11. 視圖切換：回到首頁 vs. 進入章節練習
 function showHomeView() {
   window.chemApp.currentView = 'home';
   pauseTimer();
@@ -825,7 +844,6 @@ function switchRightPanelToChapterView() {
 
     wrapper.innerHTML = `
       <div id="chapterHeaderBar" class="m3-card" style="background:#fff; padding:12px 16px; border-radius:22px; border:1px solid #e0e0e0; margin-bottom:14px; box-shadow:0 2px 8px rgba(0,0,0,0.04); display:flex; flex-direction:column; gap:10px;">
-        <!-- 第一層：返回、章節標題、靜音與載入檔案 -->
         <div style="display:flex; justify-content:space-between; align-items:center; gap:8px; flex-wrap:wrap;">
           <div style="display:flex; align-items:center; gap:8px; min-width:0; flex:1;">
             <button id="backHomeTopBtn" class="sound-trigger" style="padding:6px 12px; font-size:12px; border:1px solid #d2e3fc; border-radius:14px; background:#e8f0fe; color:#1a73e8; font-weight:bold; cursor:pointer; white-space:nowrap;">
@@ -844,7 +862,6 @@ function switchRightPanelToChapterView() {
           </div>
         </div>
 
-        <!-- 第二層：計時器與題數統計 -->
         <div style="display:flex; justify-content:space-between; align-items:center; padding-top:8px; border-top:1px solid #f1f3f4; font-size:12px;">
           <div style="display:flex; align-items:center; gap:6px;">
             <span style="color:#666; font-weight:bold;">計時</span>
@@ -999,7 +1016,7 @@ async function openChapter(chapId) {
   }
 }
 
-// 13. 渲染題目卡片
+// 13. 渲染題目卡片（三重物理鎖死機制：一旦作答，整個選項區禁止任何二次點擊，直到結束當前 MC）
 function renderQuestions(qList, chapId) {
   const wrapper = switchRightPanelToChapterView();
   const container = wrapper.querySelector('#questionList');
@@ -1009,6 +1026,7 @@ function renderQuestions(qList, chapId) {
   if (chapStats) chapStats.textContent = `共 ${qList.length} 題`;
 
   qList.forEach((q, index) => {
+    const qOrderNum = index + 1;
     const card = document.createElement('div');
     card.className = 'question-card m3-card';
     card.style.cssText = 'background:#fff; border-radius:24px; padding:20px 22px; margin-bottom:18px; box-shadow:0 2px 10px rgba(0,0,0,0.06); border:1px solid #e0e0e0; font-family:"Times New Roman", "Noto Serif TC", "PMingLiU", serif; box-sizing: border-box; width:100%;';
@@ -1017,20 +1035,20 @@ function renderQuestions(qList, chapId) {
 
     card.innerHTML = `
       <div class="q-header" style="margin-bottom:10px; display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #f0f0f0; padding-bottom:8px;">
-        <span class="q-number" style="color:#111; font-weight:bold; font-size:15px; font-family:Arial, sans-serif;">${q.qNumDisplay || `Q${index + 1}`}</span>
-        <span style="font-size:12px; color:#888; font-family:sans-serif;">第 ${index + 1} / ${qList.length} 題</span>
+        <span class="q-number" style="color:#111; font-weight:bold; font-size:15px; font-family:Arial, sans-serif;">${q.qNumDisplay || `Q${qOrderNum}`}</span>
+        <span style="font-size:12px; color:#888; font-family:sans-serif;">第 ${qOrderNum} / ${qList.length} 題</span>
       </div>
       <div class="q-native-body" style="line-height:1.7; font-size:16px; color:#111; overflow-x:auto; word-break:break-word; font-family:'Times New Roman', 'Noto Serif TC', 'PMingLiU', serif;">
         ${q.htmlContent}
       </div>
       <div class="interactive-action-bar" style="margin-top:16px; padding-top:12px; border-top:1px dashed #ddd; font-family:sans-serif;">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
-          <span style="font-weight:bold; color:#555; font-size:12px;">請選擇答案：</span>
+          <span class="q-status-prompt" style="font-weight:bold; color:#555; font-size:12px;">請選擇答案（點擊後即鎖定，不可改答案）：</span>
           <button class="peek-ans-btn sound-trigger" style="border:none; background:transparent; color:#1a73e8; font-size:12px; cursor:pointer; padding:2px 6px; font-weight:bold;">顯示/隱藏解析</button>
         </div>
         <div class="options-btn-group" style="display:flex; gap:8px;">
           ${['A', 'B', 'C', 'D'].map(k => `
-            <button class="opt-act-btn" data-opt="${k}" style="flex:1; padding:10px 2px; border:1px solid #1a73e8; border-radius:12px; background:#fff; color:#1a73e8; font-weight:bold; cursor:pointer; font-size:14px;">
+            <button type="button" class="opt-act-btn" data-opt="${k}" style="flex:1; padding:10px 2px; border:1px solid #1a73e8; border-radius:12px; background:#fff; color:#1a73e8; font-weight:bold; cursor:pointer; font-size:14px;">
               ${k}
             </button>
           `).join('')}
@@ -1058,69 +1076,264 @@ function renderQuestions(qList, chapId) {
 
     DocxQuestionParser.stripGrayBoxNodes(card.querySelector('.q-native-body'));
 
+    const optGroup = card.querySelector('.options-btn-group');
     const optBtns = card.querySelectorAll('.opt-act-btn');
     const expPanel = card.querySelector('.explanation-panel');
     const peekBtn = card.querySelector('.peek-ans-btn');
+    const statusPrompt = card.querySelector('.q-status-prompt');
 
-    const applyAnswerUI = (selectedOpt, playSound = false) => {
+    // 獨立閉包鎖：一旦變為 true，此題任何其他選項按鈕永遠無法觸發
+    let isQuestionLocked = false;
+
+    const lockAndRenderOptionState = (selectedOpt, playSound = false) => {
+      isQuestionLocked = true;
+      card.dataset.locked = '1';
+
       const isCorrect = (selectedOpt === q.answer);
       if (playSound) SoundFX.playClick(isCorrect);
 
+      if (statusPrompt) {
+        statusPrompt.textContent = `🔒 已鎖定作答：選 ${selectedOpt}（${isCorrect ? '答對' : '答錯'} · 結束當前 MC 前不可更改）`;
+        statusPrompt.style.color = isCorrect ? '#137333' : '#c5221f';
+      }
+
+      // 物理封鎖整個按鈕群組點擊
+      if (optGroup) {
+        optGroup.style.pointerEvents = 'none';
+        optGroup.style.userSelect = 'none';
+      }
+
       optBtns.forEach(b => {
-        b.style.background = '#fff';
-        b.style.color = '#1a73e8';
-        b.style.borderColor = '#1a73e8';
+        b.disabled = true;
+        b.onclick = null;
+        b.style.cursor = 'not-allowed';
+        b.style.pointerEvents = 'none';
+
         if (b.dataset.opt === q.answer) {
           b.style.background = '#34a853';
           b.style.color = '#fff';
           b.style.borderColor = '#34a853';
+          b.style.opacity = '1';
+          b.textContent = `${b.dataset.opt} ✓`;
         } else if (selectedOpt && b.dataset.opt === selectedOpt && selectedOpt !== q.answer) {
           b.style.background = '#ea4335';
           b.style.color = '#fff';
           b.style.borderColor = '#ea4335';
+          b.style.opacity = '1';
+          b.textContent = `${b.dataset.opt} ✗`;
+        } else {
+          b.style.background = '#f1f3f4';
+          b.style.color = '#9aa0a6';
+          b.style.borderColor = '#dadce0';
+          b.style.opacity = '0.45';
         }
       });
+
       expPanel.style.display = 'block';
     };
 
+    // 檢查當次未結束的 Session 是否已經答過這題
     if (window.ChemUserLog) {
       const sessionRec = window.ChemUserLog.getSessionAnswer(chapId, q.id);
       if (sessionRec && sessionRec.chosen) {
-        applyAnswerUI(sessionRec.chosen, false);
+        lockAndRenderOptionState(sessionRec.chosen, false);
       }
     }
 
     optBtns.forEach(btn => {
-      btn.addEventListener('click', () => {
+      btn.onclick = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+
+        // 若已鎖定，直接阻斷
+        if (isQuestionLocked || card.dataset.locked === '1') return;
+
+        // 二次確認 Session 紀錄
+        if (window.ChemUserLog) {
+          const existing = window.ChemUserLog.getSessionAnswer(chapId, q.id);
+          if (existing && existing.chosen) {
+            lockAndRenderOptionState(existing.chosen, false);
+            return;
+          }
+        }
+
         const chosen = btn.dataset.opt;
-        applyAnswerUI(chosen, true);
+        lockAndRenderOptionState(chosen, true);
 
         if (window.ChemUserLog) {
           const res = window.ChemUserLog.recordQuestionAnswer({
             qId: q.id,
-            qNumDisplay: q.qNumDisplay || `Q${index + 1}`,
+            qNumDisplay: q.qNumDisplay || `Q${qOrderNum}`,
+            qOrder: qOrderNum,
             chapId: chapId,
             chosen: chosen,
             correctAns: q.answer,
             lang: window.chemApp.currentLang
           });
+
+          // 同步把 qOrder 存入 uniqueAnswers 與 sessionAnswers 方便首頁顯示「第幾題」
+          try {
+            const st = window.ChemUserLog.state;
+            if (st.uniqueAnswers && st.uniqueAnswers[q.id]) {
+              st.uniqueAnswers[q.id].qOrder = qOrderNum;
+              st.uniqueAnswers[q.id].lastTime = new Date().toISOString();
+            }
+            if (st.sessionAnswers && st.sessionAnswers[chapId] && st.sessionAnswers[chapId][q.id]) {
+              st.sessionAnswers[chapId][q.id].qOrder = qOrderNum;
+            }
+            window.ChemUserLog.saveLocalState();
+            window.ChemUserLog.syncToCloud();
+          } catch (err) {}
+
           const streakEl = document.getElementById('footerStreakCount');
           if (streakEl && res) streakEl.textContent = res.currentStreak;
         }
-      });
+      };
     });
 
-    peekBtn.addEventListener('click', () => {
+    peekBtn.onclick = () => {
       SoundFX.playClick();
       const isHidden = expPanel.style.display === 'none';
       expPanel.style.display = isHidden ? 'block' : 'none';
-    });
+    };
 
     container.appendChild(card);
   });
 }
 
-// 14. 首頁 Dashboard 渲染 (清爽極簡頂部導覽列 + 靜音按鍵)
+// 14. 計算「多個最近做過的課題 (Multi-Recent Topics)」與「做了多少題、第幾題」明細
+function buildRecentTopicsList() {
+  if (!window.ChemUserLog || !window.ChemUserLog.state) return [];
+  const st = window.ChemUserLog.state;
+  const lang = window.chemApp.currentLang || 'e';
+  const uniqueAns = st.uniqueAnswers || {};
+  const sessionAns = st.sessionAnswers || {};
+  const dailyLogs = st.dailyLogs || {};
+  const chapMap = {};
+
+  const ensureChapEntry = (chapId) => {
+    const numId = parseInt(chapId, 10);
+    if (!numId || !CHAPTER_MAP[numId]) return null;
+    if (!chapMap[numId]) {
+      const info = CHAPTER_MAP[numId];
+      const countKey = `${lang}_${numId}`;
+      const fallbackKey = `${lang === 'e' ? 'c' : 'e'}_${numId}`;
+      const totalInChapter =
+        (st.chapterCounts && (st.chapterCounts[countKey] || st.chapterCounts[fallbackKey])) ||
+        (window.chemApp.chapterCounts && (window.chemApp.chapterCounts[countKey] || window.chemApp.chapterCounts[fallbackKey])) ||
+        0;
+
+      chapMap[numId] = {
+        chapId: numId,
+        topicId: info.topic.topicId,
+        topicName: info.topic.topicName,
+        chapterName: info.chapter.name,
+        totalInChapter,
+        questionsMap: {}, // qId -> { qId, qNumDisplay, qOrder, chosen, correct, timestamp }
+        sessionCount: sessionAns[numId] ? Object.keys(sessionAns[numId]).length : 0,
+        lastTimestamp: ''
+      };
+    }
+    return chapMap[numId];
+  };
+
+  // 1. 從永久唯一答題紀錄 (uniqueAnswers) 匯入
+  Object.values(uniqueAns).forEach(rec => {
+    if (!rec || !rec.chapId) return;
+    const entry = ensureChapEntry(rec.chapId);
+    if (!entry) return;
+    const qOrder = rec.qOrder || extractQuestionOrderNumber(rec.qNumDisplay, rec.qId);
+    const ts = rec.lastTime || rec.lastDate || '';
+    entry.questionsMap[rec.qId] = {
+      qId: rec.qId,
+      qNumDisplay: rec.qNumDisplay || rec.qId.split('_ch')[0],
+      qOrder,
+      chosen: rec.chosen,
+      correct: !!rec.correct,
+      timestamp: ts
+    };
+    if (ts > entry.lastTimestamp) entry.lastTimestamp = ts;
+  });
+
+  // 2. 從當次未結束 Session (sessionAnswers) 補充最新時間戳與狀態
+  Object.entries(sessionAns).forEach(([cId, chapSession]) => {
+    const entry = ensureChapEntry(cId);
+    if (!entry || !chapSession) return;
+    Object.values(chapSession).forEach(sRec => {
+      if (!sRec || !sRec.qId) return;
+      const qOrder = sRec.qOrder || extractQuestionOrderNumber(sRec.qNumDisplay, sRec.qId);
+      const ts = sRec.timestamp || '';
+      entry.questionsMap[sRec.qId] = {
+        qId: sRec.qId,
+        qNumDisplay: sRec.qNumDisplay || sRec.qId.split('_ch')[0],
+        qOrder,
+        chosen: sRec.chosen,
+        correct: !!sRec.correct,
+        timestamp: ts
+      };
+      if (ts > entry.lastTimestamp) entry.lastTimestamp = ts;
+    });
+  });
+
+  // 3. 從每日紀錄 (dailyLogs) 補齊精準作答時間排序
+  Object.entries(dailyLogs).forEach(([dateStr, dayObj]) => {
+    (dayObj.items || []).forEach(it => {
+      if (!it || !it.chapId) return;
+      const entry = ensureChapEntry(it.chapId);
+      if (!entry) return;
+      const fullTs = `${dateStr}T${it.time || '00:00:00'}`;
+      if (fullTs > entry.lastTimestamp) entry.lastTimestamp = fullTs;
+      if (entry.questionsMap[it.qId] && fullTs > (entry.questionsMap[it.qId].timestamp || '')) {
+        entry.questionsMap[it.qId].timestamp = fullTs;
+      }
+    });
+  });
+
+  // 4. 若 recentTopic 有打開過但尚未作答，也放入列表
+  if (st.recentTopic && st.recentTopic.chapId) {
+    const rtEntry = ensureChapEntry(st.recentTopic.chapId);
+    if (rtEntry && (st.recentTopic.lastUpdated || '') > rtEntry.lastTimestamp) {
+      rtEntry.lastTimestamp = st.recentTopic.lastUpdated;
+    }
+  }
+
+  // 整理並按最後練習時間由新到舊排序
+  return Object.values(chapMap)
+    .filter(e => Object.keys(e.questionsMap).length > 0 || e.chapId === (st.recentTopic && st.recentTopic.chapId))
+    .map(e => {
+      const qArr = Object.values(e.questionsMap);
+      const answered = qArr.length;
+      const correct = qArr.filter(q => q.correct).length;
+      const wrong = answered - correct;
+      const completionRate =
+        e.totalInChapter > 0
+          ? Math.min(100, Math.round((answered / e.totalInChapter) * 100))
+          : answered > 0
+          ? Math.min(100, Math.round((correct / answered) * 100))
+          : 0;
+      const remainingRate = Math.max(0, 100 - completionRate);
+
+      // 按題號由小到大排序 (第 1 題, 第 2 題...)
+      const sortedByOrder = qArr.slice().sort((a, b) => (a.qOrder || 999) - (b.qOrder || 999));
+      // 按作答時間由新到舊排序，找出「最新做到第幾題」
+      const sortedByTime = qArr.slice().sort((a, b) => (b.timestamp || '').localeCompare(a.timestamp || ''));
+      const latestQ = sortedByTime[0] || sortedByOrder[sortedByOrder.length - 1] || null;
+
+      return {
+        ...e,
+        answered,
+        correct,
+        wrong,
+        completionRate,
+        remainingRate,
+        sortedByOrder,
+        latestQ
+      };
+    })
+    .sort((a, b) => (b.lastTimestamp || '').localeCompare(a.lastTimestamp || ''));
+}
+
+// 15. 首頁 Dashboard 渲染
 function renderHomeDashboard() {
   let rightMain = document.getElementById('chemAppRootContainer') || document.body;
   let dashboardEl = document.getElementById('chemDashboardHome');
@@ -1128,7 +1341,7 @@ function renderHomeDashboard() {
   if (!dashboardEl) {
     dashboardEl = document.createElement('div');
     dashboardEl.id = 'chemDashboardHome';
-    dashboardEl.style.cssText = 'width:100%; max-width:620px; margin:0 auto; padding:6px 14px 90px 14px; box-sizing:border-box; font-family:sans-serif;';
+    dashboardEl.style.cssText = 'width:100%; max-width:640px; margin:0 auto; padding:6px 14px 90px 14px; box-sizing:border-box; font-family:sans-serif;';
     rightMain.appendChild(dashboardEl);
   }
 
@@ -1144,16 +1357,13 @@ function renderHomeDashboard() {
         totalChapters: 65,
         totalUniqueAnswered: 0,
         overallCompletionText: '0%',
-        recentTopic: { chapId: null, topicName: '尚未選擇課題', chapterName: '', answered: 0, correct: 0, wrong: 0, completionRate: 0, remainingRate: 100 },
         dailyList: []
       };
 
   const todayStr = new Date().toISOString().slice(0, 10);
-  const rt = summary.recentTopic || {};
-  const hasRecentChap = !!rt.chapId;
-  const recentHeaderTitle = hasRecentChap
-    ? `${rt.topicName} — ${rt.chapterName}`
-    : '尚未選擇課題（請點右下角「目錄選單」開始）';
+  const recentTopicsList = buildRecentTopicsList();
+  const visibleLimit = window.chemApp.showAllRecentTopics ? recentTopicsList.length : 4;
+  const displayedRecentList = recentTopicsList.slice(0, visibleLimit);
 
   const cloudDotColor =
     summary.cloudStatus === 'synced'
@@ -1169,6 +1379,98 @@ function renderHomeDashboard() {
       : '雲端連線中...';
 
   const muted = window.chemApp.isMuted;
+
+  // 渲染多個 Recent Topics 卡片列表（顯示做了多少題、最新做到第幾題、已做題號明細）
+  const recentTopicsHtml =
+    displayedRecentList.length === 0
+      ? `
+        <div style="text-align:center; padding:24px 12px; color:#888; font-size:13px; background:#f8fafd; border-radius:16px; border:1px dashed #dadce0;">
+          尚未選擇任何課題練習，請點擊右下角「目錄選單」開始刷題！
+        </div>
+      `
+      : displayedRecentList
+          .map((item, idx) => {
+            const totalTxt = item.totalInChapter > 0 ? `${item.answered} / ${item.totalInChapter} 題` : `已做 ${item.answered} 題`;
+            const latestQTxt = item.latestQ
+              ? `最新做到：<b style="color:#1a73e8;">第 ${item.latestQ.qOrder} 題</b> (${item.latestQ.qNumDisplay} · 選 ${item.latestQ.chosen} ${item.latestQ.correct ? '✓' : '✗'})`
+              : '尚未作答題目';
+
+            // 列出該章節做過的題號小標籤 (第 X 題)
+            const qBadgesHtml =
+              item.sortedByOrder.length === 0
+                ? ''
+                : `
+                  <div style="margin-top:8px; display:flex; flex-wrap:wrap; gap:5px; align-items:center;">
+                    <span style="font-size:11px; color:#666; font-weight:bold;">已做題號：</span>
+                    ${item.sortedByOrder
+                      .slice(0, 18)
+                      .map(
+                        q => `
+                        <span title="${q.qNumDisplay} (選 ${q.chosen})" style="font-size:11px; font-weight:bold; padding:2px 7px; border-radius:8px; background:${
+                          q.correct ? '#e6f4ea' : '#fce8e6'
+                        }; color:${q.correct ? '#137333' : '#c5221f'};">
+                          第 ${q.qOrder} 題 ${q.correct ? '✓' : '✗'}
+                        </span>
+                      `
+                      )
+                      .join('')}
+                    ${
+                      item.sortedByOrder.length > 18
+                        ? `<span style="font-size:11px; color:#888;">...共 ${item.sortedByOrder.length} 題</span>`
+                        : ''
+                    }
+                  </div>
+                `;
+
+            return `
+              <div style="background:${idx === 0 ? '#f8fafd' : '#fff'}; border:1.5px solid ${idx === 0 ? '#aecbfa' : '#e6e8ec'}; border-radius:18px; padding:14px 16px; margin-bottom:12px;">
+                <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:8px; flex-wrap:wrap; margin-bottom:6px;">
+                  <div style="flex:1; min-width:180px;">
+                    <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap; margin-bottom:3px;">
+                      <span style="font-size:11px; font-weight:bold; color:#fff; background:${idx === 0 ? '#1a73e8' : '#5f6368'}; padding:2px 8px; border-radius:8px;">
+                        ${idx === 0 ? '最近練習' : `#${idx + 1}`}
+                      </span>
+                      <span style="font-size:11px; font-weight:bold; color:#1a73e8; background:#e8f0fe; padding:2px 8px; border-radius:8px;">
+                        還差 ${item.remainingRate}%
+                      </span>
+                      ${
+                        item.sessionCount > 0
+                          ? `<span style="font-size:11px; font-weight:bold; color:#b06000; background:#fef7e0; padding:2px 8px; border-radius:8px;">進行中 (${item.sessionCount} 題未結算)</span>`
+                          : ''
+                      }
+                    </div>
+                    <div style="font-size:14px; font-weight:bold; color:#111; margin-top:4px;">
+                      ${item.topicName} — ${item.chapterName}
+                    </div>
+                  </div>
+                  <button class="recent-chap-jump-btn sound-trigger" data-chid="${item.chapId}" style="background:#1a73e8; color:#fff; border:none; padding:7px 13px; border-radius:12px; font-size:12px; font-weight:bold; cursor:pointer; white-space:nowrap;">
+                    繼續練習 &rsaquo;
+                  </button>
+                </div>
+
+                <!-- 進度條 -->
+                <div style="width:100%; background:#e9eef6; height:6px; border-radius:3px; overflow:hidden; margin:8px 0;">
+                  <div style="width:${item.completionRate}%; background:#34a853; height:100%; transition:width 0.3s;"></div>
+                </div>
+
+                <!-- 做了多少題 & 最新做到第幾題 -->
+                <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; font-size:12px; color:#444; background:#fff; padding:8px 12px; border-radius:12px; border:1px solid #eef0f4;">
+                  <div>
+                    📊 <b>進度：</b><span style="color:#1a73e8; font-weight:bold;">${totalTxt}</span>
+                    <span style="margin-left:6px; color:#34a853; font-weight:bold;">對 ${item.correct}</span> ·
+                    <span style="color:#ea4335; font-weight:bold;">錯 ${item.wrong}</span> ·
+                    <span style="color:#fbbc05; font-weight:bold;">完成 ${item.completionRate}%</span>
+                  </div>
+                  <div>
+                    📍 ${latestQTxt}
+                  </div>
+                </div>
+
+                ${qBadgesHtml}
+              </div>
+            `;
+          })
+          .join('');
 
   const dailyListHtml =
     summary.dailyList.length === 0
@@ -1189,10 +1491,11 @@ function renderHomeDashboard() {
           .join('');
 
   dashboardEl.innerHTML = `
-    <!-- 優化後清爽頂部導覽列：左邊品牌+學號，右邊靜音+Admin+登出 -->
+    <!-- 清爽頂部導覽列 (含 v51 版本確認標記) -->
     <div style="background:#fff; border:1px solid #e0e0e0; border-radius:24px; padding:10px 16px; margin-top:4px; margin-bottom:16px; box-shadow:0 2px 10px rgba(0,0,0,0.04); display:flex; justify-content:space-between; align-items:center; gap:8px; flex-wrap:wrap;">
-      <div style="display:flex; align-items:center; gap:10px;">
+      <div style="display:flex; align-items:center; gap:8px;">
         <span style="font-size:16px; color:#1a73e8; font-weight:800; font-style:italic; letter-spacing:0.3px;">CHEM QB</span>
+        <span style="font-size:10px; color:#888; background:#f1f3f4; padding:2px 6px; border-radius:6px; font-weight:bold;">v51</span>
         <span style="display:inline-flex; align-items:center; gap:5px; font-size:12px; font-weight:700; color:#1a73e8; background:#e8f0fe; padding:4px 10px; border-radius:12px;" title="${cloudDotTitle}">
           <span style="width:7px; height:7px; border-radius:50%; background:${cloudDotColor}; display:inline-block;"></span>
           ${summary.studentId}
@@ -1207,46 +1510,24 @@ function renderHomeDashboard() {
       </div>
     </div>
 
-    <!-- Recent Topic / Chapter 卡片 -->
+    <!-- 多個 Recent Topics / Chapters 卡片 -->
     <div class="m3-card" style="background:#fff; border:1px solid #e0e0e0; border-radius:24px; padding:18px 20px; margin-bottom:16px; box-shadow:0 4px 12px rgba(0,0,0,0.04);">
-      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px; flex-wrap:wrap; gap:6px;">
-        <span style="font-size:13px; color:#e67c73; font-weight:bold;">Recent topic / Chapter</span>
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; flex-wrap:wrap; gap:6px;">
+        <div>
+          <span style="font-size:14px; color:#e67c73; font-weight:800;">Recent Topics / Chapters</span>
+          <span style="font-size:12px; color:#888; margin-left:6px;">(共練習過 ${recentTopicsList.length} 個章節)</span>
+        </div>
         ${
-          hasRecentChap
-            ? `<span style="font-size:12px; font-weight:bold; color:#1a73e8; background:#e8f0fe; padding:3px 10px; border-radius:12px;">本課題還差 ${rt.remainingRate ?? 100}% 完成</span>`
-            : ''
-        }
-      </div>
-      <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; margin-bottom:14px; flex-wrap:wrap;">
-        <div style="font-size:15px; font-weight:bold; color:#111;">${recentHeaderTitle}</div>
-        ${
-          hasRecentChap
-            ? `<button id="resumeRecentChapBtn" class="sound-trigger" style="background:#1a73e8; color:#fff; border:none; padding:6px 12px; border-radius:12px; font-size:12px; font-weight:bold; cursor:pointer;">繼續練習</button>`
+          recentTopicsList.length > 4
+            ? `<button id="toggleMoreRecentBtn" class="sound-trigger" style="background:#e8f0fe; color:#1a73e8; border:none; padding:4px 10px; border-radius:10px; font-size:12px; font-weight:bold; cursor:pointer;">
+                ${window.chemApp.showAllRecentTopics ? '收起部分 ▲' : `展開全部 (${recentTopicsList.length}) ▼`}
+              </button>`
             : ''
         }
       </div>
 
-      <div style="width:100%; background:#edf2f7; height:8px; border-radius:4px; overflow:hidden; margin-bottom:16px;">
-        <div style="width:${rt.completionRate || 0}%; background:#34a853; height:100%; transition:width 0.3s;"></div>
-      </div>
-
-      <div style="display:flex; justify-content:space-between; gap:8px; text-align:center;">
-        <div style="flex:1; background:#f8fafd; padding:10px 4px; border-radius:14px;">
-          <div style="font-size:12px; color:#888; font-weight:bold;">已答題數</div>
-          <div style="font-size:18px; font-weight:bold; color:#1a73e8; margin-top:4px;">${rt.answered || 0}</div>
-        </div>
-        <div style="flex:1; background:#f8fafd; padding:10px 4px; border-radius:14px;">
-          <div style="font-size:12px; color:#888; font-weight:bold;">答對題數</div>
-          <div style="font-size:18px; font-weight:bold; color:#34a853; margin-top:4px;">${rt.correct || 0}</div>
-        </div>
-        <div style="flex:1; background:#f8fafd; padding:10px 4px; border-radius:14px;">
-          <div style="font-size:12px; color:#888; font-weight:bold;">答錯題數</div>
-          <div style="font-size:18px; font-weight:bold; color:#ea4335; margin-top:4px;">${rt.wrong || 0}</div>
-        </div>
-        <div style="flex:1; background:#f8fafd; padding:10px 4px; border-radius:14px;">
-          <div style="font-size:12px; color:#888; font-weight:bold;">完成率</div>
-          <div style="font-size:18px; font-weight:bold; color:#fbbc05; margin-top:4px;">${rt.completionRate || 0}%</div>
-        </div>
+      <div>
+        ${recentTopicsHtml}
       </div>
     </div>
 
@@ -1296,13 +1577,22 @@ function renderHomeDashboard() {
 
   dashboardEl.querySelector('#homeMuteBtn').onclick = () => SoundFX.toggleMute();
 
-  const resumeBtn = dashboardEl.querySelector('#resumeRecentChapBtn');
-  if (resumeBtn && rt.chapId) {
-    resumeBtn.onclick = () => {
+  const toggleMoreBtn = dashboardEl.querySelector('#toggleMoreRecentBtn');
+  if (toggleMoreBtn) {
+    toggleMoreBtn.onclick = () => {
       SoundFX.playClick();
-      openChapter(rt.chapId);
+      window.chemApp.showAllRecentTopics = !window.chemApp.showAllRecentTopics;
+      renderHomeDashboard();
     };
   }
+
+  dashboardEl.querySelectorAll('.recent-chap-jump-btn').forEach(btn => {
+    btn.onclick = (e) => {
+      SoundFX.playClick();
+      const chId = parseInt(e.currentTarget.getAttribute('data-chid'), 10);
+      if (chId) openChapter(chId);
+    };
+  });
 
   dashboardEl.querySelector('#homeAdminBtn').onclick = () => {
     SoundFX.playClick();
@@ -1352,7 +1642,7 @@ function renderHomeDashboard() {
   };
 }
 
-// 15. 螢幕正中央 28px 圓角 Topic / Chapter 目錄卡片
+// 16. 螢幕正中央 28px 圓角 Topic / Chapter 目錄卡片
 function renderCenterDirectoryModal() {
   let modal = document.getElementById('centerDirectoryModal');
   if (!modal) {
@@ -1436,7 +1726,7 @@ function renderCenterDirectoryModal() {
   });
 }
 
-// 16. 全屏登入 / 註冊閘道 (移除所有 Admin/Wesley 字眼提示，僅留低調接口)
+// 17. 全屏登入 / 註冊閘道
 function ensureAuthOverlay() {
   let authOverlay = document.getElementById('chemAuthOverlay');
   if (authOverlay) return authOverlay;
@@ -1553,7 +1843,7 @@ function ensureAuthOverlay() {
   return authOverlay;
 }
 
-// 17. 自動載入 style.css 與 userlog.js
+// 18. 自動載入 style.css 與 userlog.js
 function ensureStyleCssLoaded() {
   if (document.querySelector('link[href*="style.css"]')) return;
   const link = document.createElement('link');
@@ -1604,7 +1894,7 @@ function cleanLegacyPageLayout() {
   }
 }
 
-// 18. 主程式啟動入口
+// 19. 主程式啟動入口
 async function bootChemApp() {
   ensureStyleCssLoaded();
   cleanLegacyPageLayout();
@@ -1628,8 +1918,22 @@ async function bootChemApp() {
   await ensureUserLogModuleLoaded();
 
   if (window.ChemUserLog) {
-    // 強制覆蓋 userlog.js 內原本帶有密碼提示的彈窗函數
     window.ChemUserLog.promptAdminAccess = openDiscreetAdminModal;
+
+    // 底層強制攔截：若當次 Session 該題已答過，絕不允許覆寫答案
+    const origRecordFn = window.ChemUserLog.recordQuestionAnswer.bind(window.ChemUserLog);
+    window.ChemUserLog.recordQuestionAnswer = function (params) {
+      const existing = this.getSessionAnswer(params.chapId, params.qId);
+      if (existing && existing.chosen) {
+        return {
+          isCorrect: existing.correct,
+          currentStreak: this.state.currentStreak,
+          bestStreak: this.state.bestStreak,
+          recentTopic: this.state.recentTopic
+        };
+      }
+      return origRecordFn(params);
+    };
 
     window.ChemUserLog.onAuthChange((user, isAdmin) => {
       if (user) {
@@ -1638,6 +1942,11 @@ async function bootChemApp() {
           showHomeView();
         } else {
           updateFloatingButtonsVisibility();
+          const activeId = window.chemApp.activeChapterId;
+          const dbKey = `${window.chemApp.currentLang}_${activeId}`;
+          if (activeId && window.chemApp.questionsDB[dbKey]) {
+            renderQuestions(window.chemApp.questionsDB[dbKey], activeId);
+          }
         }
         if (isAdmin) {
           window.ChemUserLog.openAdminPanel();
