@@ -333,3 +333,91 @@ function renderHeatmap() {
 
 function getTodayDateStr() { return formatDate(new Date()); }
 function formatDate(date) { return `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,'0')}-${String(date.getDate()).padStart(2,'0')}`; }
+/**
+ * 語言狀態：'c' 代表中文卷，'e' 代表英文卷
+ */
+let currentLang = 'c'; 
+
+document.addEventListener('DOMContentLoaded', () => {
+  initData();
+  renderSidebar();
+  updateDashboardProgress();
+  renderHeatmap();
+
+  document.getElementById('expandAllBtn').addEventListener('click', () => toggleAllTopics(true));
+  document.getElementById('collapseAllBtn').addEventListener('click', () => toggleAllTopics(false));
+  document.getElementById('backToHomeBtn').addEventListener('click', showDashboardView);
+
+  // 監聽中/英文卷切換按鈕
+  const langBtns = document.querySelectorAll('.lang-btn');
+  langBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+      if (currentLang === btn.dataset.lang) return;
+      
+      langBtns.forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      currentLang = btn.dataset.lang;
+
+      // 若目前停留在某一章，自動重新載入該語言的 PDF
+      if (activeChapterId) {
+        openChapter(activeChapterId);
+      }
+    });
+  });
+});
+
+/**
+ * 嚴格依照檔名規範：chemqb_chxx_mcq_y.pdf 載入
+ * x: 01 ~ 65（兩位數補零）
+ * y: c 或 e
+ */
+async function openChapter(chapId) {
+  activeChapterId = chapId;
+  const lookup = CHAPTER_LOOKUP[chapId];
+  if (!lookup) return;
+
+  document.querySelectorAll('.chapter-item').forEach(i => i.classList.remove('active'));
+  const activeEl = document.getElementById(`chap-item-${chapId}`);
+  if (activeEl) activeEl.classList.add('active');
+
+  document.getElementById('bcTopicName').textContent = lookup.topic.topicName;
+  document.getElementById('bcChapterName').textContent = `第 ${lookup.chapter.id} 章`;
+  document.getElementById('currentChapterTitle').textContent = lookup.chapter.name;
+
+  document.getElementById('dashboardView').classList.remove('active');
+  document.getElementById('chapterView').classList.add('active');
+
+  const container = document.getElementById('questionList');
+  
+  // 產生標準檔名格式：chemqb_ch01_mcq_c.pdf
+  const chapNumStr = String(chapId).padStart(2, '0');
+  const targetFileName = `chemqb_ch${chapNumStr}_mcq_${currentLang}.pdf`;
+  const pdfUrl = `./pdfs/${targetFileName}`;
+
+  container.innerHTML = `
+    <div style="text-align: center; padding: 48px 0; color: var(--text-secondary);">
+      正在從 GitHub 載入 <code>${targetFileName}</code> 並解析題目與圖片...
+    </div>`;
+
+  try {
+    const loadingTask = pdfjsLib.getDocument(pdfUrl);
+    const pdfDoc = await loadingTask.promise;
+
+    // 解析該 PDF 的文字與化學結構式圖片
+    const parsedQuestions = await parseQuestionsAndImagesFromPdf(pdfDoc);
+    questionsDB[chapId] = parsedQuestions;
+
+    renderChapterQuestions(chapId);
+  } catch (err) {
+    console.warn('載入 PDF 失敗:', err);
+    container.innerHTML = `
+      <div style="text-align: center; color: var(--danger-color); padding: 48px 0; line-height: 1.8;">
+        找不到對應的題庫檔案：<br>
+        <code style="background: var(--bg-tertiary); padding: 2px 8px; border-radius: 4px; font-weight: bold;">pdfs/${targetFileName}</code><br><br>
+        <span style="color: var(--text-secondary); font-size: 13px;">
+          請檢查 GitHub 倉庫的 <code>pdfs/</code> 資料夾內是否有該檔案，<br>
+          並確認檔名大小寫完全一致。
+        </span>
+      </div>`;
+  }
+}
