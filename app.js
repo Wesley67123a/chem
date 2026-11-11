@@ -157,9 +157,9 @@ const SYLLABUS_CONFIG = [
   }
 ];
 
-// 2. 全局狀態 (v0.0.44)
+// 2. 全局狀態 (v0.0.45)
 window.chemApp = {
-  version: '0.0.44',
+  version: '0.0.45',
   currentLang: 'e',
   activeChapterId: null,
   questionsDB: {},
@@ -176,7 +176,7 @@ window.chemApp = {
 const CHAPTER_MAP = {};
 SYLLABUS_CONFIG.forEach(t => t.chapters.forEach(c => { CHAPTER_MAP[c.id] = { topic: t, chapter: c }; }));
 
-// 2.1 網頁音效系統 (Web Audio API)
+// 2.1 網頁音效系統
 class SoundFX {
   static audioCtx = null;
   static getContext() {
@@ -228,7 +228,7 @@ class ChemStorage {
   static getDB() {
     if (!this.dbPromise) {
       this.dbPromise = new Promise((resolve, reject) => {
-        const req = indexedDB.open('HKDSE_CHEM_QB_V44', 1);
+        const req = indexedDB.open('HKDSE_CHEM_QB_V45', 1);
         req.onupgradeneeded = (e) => {
           const db = e.target.result;
           if (!db.objectStoreNames.contains('chapters')) db.createObjectStore('chapters');
@@ -266,29 +266,30 @@ class ChemStorage {
 
   static loadMeta() {
     try {
-      const counts = localStorage.getItem('CHEM_COUNTS_V44');
+      const counts = localStorage.getItem('CHEM_COUNTS_V45');
       if (counts) window.chemApp.chapterCounts = JSON.parse(counts);
-      const ans = localStorage.getItem('CHEM_USER_ANS_V44');
+      const ans = localStorage.getItem('CHEM_USER_ANS_V45');
       if (ans) window.chemApp.userAnswers = JSON.parse(ans);
-      const savedLang = localStorage.getItem('CHEM_LANG_V44');
+      const savedLang = localStorage.getItem('CHEM_LANG_V45');
       if (savedLang === 'c' || savedLang === 'e') window.chemApp.currentLang = savedLang;
-      const streak = localStorage.getItem('CHEM_STREAK_V44');
+      const streak = localStorage.getItem('CHEM_STREAK_V45');
       if (streak) window.chemApp.currentStreak = parseInt(streak, 10);
     } catch (e) {}
   }
 
   static saveMeta() {
     try {
-      localStorage.setItem('CHEM_COUNTS_V44', JSON.stringify(window.chemApp.chapterCounts));
-      localStorage.setItem('CHEM_USER_ANS_V44', JSON.stringify(window.chemApp.userAnswers));
-      localStorage.setItem('CHEM_LANG_V44', window.chemApp.currentLang);
-      localStorage.setItem('CHEM_STREAK_V44', window.chemApp.currentStreak.toString());
+      localStorage.setItem('CHEM_COUNTS_V45', JSON.stringify(window.chemApp.chapterCounts));
+      localStorage.setItem('CHEM_USER_ANS_V45', JSON.stringify(window.chemApp.userAnswers));
+      localStorage.setItem('CHEM_LANG_V45', window.chemApp.currentLang);
+      localStorage.setItem('CHEM_STREAK_V45', window.chemApp.currentStreak.toString());
     } catch (e) {}
 
     if (window.chemApp.currentUser && window.firebaseCloud) {
       window.firebaseCloud.syncToCloud(window.chemApp.currentUser.uid, window.chemApp.userAnswers, window.chemApp.chapterCounts, window.chemApp.currentStreak);
     }
-    updateDashboardStats();
+    // 儲存進度時不強制切換到首頁，只在背景更新統計資料卡片
+    updateDashboardStats(false);
   }
 }
 
@@ -578,7 +579,6 @@ function switchRightPanelToChapterView() {
 
     rightMain.insertBefore(wrapper, rightMain.firstChild);
 
-    // 確認框 (是/否)
     const confirmModalHTML = `
       <div id="inlineConfirmModal" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.4); z-index:99999; justify-content:center; align-items:center;">
         <div style="background:#fff; padding:24px 28px; border-radius:28px; width:90%; max-width:320px; text-align:center; box-shadow:0 8px 30px rgba(0,0,0,0.2); border:1px solid #e0e0e0;">
@@ -613,7 +613,7 @@ function switchRightPanelToChapterView() {
         pauseTimer();
         wrapper.style.display = 'none';
         window.chemApp.dashboardNodes.forEach(n => n.style.display = '');
-        updateDashboardStats();
+        updateDashboardStats(true);
       }
     };
 
@@ -625,7 +625,7 @@ function switchRightPanelToChapterView() {
       pauseTimer();
       wrapper.style.display = 'none';
       window.chemApp.dashboardNodes.forEach(n => n.style.display = '');
-      updateDashboardStats();
+      updateDashboardStats(true);
     };
 
     noBtn.onclick = () => {
@@ -682,7 +682,6 @@ function switchRightPanelToChapterView() {
   });
   wrapper.style.display = 'block';
 
-  // 開啟章節時自動顯示右下角的 Streak 與結束按鈕群組
   const actionGroup = document.getElementById('floatingActionGroup');
   if (actionGroup) actionGroup.style.display = 'flex';
 
@@ -715,7 +714,6 @@ async function openChapter(chapId) {
     </div>
   `;
 
-  // 直接從快取或網路讀取，但渲染時強制傳入 true 進行重置，不顯示上次的選擇
   if (window.chemApp.questionsDB[dbKey] && window.chemApp.questionsDB[dbKey].length > 0) {
     renderQuestions(window.chemApp.questionsDB[dbKey], chapId, true);
     return;
@@ -769,7 +767,7 @@ async function openChapter(chapId) {
   }
 }
 
-// 8. 渲染題目卡片 (強制重置答案狀態)
+// 8. 渲染題目卡片
 function renderQuestions(qList, chapId, resetState = true) {
   const wrapper = switchRightPanelToChapterView();
   const container = wrapper.querySelector('#questionList');
@@ -858,6 +856,14 @@ function renderQuestions(qList, chapId, resetState = true) {
       expPanel.style.display = 'block';
     };
 
+    if (!resetState) {
+      const savedRecord = window.chemApp.userAnswers[q.id];
+      if (savedRecord) {
+        const chosen = typeof savedRecord === 'string' ? savedRecord : savedRecord.chosen;
+        if (chosen) applyAnswerUI(chosen, false);
+      }
+    }
+
     optBtns.forEach(btn => {
       btn.addEventListener('click', () => {
         const chosen = btn.dataset.opt;
@@ -897,40 +903,57 @@ function renderQuestions(qList, chapId, resetState = true) {
   });
 }
 
-// 9. 首頁大改版 (還原手繪草稿版面)
-function updateDashboardStats() {
+// 9. 首頁大改版 (顯示每日清單、日期記錄模態框、總覽卡片)
+function updateDashboardStats(forceDisplay = false) {
   const rightMain = document.querySelector('main') || document.body;
   
-  // 找出並隱藏章節介面
-  const wrapper = document.getElementById('chemChapterViewWrapper');
-  if (wrapper) wrapper.style.display = 'none';
+  if (forceDisplay) {
+    const wrapper = document.getElementById('chemChapterViewWrapper');
+    if (wrapper) wrapper.style.display = 'none';
+    const actionGroup = document.getElementById('floatingActionGroup');
+    if (actionGroup) actionGroup.style.display = 'none';
 
-  // 隱藏右下角 action group
-  const actionGroup = document.getElementById('floatingActionGroup');
-  if (actionGroup) actionGroup.style.display = 'none';
-
-  // 隱藏/清理舊有的雜亂佈局
-  Array.from(rightMain.children).forEach(child => {
-    if (child.id !== 'chemChapterViewWrapper' && child.tagName !== 'SCRIPT') {
-      child.style.display = 'none';
-    }
-  });
+    Array.from(rightMain.children).forEach(child => {
+      if (child.id !== 'chemChapterViewWrapper' && child.id !== 'inlineConfirmModal' && child.id !== 'floatingActionGroup' && child.tagName !== 'SCRIPT') {
+        child.style.display = 'none';
+      }
+    });
+  }
 
   let dashboardEl = document.getElementById('chemDashboardHome');
   if (!dashboardEl) {
     dashboardEl = document.createElement('div');
     dashboardEl.id = 'chemDashboardHome';
-    dashboardEl.style.cssText = 'width:100%; max-width:600px; margin:0 auto; padding:16px; box-sizing:border-box; font-family:sans-serif;';
+    dashboardEl.style.cssText = 'width:100%; max-width:600px; margin:0 auto; padding:16px; box-sizing:border-box; font-family:sans-serif; margin-top:20px;';
     rightMain.appendChild(dashboardEl);
   }
-  dashboardEl.style.display = 'block';
+  if (forceDisplay) dashboardEl.style.display = 'block';
 
-  // 計算所有數據
   const recordsArr = Object.values(window.chemApp.userAnswers).map(v => typeof v === 'string' ? { chosen: v, correct: false, date: '' } : v);
-  const totalAnswered = recordsArr.length;
-  const correctCount = recordsArr.filter(r => r.correct).length;
-  const wrongCount = recordsArr.filter(r => !r.correct).length;
-  const masteryRate = totalAnswered > 0 ? Math.round((correctCount / totalAnswered) * 100) : 0;
+  
+  // 計算 Recent Topic 的當前章節數據
+  let recentTopicName = "尚未選擇課題";
+  let curChapTotal = 0;
+  let curChapAns = 0;
+  let curChapCorrect = 0;
+  let curChapWrong = 0;
+
+  if (window.chemApp.activeChapterId && CHAPTER_MAP[window.chemApp.activeChapterId]) {
+    const chInfo = CHAPTER_MAP[window.chemApp.activeChapterId];
+    recentTopicName = `${chInfo.topic.topicName.replace('topic / chapter: ', '')} - ${chInfo.chapter.name}`;
+    
+    const k = `${window.chemApp.currentLang}_${window.chemApp.activeChapterId}`;
+    curChapTotal = window.chemApp.chapterCounts[k] || 0;
+
+    const chapRecords = Object.entries(window.chemApp.userAnswers)
+      .filter(([id, _]) => id.endsWith(`_ch${window.chemApp.activeChapterId}`))
+      .map(([_, v]) => v);
+      
+    curChapAns = chapRecords.length;
+    curChapCorrect = chapRecords.filter(r => r.correct).length;
+    curChapWrong = chapRecords.filter(r => !r.correct).length;
+  }
+  const curChapRate = curChapTotal > 0 ? Math.round((curChapAns / curChapTotal) * 100) : 0;
   
   const todayStr = new Date().toISOString().slice(0, 10);
   
@@ -939,65 +962,63 @@ function updateDashboardStats() {
     if (r.date) dateMap[r.date] = (dateMap[r.date] || 0) + 1;
   });
   const sortedDates = Object.keys(dateMap).sort().reverse();
+  
   const dailyListHtml = sortedDates.length === 0 
     ? `<div style="font-size:13px; color:#888;">尚無作答記錄，快去開始練習吧！</div>`
     : sortedDates.map(d => `
-      <div style="display:flex; justify-content:space-between; align-items:center; padding:10px 14px; background:#fff; border-radius:12px; margin-bottom:8px; border:1px solid #eee;">
+      <div class="daily-record-item sound-trigger" data-date="${d}" style="display:flex; justify-content:space-between; align-items:center; padding:10px 14px; background:#fff; border-radius:12px; margin-bottom:8px; border:1px solid #eee; cursor:pointer;">
         <span style="font-weight:bold; color:#333; font-size:14px;">${d}</span>
-        <span style="color:#1a73e8; font-weight:bold; font-size:14px;">答了: ${dateMap[d]} 題</span>
+        <span style="color:#1a73e8; font-weight:bold; font-size:14px;">答了: ${dateMap[d]} 題 <span style="font-size:10px; color:#888;">(點擊查看)</span></span>
       </div>
     `).join('');
-
-  // 計算最近課題 (Recent Topic)
-  let recentTopicName = "尚未選擇課題";
-  if (window.chemApp.activeChapterId && CHAPTER_MAP[window.chemApp.activeChapterId]) {
-    const chInfo = CHAPTER_MAP[window.chemApp.activeChapterId];
-    recentTopicName = `${chInfo.topic.topicName.replace('topic / chapter: ', '')} - ${chInfo.chapter.name}`;
-  }
 
   const userIdDisplay = window.chemApp.currentUser 
     ? window.chemApp.currentUser.email.split('@')[0].toUpperCase() 
     : "GUEST";
 
-  // 重構首頁 HTML (對應圖三草稿)
+  // 計算總完成度
+  let allTotal = 0;
+  Object.values(window.chemApp.chapterCounts).forEach(v => allTotal += v);
+  const totalPct = allTotal > 0 ? Math.round((recordsArr.length / allTotal) * 100) : 0;
+
   dashboardEl.innerHTML = `
-    <!-- 頂部列 -->
-    <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:2px solid #1a73e8; padding-bottom:12px; margin-bottom:20px;">
+    <!-- 頂部大圓角導覽列 -->
+    <div style="background:#fff; border:1px solid #e0e0e0; border-radius:24px; padding:12px 20px; margin-bottom:24px; box-shadow:0 4px 12px rgba(0,0,0,0.05); display:flex; justify-content:space-between; align-items:center; flex-wrap:nowrap; white-space:nowrap;">
       <h1 style="margin:0; font-size:18px; color:#1a73e8; font-weight:bold; font-style:italic;">CHEM QB</h1>
-      <span style="font-weight:bold; color:#555; font-size:14px;">${todayStr}</span>
+      <span style="font-weight:bold; color:#555; font-size:13px;">${todayStr}</span>
       <div style="display:flex; align-items:center; gap:8px;">
-        <span style="font-size:13px; font-weight:bold; color:#333;">USER: [ ${userIdDisplay} ]</span>
-        <button id="homeLogoutBtn" class="sound-trigger" style="background:#fff; border:1px solid #ea4335; color:#ea4335; padding:4px 8px; border-radius:6px; font-weight:bold; font-size:11px; cursor:pointer;">登出</button>
+        <span style="font-size:12px; font-weight:bold; color:#333;">USER: [ ${userIdDisplay} ]</span>
+        <button id="homeLogoutBtn" class="sound-trigger" style="background:#fff; border:1px solid #ea4335; color:#ea4335; padding:4px 8px; border-radius:8px; font-weight:bold; font-size:11px; cursor:pointer;">登出</button>
       </div>
     </div>
 
     <!-- Recent Topic 區塊 -->
-    <div style="background:#fff; border:2px solid #e0e0e0; border-radius:16px; padding:16px; margin-bottom:20px; box-shadow:0 4px 12px rgba(0,0,0,0.05);">
+    <div style="background:#fff; border:2px solid #e0e0e0; border-radius:20px; padding:18px; margin-bottom:20px; box-shadow:0 4px 12px rgba(0,0,0,0.05);">
       <div style="font-size:13px; color:#e67c73; font-weight:bold; margin-bottom:6px;">Recent topic / Chapter</div>
-      <div style="font-size:16px; font-weight:bold; color:#111; margin-bottom:16px;">${recentTopicName}</div>
+      <div style="font-size:15px; font-weight:bold; color:#111; margin-bottom:16px;">${recentTopicName}</div>
       
       <div style="display:flex; justify-content:space-between; gap:8px; text-align:center;">
         <div style="flex:1;">
           <div style="font-size:12px; color:#888; font-weight:bold;">已答題數</div>
-          <div style="font-size:18px; font-weight:bold; color:#1a73e8; margin-top:4px;">${totalAnswered}</div>
+          <div style="font-size:18px; font-weight:bold; color:#1a73e8; margin-top:4px;">${curChapAns}</div>
         </div>
         <div style="flex:1;">
           <div style="font-size:12px; color:#888; font-weight:bold;">答對題數</div>
-          <div style="font-size:18px; font-weight:bold; color:#34a853; margin-top:4px;">${correctCount}</div>
+          <div style="font-size:18px; font-weight:bold; color:#34a853; margin-top:4px;">${curChapCorrect}</div>
         </div>
         <div style="flex:1;">
           <div style="font-size:12px; color:#888; font-weight:bold;">答錯題數</div>
-          <div style="font-size:18px; font-weight:bold; color:#ea4335; margin-top:4px;">${wrongCount}</div>
+          <div style="font-size:18px; font-weight:bold; color:#ea4335; margin-top:4px;">${curChapWrong}</div>
         </div>
         <div style="flex:1;">
           <div style="font-size:12px; color:#888; font-weight:bold;">完成率</div>
-          <div style="font-size:18px; font-weight:bold; color:#fbbc05; margin-top:4px;">${masteryRate}%</div>
+          <div style="font-size:18px; font-weight:bold; color:#fbbc05; margin-top:4px;">${curChapRate}%</div>
         </div>
       </div>
     </div>
 
     <!-- 每日練習記錄 -->
-    <div style="background:#f8f9fa; border:2px solid #e0e0e0; border-radius:16px; padding:16px; margin-bottom:20px;">
+    <div style="background:#f8f9fa; border:2px solid #e0e0e0; border-radius:20px; padding:18px; margin-bottom:20px;">
       <h3 style="margin:0 0 12px 0; font-size:15px; color:#333;">每日練習記錄</h3>
       <div style="max-height:180px; overflow-y:auto; padding-right:4px;">
         ${dailyListHtml}
@@ -1005,14 +1026,79 @@ function updateDashboardStats() {
     </div>
 
     <!-- 語言切換卡片 -->
-    <div style="background:#fff; border:2px solid #e0e0e0; border-radius:16px; padding:16px; display:flex; justify-content:space-between; align-items:center;">
+    <div style="background:#fff; border:2px solid #e0e0e0; border-radius:20px; padding:16px 20px; margin-bottom:20px; display:flex; justify-content:space-between; align-items:center;">
       <span style="font-weight:bold; font-size:14px; color:#333;">MC 語言 (Stay tuned)</span>
       <div style="display:flex; background:#f1f3f4; border-radius:20px; padding:4px;">
         <button id="langEnBtn" class="sound-trigger" style="border:none; background:${window.chemApp.currentLang === 'e' ? '#1a73e8' : 'transparent'}; color:${window.chemApp.currentLang === 'e' ? '#fff' : '#555'}; font-weight:bold; padding:6px 12px; border-radius:16px; font-size:13px; cursor:pointer;">英</button>
         <button id="langZhBtn" class="sound-trigger" style="border:none; background:${window.chemApp.currentLang === 'c' ? '#1a73e8' : 'transparent'}; color:${window.chemApp.currentLang === 'c' ? '#fff' : '#555'}; font-weight:bold; padding:6px 12px; border-radius:16px; font-size:13px; cursor:pointer;">中</button>
       </div>
     </div>
+
+    <!-- 總覽統計卡片 -->
+    <div style="background:#fff; border:2px solid #e0e0e0; border-radius:20px; padding:20px; text-align:center; display:flex; justify-content:space-around; align-items:center;">
+      <div>
+        <div style="font-size:12px; color:#e67c73; font-weight:bold;">總 Topic</div>
+        <div style="font-size:24px; font-weight:bold; color:#333;">15</div>
+      </div>
+      <div>
+        <div style="font-size:12px; color:#e67c73; font-weight:bold;">總 Chapter</div>
+        <div style="font-size:24px; font-weight:bold; color:#333;">65</div>
+      </div>
+      <div>
+        <div style="font-size:12px; color:#e67c73; font-weight:bold;">整體完成度</div>
+        <div style="font-size:24px; font-weight:bold; color:#1a73e8;">${totalPct}%</div>
+      </div>
+    </div>
   `;
+
+  // 日期點擊展開紀錄模態框
+  dashboardEl.querySelectorAll('.daily-record-item').forEach(item => {
+    item.onclick = (e) => {
+      SoundFX.playClick();
+      const date = e.currentTarget.getAttribute('data-date');
+      
+      const dayRecords = Object.entries(window.chemApp.userAnswers)
+        .filter(([_, v]) => v.date === date)
+        .map(([id, v]) => {
+          const match = id.match(/_ch(\d+)$/);
+          const chId = match ? parseInt(match[1]) : 0;
+          const qName = id.split('_ch')[0];
+          return { qName, chId, chosen: v.chosen, correct: v.correct };
+        });
+
+      let recHtml = dayRecords.map(r => `
+        <div style="display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid #f0f0f0; font-size:13px;">
+          <span style="font-weight:bold; color:#555;">Ch.${r.chId} - ${r.qName}</span>
+          <span>選 <b style="color:#1a73e8;">${r.chosen}</b> ${r.correct ? '✅' : '❌'}</span>
+        </div>
+      `).join('');
+
+      let recModal = document.getElementById('dailyRecordModal');
+      if (!recModal) {
+        recModal = document.createElement('div');
+        recModal.id = 'dailyRecordModal';
+        recModal.style.cssText = 'position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.5); z-index:99999; display:none; justify-content:center; align-items:center; padding:20px; box-sizing:border-box;';
+        document.body.appendChild(recModal);
+      }
+      
+      recModal.innerHTML = `
+        <div style="background:#fff; width:100%; max-width:400px; max-height:70vh; border-radius:24px; box-shadow:0 12px 40px rgba(0,0,0,0.2); display:flex; flex-direction:column; overflow:hidden; padding:20px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+            <h3 style="margin:0; font-size:16px; color:#1a73e8;">${date} 練習記錄</h3>
+            <button id="closeDailyRecBtn" class="sound-trigger" style="background:transparent; border:none; font-size:20px; cursor:pointer;">&times;</button>
+          </div>
+          <div style="overflow-y:auto; flex:1;">
+            ${recHtml}
+          </div>
+        </div>
+      `;
+      recModal.style.display = 'flex';
+      recModal.querySelector('#closeDailyRecBtn').onclick = () => {
+        SoundFX.playClick();
+        recModal.style.display = 'none';
+      };
+    };
+  });
 
   dashboardEl.querySelector('#homeLogoutBtn').onclick = async () => {
     SoundFX.playClick();
@@ -1025,17 +1111,17 @@ function updateDashboardStats() {
     SoundFX.playClick();
     window.chemApp.currentLang = 'e';
     ChemStorage.saveMeta();
-    updateDashboardStats();
+    updateDashboardStats(false);
   };
   dashboardEl.querySelector('#langZhBtn').onclick = () => {
     SoundFX.playClick();
     window.chemApp.currentLang = 'c';
     ChemStorage.saveMeta();
-    updateDashboardStats();
+    updateDashboardStats(false);
   };
 }
 
-// 10. 大圓角置中懸浮目錄 Modal (取代左側欄)
+// 10. 大圓角置中懸浮目錄 Modal
 function renderCenterDirectoryModal() {
   let modal = document.getElementById('centerDirectoryModal');
   if (!modal) {
@@ -1103,13 +1189,13 @@ function renderCenterDirectoryModal() {
   });
 }
 
-// 11. 初始化與註冊系統
+// 11. 初始化與註冊系統 / Firebase
 document.addEventListener('DOMContentLoaded', () => {
   ChemStorage.loadMeta();
   renderCenterDirectoryModal();
 
   document.addEventListener('click', (e) => {
-    const target = e.target.closest('button, .sound-trigger, input[type="file"], .dir-topic-header, .dir-chapter-item');
+    const target = e.target.closest('button, .sound-trigger, input[type="file"], .dir-topic-header, .dir-chapter-item, .daily-record-item');
     if (target && !target.id.includes('timerToggleBtn') && !target.id.includes('timerResetBtn') && !target.classList.contains('opt-act-btn') && !target.classList.contains('peek-ans-btn')) {
       SoundFX.playClick();
     }
@@ -1235,7 +1321,6 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             try {
               await createUserWithEmailAndPassword(auth, syntheticEmail, pass);
-              // 註冊成功後自動觸發登入狀態變更
             } catch (e) {
               errMsg.textContent = '註冊失敗：' + e.message;
             }
@@ -1253,7 +1338,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (user) {
           window.chemApp.currentUser = user;
           authOverlay.style.display = 'none';
-          
+
           try {
             const docSnap = await getDoc(doc(db, "users_progress", user.uid));
             if (docSnap.exists()) {
@@ -1265,7 +1350,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
           } catch (e) {}
 
-          updateDashboardStats();
+          updateDashboardStats(true); // 登入後強制載入首頁
 
           // 顯示右下角目錄按鈕與 Streak 群組
           const floatGroup = document.getElementById('floatingActionGroup');
@@ -1288,6 +1373,8 @@ document.addEventListener('DOMContentLoaded', () => {
             };
           } else {
             floatGroup.style.display = 'flex';
+            const fStreak = floatGroup.querySelector('#footerStreakBox');
+            if (fStreak) fStreak.style.display = 'none'; // 首頁隱藏 streak
           }
 
         } else {
@@ -1302,7 +1389,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   loadFirebaseSDK();
 
-  // 清除舊版的 header 與 sidebars，保持畫面純淨
+  // 清除舊版的 header 與 sidebars
   const mainHeader = document.querySelector('header') || document.querySelector('.header') || document.querySelector('.top-nav');
   if (mainHeader) mainHeader.remove();
   
