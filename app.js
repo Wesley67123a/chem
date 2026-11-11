@@ -157,9 +157,9 @@ const SYLLABUS_CONFIG = [
   }
 ];
 
-// 2. 全局狀態 (v0.0.40)
+// 2. 全局狀態 (v0.0.41)
 window.chemApp = {
-  version: '0.0.40',
+  version: '0.0.41',
   currentLang: 'e',
   activeChapterId: null,
   questionsDB: {},
@@ -169,7 +169,8 @@ window.chemApp = {
   timerSeconds: 0,
   timerInterval: null,
   isTimerRunning: false,
-  currentUser: null
+  currentUser: null,
+  currentStreak: 0
 };
 
 const CHAPTER_MAP = {};
@@ -221,13 +222,13 @@ class SoundFX {
   }
 }
 
-// 2.2 IndexedDB + 儲存引擎 (修復答題紀錄與雲端同步)
+// 2.2 儲存引擎
 class ChemStorage {
   static dbPromise = null;
   static getDB() {
     if (!this.dbPromise) {
       this.dbPromise = new Promise((resolve, reject) => {
-        const req = indexedDB.open('HKDSE_CHEM_QB_V40', 1);
+        const req = indexedDB.open('HKDSE_CHEM_QB_V41', 1);
         req.onupgradeneeded = (e) => {
           const db = e.target.result;
           if (!db.objectStoreNames.contains('chapters')) db.createObjectStore('chapters');
@@ -265,25 +266,27 @@ class ChemStorage {
 
   static loadMeta() {
     try {
-      const counts = localStorage.getItem('CHEM_COUNTS_V40');
+      const counts = localStorage.getItem('CHEM_COUNTS_V41');
       if (counts) window.chemApp.chapterCounts = JSON.parse(counts);
-      const ans = localStorage.getItem('CHEM_USER_ANS_V40');
+      const ans = localStorage.getItem('CHEM_USER_ANS_V41');
       if (ans) window.chemApp.userAnswers = JSON.parse(ans);
-      const savedLang = localStorage.getItem('CHEM_LANG_V40');
+      const savedLang = localStorage.getItem('CHEM_LANG_V41');
       if (savedLang === 'c' || savedLang === 'e') window.chemApp.currentLang = savedLang;
+      const streak = localStorage.getItem('CHEM_STREAK_V41');
+      if (streak) window.chemApp.currentStreak = parseInt(streak, 10);
     } catch (e) {}
   }
 
   static saveMeta() {
     try {
-      localStorage.setItem('CHEM_COUNTS_V40', JSON.stringify(window.chemApp.chapterCounts));
-      localStorage.setItem('CHEM_USER_ANS_V40', JSON.stringify(window.chemApp.userAnswers));
-      localStorage.setItem('CHEM_LANG_V40', window.chemApp.currentLang);
+      localStorage.setItem('CHEM_COUNTS_V41', JSON.stringify(window.chemApp.chapterCounts));
+      localStorage.setItem('CHEM_USER_ANS_V41', JSON.stringify(window.chemApp.userAnswers));
+      localStorage.setItem('CHEM_LANG_V41', window.chemApp.currentLang);
+      localStorage.setItem('CHEM_STREAK_V41', window.chemApp.currentStreak.toString());
     } catch (e) {}
 
-    // 自動同步到 Firebase 雲端
     if (window.chemApp.currentUser && window.firebaseCloud) {
-      window.firebaseCloud.syncToCloud(window.chemApp.currentUser.uid, window.chemApp.userAnswers, window.chemApp.chapterCounts);
+      window.firebaseCloud.syncToCloud(window.chemApp.currentUser.uid, window.chemApp.userAnswers, window.chemApp.chapterCounts, window.chemApp.currentStreak);
     }
   }
 }
@@ -538,7 +541,7 @@ function updateTimerDisplay() {
   }
 }
 
-// 6. 視圖切換與全屏佈局控制 (內嵌式「是 / 否」確認提示卡片)
+// 6. 視圖切換與全屏佈局控制 (含 Streak 顯示與結束當前 MC 雙重確認)
 function switchRightPanelToChapterView() {
   let wrapper = document.getElementById('chemChapterViewWrapper');
   if (!wrapper) {
@@ -557,33 +560,34 @@ function switchRightPanelToChapterView() {
     wrapper.style.cssText = 'width: 100%; max-width: 100%; margin: 0 auto; padding: 12px 6px 60px 6px; box-sizing: border-box;';
 
     wrapper.innerHTML = `
-      <div id="chapterHeaderBar" style="display:flex; flex-wrap:wrap; justify-content:space-between; align-items:center; gap:10px; background:#fff; padding:14px 18px; border-radius:20px; border:1px solid #e0e0e0; margin-bottom:14px; box-shadow:0 2px 8px rgba(0,0,0,0.04);">
-        <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
+      <div id="chapterHeaderBar" style="display:flex; flex-wrap:nowrap; justify-content:space-between; align-items:center; gap:8px; background:#fff; padding:12px 16px; border-radius:20px; border:1px solid #e0e0e0; margin-bottom:14px; box-shadow:0 2px 8px rgba(0,0,0,0.04); overflow-x:auto;">
+        <div style="display:flex; align-items:center; gap:12px; flex-wrap:nowrap; white-space:nowrap;">
           <div>
-            <h2 id="currentChapterTitle" style="margin:0; font-size:16px; color:#111; font-family:'Times New Roman', 'Noto Serif TC', serif;">請選擇章節</h2>
+            <h2 id="currentChapterTitle" style="margin:0; font-size:15px; color:#111; font-family:'Times New Roman', 'Noto Serif TC', serif;">請選擇章節</h2>
           </div>
-          <div style="display:flex; align-items:center; gap:6px; background:#f8f9fa; padding:4px 10px; border-radius:20px; border:1px solid #dadce0; font-size:13px;">
-            計時 <span id="chapterTimerDisplay" style="font-family:monospace; font-weight:bold; font-size:13px; color:#1a73e8;">00:00</span>
-            <button id="timerToggleBtn" class="sound-trigger" style="border:none; background:#1a73e8; color:#fff; font-size:11px; padding:3px 10px; border-radius:12px; cursor:pointer;">開始</button>
-            <button id="timerResetBtn" class="sound-trigger" style="border:none; background:#e0e0e0; color:#333; font-size:11px; padding:3px 10px; border-radius:12px; cursor:pointer;">重置</button>
+          <div style="display:flex; align-items:center; gap:6px; background:#f8f9fa; padding:4px 10px; border-radius:20px; border:1px solid #dadce0; font-size:12px;">
+            計時 <span id="chapterTimerDisplay" style="font-family:monospace; font-weight:bold; font-size:12px; color:#1a73e8;">00:00</span>
+            <button id="timerToggleBtn" class="sound-trigger" style="border:none; background:#1a73e8; color:#fff; font-size:11px; padding:2px 8px; border-radius:10px; cursor:pointer;">開始</button>
+            <button id="timerResetBtn" class="sound-trigger" style="border:none; background:#e0e0e0; color:#333; font-size:11px; padding:2px 8px; border-radius:10px; cursor:pointer;">重置</button>
+          </div>
+          <div style="background:#e8f0fe; padding:4px 10px; border-radius:20px; border:1px solid #aecbfa; font-size:12px; font-weight:bold; color:#1a73e8;">
+            Streak: <span id="headerStreakCount">${window.chemApp.currentStreak}</span>🔥
           </div>
         </div>
-        <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
+        <div style="display:flex; align-items:center; gap:6px; flex-wrap:nowrap; white-space:nowrap;">
           <span id="chapterStats" style="font-size:12px; color:#555; font-weight:bold;"></span>
-          <label style="padding:6px 12px; font-size:11px; border:1px solid #dadce0; border-radius:12px; background:#f8f9fa; cursor:pointer; color:#333; font-weight:bold;" class="sound-trigger">
+          <label style="padding:5px 10px; font-size:11px; border:1px solid #dadce0; border-radius:12px; background:#f8f9fa; cursor:pointer; color:#333; font-weight:bold;" class="sound-trigger">
             載入檔案
             <input type="file" id="manualDocxInput" accept=".docx" style="display:none;" />
           </label>
-          <button id="reloadChapBtn" class="sound-trigger" style="padding:6px 12px; font-size:11px; border:1px solid #dadce0; border-radius:12px; background:#fff; cursor:pointer; color:#333; font-weight:bold;">重新讀取</button>
-          <button id="backToDashboardBtn" class="sound-trigger" style="padding:6px 12px; font-size:11px; border:1px solid #1a73e8; border-radius:12px; background:#e8f0fe; cursor:pointer; color:#1a73e8; font-weight:bold;">總覽</button>
+          <button id="reloadChapBtn" class="sound-trigger" style="padding:5px 10px; font-size:11px; border:1px solid #dadce0; border-radius:12px; background:#fff; cursor:pointer; color:#333; font-weight:bold;">重新讀取</button>
+          <button id="backToDashboardBtn" class="sound-trigger" style="padding:5px 10px; font-size:11px; border:1px solid #1a73e8; border-radius:12px; background:#e8f0fe; cursor:pointer; color:#1a73e8; font-weight:bold;">返回首頁</button>
         </div>
       </div>
       <div id="questionList"></div>
       
-      <!-- 右下角結束當前 MC 按鈕 -->
       <button id="endChapterBtn" class="sound-trigger" style="position:fixed; bottom:80px; right:20px; z-index:9998; background:#ea4335; color:#fff; border:none; padding:10px 16px; border-radius:24px; font-weight:bold; font-size:13px; box-shadow:0 4px 14px rgba(0,0,0,0.25); cursor:pointer;">結束當前 MC</button>
 
-      <!-- 網頁內嵌確認提示框（雙重確認：是 / 否） -->
       <div id="inlineConfirmModal" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.4); z-index:99999; justify-content:center; align-items:center;">
         <div style="background:#fff; padding:24px 28px; border-radius:20px; width:90%; max-width:320px; text-align:center; box-shadow:0 8px 30px rgba(0,0,0,0.2); border:1px solid #e0e0e0;">
           <p id="confirmModalText" style="font-size:15px; font-weight:bold; color:#111; margin-bottom:20px; line-height:1.5;">確定要結束當前 MC 練習嗎？</p>
@@ -597,7 +601,6 @@ function switchRightPanelToChapterView() {
 
     rightMain.insertBefore(wrapper, rightMain.firstChild);
 
-    // 結束當前 MC 按鈕邏輯：按兩次確認，透過網頁內嵌卡片顯示「是 / 否」
     let endClickCount = 0;
     let endTimer = null;
     const modal = wrapper.querySelector('#inlineConfirmModal');
@@ -818,7 +821,7 @@ async function openChapter(chapId, bypassCache = false) {
   }
 }
 
-// 8. 渲染題目卡片 (修復答題記錄寫入與雲端同步)
+// 8. 渲染題目卡片 (含 Streak 邏輯：答對累加、答錯歸零)
 function renderQuestions(qList, chapId) {
   const wrapper = switchRightPanelToChapterView();
   const container = wrapper.querySelector('#questionList');
@@ -916,9 +919,31 @@ function renderQuestions(qList, chapId) {
     optBtns.forEach(btn => {
       btn.addEventListener('click', () => {
         const chosen = btn.dataset.opt;
+        const isCorrect = (chosen === q.answer);
         const today = new Date().toISOString().slice(0, 10);
-        window.chemApp.userAnswers[q.id] = { chosen: chosen, correct: chosen === q.answer, date: today };
+        
+        // 檢查是否為重複作答更改選項，若是則避免重複計算 Streak
+        const existing = window.chemApp.userAnswers[q.id];
+        const wasCorrect = existing ? (typeof existing === 'object' && existing.correct) : null;
+
+        if (wasCorrect === null) {
+          if (isCorrect) {
+            window.chemApp.currentStreak++;
+          } else {
+            window.chemApp.currentStreak = 0; // 錯了清零
+          }
+        } else if (wasCorrect !== isCorrect) {
+          if (isCorrect) window.chemApp.currentStreak++;
+          else window.chemApp.currentStreak = 0;
+        }
+
+        window.chemApp.userAnswers[q.id] = { chosen: chosen, correct: isCorrect, date: today };
         ChemStorage.saveMeta();
+
+        // 更新頁面上的 Streak 顯示
+        const streakEl = document.getElementById('headerStreakCount');
+        if (streakEl) streakEl.textContent = window.chemApp.currentStreak;
+
         applyAnswerUI(chosen, true);
         updateDashboardStats();
       });
@@ -934,7 +959,7 @@ function renderQuestions(qList, chapId) {
   });
 }
 
-// 9. 統計更新
+// 9. 統計更新與首頁大改版 (顯示日期做了多少題目)
 function updateCounts() {
   for (let i = 1; i <= 65; i++) {
     const key = `${window.chemApp.currentLang}_${i}`;
@@ -976,6 +1001,48 @@ function updateDashboardStats() {
     setIfExist('statMasteryRate', `${rate}%`);
     setIfExist('statWrong', wrongCount);
     setIfExist('statToday', todayCount);
+
+    // 渲染每日各日期做了多少題目的清單
+    let dailyListEl = document.getElementById('dailyActivityList');
+    if (!dailyListEl) {
+      // 如果原本的 12 週記錄區塊存在，將其改造成每日做題統計清單
+      const historyCard = Array.from(document.querySelectorAll('div')).find(el => (el.textContent || '').includes('最近 12 週練習記錄') || (el.textContent || '').includes('練習進度'));
+      if (historyCard) {
+        let parentCard = historyCard.parentElement;
+        if (parentCard) {
+          let containerDiv = document.createElement('div');
+          containerDiv.style.cssText = 'background:#fff; border-radius:16px; padding:18px 20px; margin-top:20px; border:1px solid #e0e0e0;';
+          containerDiv.innerHTML = `
+            <h3 style="margin:0 0 12px 0; font-size:15px; color:#111;">每日練習記錄（按日期統計）</h3>
+            <div id="dailyActivityList" style="display:flex; flex-direction:column; gap:8px; max-height:200px; overflow-y:auto;"></div>
+          `;
+          parentCard.appendChild(containerDiv);
+          dailyListEl = containerDiv.querySelector('#dailyActivityList');
+        }
+      }
+    }
+
+    if (dailyListEl) {
+      // 統計每個日期的作答題數
+      const dateMap = {};
+      records.forEach(r => {
+        if (r.date) {
+          dateMap[r.date] = (dateMap[r.date] || 0) + 1;
+        }
+      });
+
+      const sortedDates = Object.keys(dateMap).sort().reverse();
+      if (sortedDates.length === 0) {
+        dailyListEl.innerHTML = `<div style="font-size:13px; color:#888;">尚無作答記錄，快去開始練習吧！</div>`;
+      } else {
+        dailyListEl.innerHTML = sortedDates.map(d => `
+          <div style="display:flex; justify-content:space-between; align-items:center; padding:8px 12px; background:#f8f9fa; border-radius:8px; font-size:13px;">
+            <span style="font-weight:bold; color:#333;">📅 ${d}</span>
+            <span style="background:#e8f0fe; color:#1a73e8; padding:2px 8px; border-radius:10px; font-weight:bold;">已做 ${dateMap[d]} 題</span>
+          </div>
+        `).join('');
+      }
+    }
   } catch (e) {}
 }
 
@@ -1093,11 +1160,12 @@ document.addEventListener('DOMContentLoaded', () => {
       const db = getFirestore(app);
 
       window.firebaseCloud = {
-        async syncToCloud(uid, answers, counts) {
+        async syncToCloud(uid, answers, counts, streak) {
           try {
             await setDoc(doc(db, "users_progress", uid), {
               answers: answers,
               counts: counts,
+              streak: streak,
               lastUpdated: new Date().toISOString()
             }, { merge: true });
           } catch (e) {}
@@ -1206,19 +1274,38 @@ document.addEventListener('DOMContentLoaded', () => {
           renderSidebar();
           updateCounts();
 
+          // 右上角顯示用戶名與返回首頁按鈕（橫排、返回首頁回到儀表板）
           const navRight = document.querySelector('.nav-right');
           if (navRight && !document.getElementById('topUserDisplayBar')) {
+            // 清除被圈起來的冗餘按鈕區塊
+            navRight.innerHTML = '';
+            navRight.style.cssText = 'display:flex; align-items:center; gap:8px; flex-wrap:nowrap; justify-content:flex-end; white-space:nowrap;';
+
             const userBar = document.createElement('div');
             userBar.id = 'topUserDisplayBar';
-            userBar.style.cssText = 'display:inline-flex; align-items:center; gap:8px; margin-left:8px; font-size:12px;';
+            userBar.style.cssText = 'display:inline-flex; align-items:center; gap:8px; font-size:12px; white-space:nowrap;';
             const displayId = user.email.split('@')[0].toUpperCase();
             userBar.innerHTML = `
               <span style="font-weight:bold; color:#1a73e8; background:#e8f0fe; padding:4px 10px; border-radius:12px; border:1px solid #aecbfa;">用戶: ${displayId}</span>
-              <button id="returnHomeBtn" class="sound-trigger" style="background:#5f6368; color:#fff; border:none; padding:4px 10px; border-radius:12px; cursor:pointer; font-weight:bold;">返回首頁</button>
+              <button id="returnHomeBtn" class="sound-trigger" style="background:#1a73e8; color:#fff; border:none; padding:5px 12px; border-radius:12px; cursor:pointer; font-weight:bold;">返回首頁</button>
+              <button id="logoutBtn" class="sound-trigger" style="background:#ea4335; color:#fff; border:none; padding:5px 10px; border-radius:12px; cursor:pointer; font-weight:bold;">登出</button>
             `;
             navRight.appendChild(userBar);
 
             userBar.querySelector('#returnHomeBtn').onclick = () => {
+              SoundFX.playClick();
+              // 返回首頁（隱藏章節視圖，回到儀表板首頁）
+              const wrapper = document.getElementById('chemChapterViewWrapper');
+              if (wrapper) wrapper.style.display = 'none';
+              window.chemApp.dashboardNodes.forEach(node => {
+                if (node !== wrapper) node.style.display = '';
+              });
+              const sidebar = document.querySelector('aside') || document.querySelector('.sidebar') || document.querySelector('#sidebar') || document.querySelector('.left-panel');
+              if (sidebar) sidebar.style.display = '';
+              updateDashboardStats();
+            };
+
+            userBar.querySelector('#logoutBtn').onclick = () => {
               SoundFX.playClick();
               signOut(auth);
             };
@@ -1230,6 +1317,7 @@ document.addEventListener('DOMContentLoaded', () => {
               const data = docSnap.data();
               if (data.answers) window.chemApp.userAnswers = data.answers;
               if (data.counts) window.chemApp.chapterCounts = data.counts;
+              if (data.streak !== undefined) window.chemApp.currentStreak = data.streak;
               ChemStorage.saveMeta();
               updateCounts();
             }
@@ -1274,41 +1362,9 @@ document.addEventListener('DOMContentLoaded', () => {
     document.body.appendChild(floatBtn);
   }
 
-  const navRight = document.querySelector('.nav-right');
-  if (navRight && !document.getElementById('langSwitchBar')) {
-    const bar = document.createElement('div');
-    bar.id = 'langSwitchBar';
-    bar.style.cssText = 'display:inline-flex; align-items:center; gap:4px; background:#f1f3f4; padding:2px 6px; border-radius:16px; white-space:nowrap;';
-
-    ['c', 'e'].forEach(lang => {
-      const isSelected = window.chemApp.currentLang === lang;
-      const b = document.createElement('button');
-      b.textContent = lang === 'c' ? '中文' : '英文';
-      b.style.cssText = `border:none; padding:3px 8px; font-size:10px; border-radius:12px; cursor:pointer; font-weight:bold; background:${isSelected ? '#fff' : 'transparent'}; color:${isSelected ? '#1a73e8' : '#5f6368'}; box-shadow:${isSelected ? '0 1px 3px rgba(0,0,0,0.1)' : 'none'}; white-space:nowrap;`;
-      b.onclick = () => {
-        SoundFX.playClick();
-        window.chemApp.currentLang = lang;
-        ChemStorage.saveMeta();
-        bar.querySelectorAll('button').forEach(btn => {
-          btn.style.background = 'transparent';
-          btn.style.color = '#5f6368';
-          btn.style.boxShadow = 'none';
-        });
-        b.style.background = '#fff';
-        b.style.color = '#1a73e8';
-        b.style.boxShadow = '0 1px 3px rgba(0,0,0,0.1)';
-        updateCounts();
-        if (window.chemApp.activeChapterId) openChapter(window.chemApp.activeChapterId);
-      };
-      bar.appendChild(b);
-    });
-
-    const verSpan = document.createElement('span');
-    verSpan.id = 'appVersionBadge';
-    verSpan.textContent = `v${window.chemApp.version}`;
-    verSpan.style.cssText = 'font-size:10px; font-weight:bold; color:#1a73e8; background:#e8f0fe; padding:2px 5px; border-radius:8px; border:1px solid #aecbfa; white-space:nowrap;';
-    bar.appendChild(verSpan);
-
-    navRight.insertBefore(bar, navRight.firstChild);
+  // 確保頂部導覽列嚴格橫排不折行
+  const mainHeader = document.querySelector('header') || document.querySelector('.header') || document.querySelector('.top-nav');
+  if (mainHeader) {
+    mainHeader.style.cssText = 'display:flex; justify-content:space-between; align-items:center; padding:8px 12px; flex-wrap:nowrap; overflow:hidden;';
   }
 });
