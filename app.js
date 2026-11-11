@@ -759,4 +759,85 @@ window.chemApp.addPostProcessor((questions, rawText) => {
 
   console.log('✅ [ChemFix] 專屬題目解析與化學圖片修復模組已載入');
 })();
+  static parseBlocks(cleanText, prefix) {
+    const list = [];
+    
+    // 嚴格依照 "ChemMCQ" 開頭的題號分割（如 ChemMCQ44053）
+    const regexQuestionSplit = /(?:^|\n)\s*(ChemMCQ\s*\d+)/gi;
+    const pieces = cleanText.split(regexQuestionSplit);
+
+    for (let i = 1; i < pieces.length; i += 2) {
+      const qNumCode = pieces[i].trim(); // 例如 ChemMCQ44053
+      const qBlock = pieces[i + 1] || '';
+
+      // 嚴格定位 A. B. C. D. 選項 (排除 (1)(2)(3) 的干擾)
+      const optMatch = qBlock.match(/(?:^|\n)\s*A[\.、\)]\s*([\s\S]*?)(?:^|\n)\s*B[\.、\)]\s*([\s\S]*?)(?:^|\n)\s*C[\.、\)]\s*([\s\S]*?)(?:^|\n)\s*D[\.、\)]\s*([\s\S]*?)(?=(?:\n\s*(?:Ans|Answer|答案|Exp|Explanation|解析|ChemMCQ)|$))/i);
+
+      if (optMatch) {
+        // A 選項之前的所有內容 = 題幹 + (1)(2)(3) 陳述句
+        let fullQuestionBody = qBlock.substring(0, qBlock.indexOf(optMatch[0])).trim();
+        let optA = optMatch[1].trim();
+        let optB = optMatch[2].trim();
+        let optC = optMatch[3].trim();
+        let optD = optMatch[4].trim();
+
+        // 提取答案
+        let ans = 'A';
+        const ansMatch = qBlock.match(/(?:Ans|Answer|答案)\s*[:：]?\s*\(?([A-D])\)?/i);
+        if (ansMatch) ans = ansMatch[1].toUpperCase();
+
+        // 提取解析
+        let exp = '';
+        const expMatch = qBlock.match(/(?:Exp|Explanation|解析|說明)\s*[:：]?\s*([\s\S]*)/i);
+        if (expMatch) exp = expMatch[1].trim();
+
+        // 清除選項 D 尾部可能殘留的標記
+        optD = optD.split(/(?:Ans|Answer|答案|Exp|Explanation|解析)/i)[0].trim();
+
+        // 格式化題幹中的 (1), (2), (3) 陳述句，使其自動分行
+        fullQuestionBody = fullQuestionBody
+          .replace(/(?:^|\n|\s)\(1\)\s*/g, '\n<div class="stmt-item"><b>(1)</b> ')
+          .replace(/(?:^|\n|\s)\(2\)\s*/g, '</div>\n<div class="stmt-item"><b>(2)</b> ')
+          .replace(/(?:^|\n|\s)\(3\)\s*/g, '</div>\n<div class="stmt-item"><b>(3)</b> ') + '</div>';
+
+        // 自動化學式標註（將化學式轉為 KaTeX mhchem: \ce{...}）
+        fullQuestionBody = autoFormatChemistryLaTeX(fullQuestionBody);
+        
+        // 修正選項 D 中多餘的標籤
+        optD = optD.replace('</div>', '');
+
+        list.push({
+          id: `${qNumCode}_${Date.now()}_${i}`,
+          qNumDisplay: qNumCode, // 保留原題號 ChemMCQ44053
+          question: fullQuestionBody,
+          options: {
+            A: autoFormatChemistryLaTeX(optA),
+            B: autoFormatChemistryLaTeX(optB),
+            C: autoFormatChemistryLaTeX(optC),
+            D: autoFormatChemistryLaTeX(optD)
+          },
+          answer: ans,
+          explanation: exp || '本題無額外文字解析',
+          images: []
+        });
+      }
+    }
+
+    return list;
+  }
+// 自動將文字中的化學式、箭頭轉化為 KaTeX 格式
+function autoFormatChemistryLaTeX(str) {
+  if (!str) return '';
+  // 將反應箭頭轉為 LaTeX 箭頭
+  let res = str.replace(/→/g, '$\\rightarrow$');
+  
+  // 如果字串包含常見化學式格式（例如 CH3, CH2, H2O, NaOH 等），包覆 KaTeX mhchem
+  res = res.replace(/\b([A-Z][a-z]?\d*(?:\([A-Z][a-z]?\d*\))?[A-Z0-9\(\)]+)\b/g, (match) => {
+    // 排除全大寫選項詞或普通英文單詞
+    if (/^(AND|ONLY|WHICH|FOLLOWING|THE|REACTIONS|CORRECT|EXHIBITS|IS|ARE|REQUIRED|FOR|ALKANES|TO|UNDERGO|SUBSTITUTION|WITH|BROMINE)$/i.test(match)) return match;
+    if (match.length <= 1) return match;
+    return `$\\ce{${match}}$`;
+  });
+  return res;
+}
 
