@@ -1,59 +1,180 @@
-[
-  {
-    "id": "ARTISTO-CH11-001",
-    "chapterNum": 11,
-    "text": "下列哪一種方法最能有效防止埋在潮濕泥土中的鐵製輸水管發生生鏽？",
-    "options": {
-      "A": "在水管外部塗抹潤滑油",
-      "B": "將鐵管與鋅塊通過導線相連（犧牲陽極法）",
-      "C": "將鐵管與銅塊通過導線相連",
-      "D": "在鐵管內部通入純氧氣"
-    },
-    "correct": "B",
-    "optionExplanations": {
-      "A": "錯誤：塗潤滑油易被泥土水分沖刷分解，無法長效防護地下水管。",
-      "B": "正確：鋅的金屬活性高於鐵（$\\text{Zn} > \\text{Fe}$），鋅會優先失去電子被氧化（$\\text{Zn} \\rightarrow \\text{Zn}^{2+} + 2e^-$），從而保護鐵管不被腐蝕。",
-      "C": "錯誤：銅的活性低於鐵（$\\text{Fe} > \\text{Cu}$），與銅相連反而會加速鐵的氧化鏽蝕。",
-      "D": "錯誤：氧氣是鐵生鏽的必要反應物，通入純氧會急劇加速生鏽。"
-    },
-    "generalTheory": "犧牲陽極陰極保護法（Sacrificial Protection）利用活性更高的金屬（如 $\\text{Zn}$ 或 $\\text{Mg}$）代替被保護金屬被氧化。"
-  },
-  {
-    "id": "ARTISTO-CH42-001",
-    "chapterNum": 42,
-    "text": "當將丙-2-醇 ($\\text{CH}_3\\text{CH(OH)CH}_3$) 與酸化重鉻酸鉀溶液 ($\\text{K}_2\\text{Cr}_2\\text{O}_7 / \\text{H}^+$) 共熱時，觀察到的顏色變化及生成物為何？",
-    "options": {
-      "A": "溶液由橙色變為綠色，生成丙酮 ($\\text{CH}_3\\text{COCH}_3$)",
-      "B": "溶液由綠色變為橙色，生成丙酸 ($\\text{CH}_3\\text{CH}_2\\text{COOH}$)",
-      "C": "溶液由紫色變為無色，生成丙烯",
-      "D": "無明顯顏色變化，因叔醇不易被氧化"
-    },
-    "correct": "A",
-    "optionExplanations": {
-      "A": "正確：丙-2-醇為仲醇，被氧化生成對應的酮（丙酮），而橙色的 $\\text{Cr}_2\\text{O}_7^{2-}$ 被還原為綠色的 $\\text{Cr}^{3+}$。",
-      "B": "錯誤：重鉻酸鉀原本為橙色，還原產物為綠色；且仲醇氧化產物為酮而非羧酸。",
-      "C": "錯誤：紫色變無色為高錳酸鉀的特徵反應，且產物不是丙烯。",
-      "D": "錯誤：丙-2-醇是仲醇（不是叔醇），很容易被溫和氧化劑氧化。"
-    },
-    "generalTheory": "仲醇（Secondary Alcohols）氧化生成酮（Ketones），重鉻酸根離子發生反應：$\\text{Cr}_2\\text{O}_7^{2-} + 14\\text{H}^+ + 6e^- \\rightarrow 2\\text{Cr}^{3+} + 7\\text{H}_2\\text{O}$。"
-  },
-  {
-    "id": "ARTISTO-CH36-001",
-    "chapterNum": 36,
-    "text": "密閉容器中進行放熱反應：$2\\text{SO}_2(g) + \\text{O}_2(g) \\rightleftharpoons 2\\text{SO}_3(g) \\quad \\Delta H < 0$。當達到化學平衡後，若升高反應溫度，下列哪項敘述正確？",
-    "options": {
-      "A": "正反應速率減慢，逆反應速率加快",
-      "B": "平衡常數 $K_c$ 數值增大",
-      "C": "化學平衡逆向移動，$\\text{SO}_3$ 產率下降",
-      "D": "反應混合物氣體總分子數保持不變"
-    },
-    "correct": "C",
-    "optionExplanations": {
-      "A": "錯誤：升高溫度時，正反應速率與逆反應速率均會加快，只是逆反應增加幅度更大。",
-      "B": "錯誤：對於放熱反應（$\\Delta H < 0$），升溫使平衡逆向移動，$K_c$ 數值必然減小。",
-      "C": "正確：根據勒沙特列原理，升溫體系會朝吸熱方向（逆向）移動以消耗熱量，故 $\\text{SO}_3$ 轉化率下降。",
-      "D": "錯誤：逆向移動由 2 莫耳氣體生成 3 莫耳氣體，氣體總分子數會增加。"
-    },
-    "generalTheory": "勒沙特列原理（Le Chatelier's Principle）：溫度改變是唯一能改變特定反應之平衡常數 $K_c$ 數值的因素。"
-  }
-]
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DSE 化學 分章模擬題庫</title>
+  
+  <!-- Inter Font -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
+  
+  <!-- KaTeX CSS & JS (含 mhchem 化學式擴展) -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css" />
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/contrib/mhchem.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/contrib/auto-render.min.js"></script>
+
+  <!-- PDF.js CDN -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+  <script>
+    // 設定 PDF.js worker
+    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+  </script>
+
+  <!-- 自定義樣式 -->
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <!-- 頂部標題列 -->
+  <header class="top-nav">
+    <div class="nav-left">
+      <h1 class="nav-title">DSE 化學 分章模擬題庫</h1>
+      <span class="nav-badge">按課題 · 按章編排</span>
+    </div>
+    <div class="nav-right">
+      <span class="question-count" id="totalQuestionsCount">共 0 題 (中文卷)</span>
+      <div class="action-buttons">
+        <label for="pdfUploadInput" class="btn btn-primary" title="上傳包含題目的 PDF">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+          匯入 PDF
+        </label>
+        <input type="file" id="pdfUploadInput" accept="application/pdf" multiple style="display: none;" />
+
+        <button id="exportBtn" class="btn btn-secondary">匯出 JSON</button>
+        <label for="importJsonInput" class="btn btn-secondary">匯入 JSON</label>
+        <input type="file" id="importJsonInput" accept=".json" style="display: none;" />
+        <button id="resetDataBtn" class="btn btn-danger-outline" title="清除所有資料">重設</button>
+      </div>
+    </div>
+  </header>
+
+  <!-- 狀態提示框 (Toast) -->
+  <div id="toast" class="toast hidden"></div>
+
+  <!-- 主佈局容器 -->
+  <div class="app-container">
+    
+    <!-- 左側邊欄 -->
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <span class="sidebar-title">十五課題</span>
+        <div class="sidebar-actions">
+          <button id="expandAllBtn" class="btn-text">全部展開</button>
+          <span class="divider">|</span>
+          <button id="collapseAllBtn" class="btn-text">全部收起</button>
+        </div>
+      </div>
+      <div class="sidebar-content" id="topicListContainer">
+        <!-- 課題與章節樹狀清單由 app.js 動態生成 -->
+      </div>
+    </aside>
+
+    <!-- 右側主內容區 -->
+    <main class="main-content">
+      
+      <!-- 總目錄首頁視圖 -->
+      <section id="dashboardView" class="view-panel active">
+        <div class="section-desc">
+          左側點 <kbd>+</kbd> 展開該課題下的章，點章名直接跳到該章 · 點 A–D 直接判對錯 · <span id="generateDate">生成日期：2026-11-11</span>
+        </div>
+
+        <!-- 3 個數字概覽卡片 -->
+        <div class="stat-cards-grid">
+          <div class="stat-card">
+            <span class="stat-label">課題總數</span>
+            <div class="stat-val">15</div>
+          </div>
+          <div class="stat-card">
+            <span class="stat-label">課程章節</span>
+            <div class="stat-val">65</div>
+          </div>
+          <div class="stat-card">
+            <span class="stat-label">題目總數</span>
+            <div class="stat-val" id="dashTotalQuestions">0</div>
+          </div>
+        </div>
+
+        <!-- 練習進度區塊 -->
+        <div class="dashboard-section">
+          <h2 class="sub-heading">練習進度</h2>
+          <div class="progress-stats-grid">
+            <div class="progress-box">
+              <span class="pb-label">已作答</span>
+              <span class="pb-val" id="answeredCount">0</span>
+            </div>
+            <div class="progress-box progress-box-wide">
+              <div class="pb-header">
+                <span class="pb-label">掌握率</span>
+                <span class="pb-val-sm" id="masteryRate">0%</span>
+              </div>
+              <div class="progress-track">
+                <div class="progress-fill" id="masteryFill" style="width: 0%;"></div>
+              </div>
+            </div>
+            <div class="progress-box">
+              <span class="pb-label">錯題數</span>
+              <span class="pb-val danger-text" id="wrongCount">0</span>
+            </div>
+            <div class="progress-box">
+              <span class="pb-label">今日作答</span>
+              <span class="pb-val primary-text" id="todayAnsweredCount">0</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 最近 12 週練習熱力圖 -->
+        <div class="dashboard-section">
+          <div class="section-title-wrap">
+            <h2 class="sub-heading">最近 12 週練習記錄</h2>
+            <span class="sub-label">記錄每日練習活躍度</span>
+          </div>
+          <div class="heatmap-container">
+            <div id="heatmapGrid" class="heatmap-grid">
+              <!-- 熱力圖方塊由 app.js 生成 -->
+            </div>
+            <div class="heatmap-legend">
+              <span>Less</span>
+              <span class="legend-cell lv-0"></span>
+              <span class="legend-cell lv-1"></span>
+              <span class="legend-cell lv-2"></span>
+              <span class="legend-cell lv-3"></span>
+              <span>More</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 章節題目作答視圖 -->
+      <section id="chapterView" class="view-panel">
+        <div class="chapter-header">
+          <div class="breadcrumb">
+            <button id="backToHomeBtn" class="breadcrumb-link">十五課題總目錄</button>
+            <span class="separator">/</span>
+            <span id="bcTopicName">CHEM-01 地球</span>
+            <span class="separator">/</span>
+            <span id="bcChapterName" class="current">第 1 章</span>
+          </div>
+          <h2 id="currentChapterTitle" class="chapter-title">第 1 章：大氣層與氣體</h2>
+          <div class="chapter-meta">
+            <span id="chapterStats">共 0 題</span>
+          </div>
+        </div>
+
+        <!-- 題目列表清單 -->
+        <div id="questionList" class="question-list">
+          <!-- 題目卡片由 app.js 動態渲染 -->
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <!-- 自定義浮動 Tooltip (給熱力圖使用) -->
+  <div id="customTooltip" class="custom-tooltip"></div>
+
+  <script src="app.js"></script>
+</body>
+</html>
