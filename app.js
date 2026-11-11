@@ -157,9 +157,9 @@ const SYLLABUS_CONFIG = [
   }
 ];
 
-// 2. 全局狀態 (v0.0.42)
+// 2. 全局狀態 (v0.0.43)
 window.chemApp = {
-  version: '0.0.42',
+  version: '0.0.43',
   currentLang: 'e',
   activeChapterId: null,
   questionsDB: {},
@@ -228,7 +228,7 @@ class ChemStorage {
   static getDB() {
     if (!this.dbPromise) {
       this.dbPromise = new Promise((resolve, reject) => {
-        const req = indexedDB.open('HKDSE_CHEM_QB_V42', 1);
+        const req = indexedDB.open('HKDSE_CHEM_QB_V43', 1);
         req.onupgradeneeded = (e) => {
           const db = e.target.result;
           if (!db.objectStoreNames.contains('chapters')) db.createObjectStore('chapters');
@@ -266,23 +266,23 @@ class ChemStorage {
 
   static loadMeta() {
     try {
-      const counts = localStorage.getItem('CHEM_COUNTS_V42');
+      const counts = localStorage.getItem('CHEM_COUNTS_V43');
       if (counts) window.chemApp.chapterCounts = JSON.parse(counts);
-      const ans = localStorage.getItem('CHEM_USER_ANS_V42');
+      const ans = localStorage.getItem('CHEM_USER_ANS_V43');
       if (ans) window.chemApp.userAnswers = JSON.parse(ans);
-      const savedLang = localStorage.getItem('CHEM_LANG_V42');
+      const savedLang = localStorage.getItem('CHEM_LANG_V43');
       if (savedLang === 'c' || savedLang === 'e') window.chemApp.currentLang = savedLang;
-      const streak = localStorage.getItem('CHEM_STREAK_V42');
+      const streak = localStorage.getItem('CHEM_STREAK_V43');
       if (streak) window.chemApp.currentStreak = parseInt(streak, 10);
     } catch (e) {}
   }
 
   static saveMeta() {
     try {
-      localStorage.setItem('CHEM_COUNTS_V42', JSON.stringify(window.chemApp.chapterCounts));
-      localStorage.setItem('CHEM_USER_ANS_V42', JSON.stringify(window.chemApp.userAnswers));
-      localStorage.setItem('CHEM_LANG_V42', window.chemApp.currentLang);
-      localStorage.setItem('CHEM_STREAK_V42', window.chemApp.currentStreak.toString());
+      localStorage.setItem('CHEM_COUNTS_V43', JSON.stringify(window.chemApp.chapterCounts));
+      localStorage.setItem('CHEM_USER_ANS_V43', JSON.stringify(window.chemApp.userAnswers));
+      localStorage.setItem('CHEM_LANG_V43', window.chemApp.currentLang);
+      localStorage.setItem('CHEM_STREAK_V43', window.chemApp.currentStreak.toString());
     } catch (e) {}
 
     if (window.chemApp.currentUser && window.firebaseCloud) {
@@ -542,7 +542,7 @@ function updateTimerDisplay() {
   }
 }
 
-// 6. 視圖切換與全屏佈局控制 (Streak 放在右下角)
+// 6. 視圖切換與全屏佈局控制 (統一右下角按鈕組高度與間距)
 function switchRightPanelToChapterView() {
   let wrapper = document.getElementById('chemChapterViewWrapper');
   if (!wrapper) {
@@ -584,12 +584,12 @@ function switchRightPanelToChapterView() {
       </div>
       <div id="questionList"></div>
       
-      <!-- 右下角 Streak 與 結束當前 MC 按鈕 -->
-      <div style="position:fixed; bottom:80px; right:20px; z-index:9998; display:flex; flex-direction:column; gap:8px; align-items:flex-end;">
-        <div style="background:#e8f0fe; padding:8px 14px; border-radius:20px; border:1px solid #aecbfa; font-size:13px; font-weight:bold; color:#1a73e8; box-shadow:0 2px 8px rgba(0,0,0,0.15);">
-          Streak: <span id="footerStreakCount">${window.chemApp.currentStreak}</span>🔥
+      <!-- 右下角固定按鈕群組 (等高排版，無Emoji) -->
+      <div id="floatingActionGroup" style="position:fixed; bottom:20px; right:20px; z-index:9998; display:flex; flex-direction:column; gap:10px; align-items:flex-end;">
+        <div style="background:#e8f0fe; padding:10px 16px; border-radius:24px; border:1px solid #aecbfa; font-size:13px; font-weight:bold; color:#1a73e8; box-shadow:0 4px 14px rgba(0,0,0,0.15); display:flex; align-items:center; justify-content:center; height:40px; box-sizing:border-box;">
+          Streak: <span id="footerStreakCount" style="margin-left:4px;">${window.chemApp.currentStreak}</span>
         </div>
-        <button id="endChapterBtn" class="sound-trigger" style="background:#ea4335; color:#fff; border:none; padding:10px 16px; border-radius:24px; font-weight:bold; font-size:13px; box-shadow:0 4px 14px rgba(0,0,0,0.25); cursor:pointer;">結束當前 MC</button>
+        <button id="endChapterBtn" class="sound-trigger" style="background:#ea4335; color:#fff; border:none; padding:10px 16px; border-radius:24px; font-weight:bold; font-size:13px; box-shadow:0 4px 14px rgba(0,0,0,0.25); cursor:pointer; height:40px; box-sizing:border-box; display:flex; align-items:center; justify-content:center;">結束當前 MC</button>
       </div>
 
       <div id="inlineConfirmModal" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.4); z-index:99999; justify-content:center; align-items:center;">
@@ -669,14 +669,15 @@ function switchRightPanelToChapterView() {
       SoundFX.playClick();
       pauseTimer();
       wrapper.style.display = 'none';
-      const endBtn = document.getElementById('endChapterBtn');
-      if (endBtn && endBtn.parentElement) endBtn.parentElement.style.display = 'none';
+      const actionGroup = document.getElementById('floatingActionGroup');
+      if (actionGroup) actionGroup.style.display = 'none';
 
       window.chemApp.dashboardNodes.forEach(node => {
         if (node !== wrapper) node.style.display = '';
       });
       const sidebar = document.querySelector('aside') || document.querySelector('.sidebar') || document.querySelector('#sidebar') || document.querySelector('.left-panel');
-      if (sidebar) sidebar.style.display = '';
+      // 返回首頁時不自動顯示左側目錄，除非點擊右下角
+      if (sidebar) sidebar.style.display = 'none'; 
       updateDashboardStats();
     };
 
@@ -711,8 +712,8 @@ function switchRightPanelToChapterView() {
     if (node !== wrapper) node.style.display = 'none';
   });
   wrapper.style.display = 'block';
-  const endContainer = wrapper.querySelector('#endChapterBtn')?.parentElement;
-  if (endContainer) endContainer.style.display = 'flex';
+  const actionGroup = wrapper.querySelector('#floatingActionGroup');
+  if (actionGroup) actionGroup.style.display = 'flex';
 
   const sidebar = document.querySelector('aside') || document.querySelector('.sidebar') || document.querySelector('#sidebar') || document.querySelector('.left-panel');
   if (sidebar) sidebar.style.display = 'none';
@@ -720,7 +721,7 @@ function switchRightPanelToChapterView() {
   return wrapper;
 }
 
-// 7. 開啟章節
+// 7. 開啟章節 (重置答案狀態，不讀取之前的作答)
 async function openChapter(chapId, bypassCache = false) {
   window.chemApp.activeChapterId = chapId;
   const lookup = CHAPTER_MAP[chapId];
@@ -748,9 +749,6 @@ async function openChapter(chapId, bypassCache = false) {
   }
 
   const wrapper = switchRightPanelToChapterView();
-  const topicSub = wrapper.querySelector('#currentTopicSubtitle');
-  if (topicSub) topicSub.style.display = 'none';
-
   const titleEl = wrapper.querySelector('#currentChapterTitle');
   const container = wrapper.querySelector('#questionList');
 
@@ -758,9 +756,10 @@ async function openChapter(chapId, bypassCache = false) {
 
   const dbKey = `${window.chemApp.currentLang}_${chapId}`;
 
+  // 強制每次進入章節都是乾淨的狀態，不主動帶入歷史綠色/紅色選取
   if (!bypassCache) {
     if (window.chemApp.questionsDB[dbKey] && window.chemApp.questionsDB[dbKey].length > 0) {
-      renderQuestions(window.chemApp.questionsDB[dbKey], chapId);
+      renderQuestions(window.chemApp.questionsDB[dbKey], chapId, true);
       return;
     }
     const cachedList = await ChemStorage.loadChapter(dbKey);
@@ -769,7 +768,7 @@ async function openChapter(chapId, bypassCache = false) {
       window.chemApp.chapterCounts[dbKey] = cachedList.length;
       ChemStorage.saveMeta();
       updateCounts();
-      renderQuestions(cachedList, chapId);
+      renderQuestions(cachedList, chapId, true);
       return;
     }
   }
@@ -804,9 +803,6 @@ async function openChapter(chapId, bypassCache = false) {
     container.innerHTML = `
       <div style="text-align:center; padding:48px 24px; background:#fff; border-radius:20px; border:1px solid #ffcdd2; color:#c62828;">
         <div style="font-size:16px; font-weight:bold; margin-bottom:10px;">找不到遠端題庫檔案：<code>chemqb_ch${pad}_mcq_${lang}.docx</code></div>
-        <div style="font-size:12px; color:#555; line-height:1.7; max-width:540px; margin:0 auto;">
-          請確認 GitHub <code>docs/</code> 資料夾內已上傳對應檔案，或點擊上方<b>「載入檔案」</b>按鈕立即練習！
-        </div>
       </div>
     `;
     return;
@@ -819,14 +815,14 @@ async function openChapter(chapId, bypassCache = false) {
     ChemStorage.saveMeta();
     await ChemStorage.saveChapter(dbKey, list);
     updateCounts();
-    renderQuestions(list, chapId);
+    renderQuestions(list, chapId, true);
   } catch (err) {
     container.innerHTML = `<div style="color:#e53935; padding:32px; background:#fff; border-radius:20px;">解析 DOCX 失敗：${err.message}</div>`;
   }
 }
 
-// 8. 渲染題目卡片 (Streak 答對累加、答錯歸零)
-function renderQuestions(qList, chapId) {
+// 8. 渲染題目卡片 (強制清除狀態)
+function renderQuestions(qList, chapId, resetState = false) {
   const wrapper = switchRightPanelToChapterView();
   const container = wrapper.querySelector('#questionList');
   const chapStats = wrapper.querySelector('#chapterStats');
@@ -914,10 +910,13 @@ function renderQuestions(qList, chapId) {
       expPanel.style.display = 'block';
     };
 
-    const savedRecord = window.chemApp.userAnswers[q.id];
-    if (savedRecord) {
-      const chosen = typeof savedRecord === 'string' ? savedRecord : savedRecord.chosen;
-      if (chosen) applyAnswerUI(chosen, false);
+    // 如果未強制重置，才顯示歷史作答（因為需求說再打開同課題要重置，所以這裡預設不會執行 applyAnswerUI）
+    if (!resetState) {
+      const savedRecord = window.chemApp.userAnswers[q.id];
+      if (savedRecord) {
+        const chosen = typeof savedRecord === 'string' ? savedRecord : savedRecord.chosen;
+        if (chosen) applyAnswerUI(chosen, false);
+      }
     }
 
     optBtns.forEach(btn => {
@@ -927,14 +926,18 @@ function renderQuestions(qList, chapId) {
         const today = new Date().toISOString().slice(0, 10);
         
         const existing = window.chemApp.userAnswers[q.id];
-        const wasCorrect = existing ? (typeof existing === 'object' && existing.correct) : null;
-
-        if (wasCorrect === null) {
-          if (isCorrect) window.chemApp.currentStreak++;
-          else window.chemApp.currentStreak = 0; // 錯了清零
-        } else if (wasCorrect !== isCorrect) {
+        
+        // 確保每一題只加一次「已作答」，若為新題目則不重複計算
+        if (!existing) {
           if (isCorrect) window.chemApp.currentStreak++;
           else window.chemApp.currentStreak = 0;
+        } else {
+          // 若重複點選，依然檢查對錯來重置 Streak，但不會增加總答題數
+          const wasCorrect = typeof existing === 'object' ? existing.correct : false;
+          if (wasCorrect !== isCorrect) {
+            if (isCorrect) window.chemApp.currentStreak++;
+            else window.chemApp.currentStreak = 0;
+          }
         }
 
         window.chemApp.userAnswers[q.id] = { chosen: chosen, correct: isCorrect, date: today };
@@ -958,7 +961,7 @@ function renderQuestions(qList, chapId) {
   });
 }
 
-// 9. 統計更新與首頁大改版 (顯示已答題數與每日清單)
+// 9. 首頁大改版 (顯示每日清單與課題完成度)
 function updateCounts() {
   for (let i = 1; i <= 65; i++) {
     const key = `${window.chemApp.currentLang}_${i}`;
@@ -990,6 +993,9 @@ function updateDashboardStats() {
     const todayStr = new Date().toISOString().slice(0, 10);
     const todayCount = records.filter(r => r.date === todayStr).length;
 
+    // 清除首頁多餘的按鈕與提示（移除 class 為 .header-message 或 #redundantHeader）
+    document.querySelectorAll('.header-message, #redundantHeader').forEach(el => el.remove());
+
     const setIfExist = (id, val) => {
       const el = document.getElementById(id);
       if (el) el.textContent = val;
@@ -1001,27 +1007,33 @@ function updateDashboardStats() {
     setIfExist('statWrong', wrongCount);
     setIfExist('statToday', todayCount);
 
-    // 同步更新網頁原本的已答題數顯示元素
     document.querySelectorAll('.stat-answered, #statAnswered, [id*="Answered"]').forEach(el => {
       el.textContent = answeredCount;
     });
 
+    // 每日練習記錄列表
     let dailyListEl = document.getElementById('dailyActivityList');
     if (!dailyListEl) {
-      const historyCard = Array.from(document.querySelectorAll('div')).find(el => (el.textContent || '').includes('最近 12 週練習記錄') || (el.textContent || '').includes('練習進度'));
-      if (historyCard) {
-        let parentCard = historyCard.parentElement;
-        if (parentCard) {
-          let containerDiv = document.createElement('div');
-          containerDiv.style.cssText = 'background:#fff; border-radius:16px; padding:18px 20px; margin-top:20px; border:1px solid #e0e0e0;';
-          containerDiv.innerHTML = `
-            <h3 style="margin:0 0 12px 0; font-size:15px; color:#111;">每日練習記錄（按日期統計）</h3>
-            <div id="dailyActivityList" style="display:flex; flex-direction:column; gap:8px; max-height:220px; overflow-y:auto;"></div>
+      // 移除最近 12 週練習記錄，替換成新的清單與進度
+      const oldHistoryCards = Array.from(document.querySelectorAll('div')).filter(el => (el.textContent || '').includes('最近 12 週練習記錄'));
+      oldHistoryCards.forEach(card => {
+        if (card.id !== 'dailyActivityList' && card.parentElement) {
+          card.parentElement.innerHTML = `
+            <div style="background:#fff; border-radius:16px; padding:18px 20px; margin-top:20px; border:1px solid #e0e0e0; display:flex; flex-direction:column; gap:20px;">
+              <div>
+                <h3 style="margin:0 0 12px 0; font-size:15px; color:#111;">每日練習記錄</h3>
+                <div id="dailyActivityList" style="display:flex; flex-direction:column; gap:8px; max-height:160px; overflow-y:auto;"></div>
+              </div>
+              <hr style="border:none; border-top:1px dashed #ddd; margin:0;"/>
+              <div>
+                <h3 style="margin:0 0 12px 0; font-size:15px; color:#111;">課題完成度預測</h3>
+                <div id="topicProgressList" style="display:flex; flex-direction:column; gap:8px; max-height:160px; overflow-y:auto;"></div>
+              </div>
+            </div>
           `;
-          parentCard.appendChild(containerDiv);
-          dailyListEl = containerDiv.querySelector('#dailyActivityList');
         }
-      }
+      });
+      dailyListEl = document.getElementById('dailyActivityList');
     }
 
     if (dailyListEl) {
@@ -1042,6 +1054,43 @@ function updateDashboardStats() {
             <span style="background:#e8f0fe; color:#1a73e8; padding:2px 8px; border-radius:10px; font-weight:bold;">已做 ${dateMap[d]} 題</span>
           </div>
         `).join('');
+      }
+    }
+
+    // 計算各課題的完成度 (Topic Progress)
+    let topicProgressEl = document.getElementById('topicProgressList');
+    if (topicProgressEl) {
+      const topicStats = SYLLABUS_CONFIG.map(t => {
+        let tTotal = 0;
+        let tAns = 0;
+        t.chapters.forEach(c => {
+          const k = `${window.chemApp.currentLang}_${c.id}`;
+          const qCount = window.chemApp.chapterCounts[k] || 0;
+          tTotal += qCount;
+          // 找所有 id 後面帶著 _ch[chapterId] 的答題紀錄
+          const ansCount = Object.keys(window.chemApp.userAnswers).filter(ansId => ansId.endsWith(`_ch${c.id}`)).length;
+          tAns += ansCount;
+        });
+        return { name: t.topicName.replace('topic / chapter: ', ''), total: tTotal, ans: tAns };
+      }).filter(t => t.total > 0).sort((a, b) => (b.ans / b.total) - (a.ans / a.total)); // 依完成度排序
+
+      if (topicStats.length === 0) {
+        topicProgressEl.innerHTML = `<div style="font-size:13px; color:#888;">暫無課題數據</div>`;
+      } else {
+        topicProgressEl.innerHTML = topicStats.slice(0, 5).map(t => {
+          const pct = Math.round((t.ans / t.total) * 100);
+          return `
+            <div style="display:flex; flex-direction:column; gap:4px; padding:8px 12px; background:#f8f9fa; border-radius:8px; font-size:12px;">
+              <div style="display:flex; justify-content:space-between; align-items:center;">
+                <span style="font-weight:bold; color:#333;">${t.name}</span>
+                <span style="color:#1a73e8; font-weight:bold;">還差 ${100 - pct}%</span>
+              </div>
+              <div style="width:100%; background:#e0e0e0; height:6px; border-radius:3px; overflow:hidden;">
+                <div style="width:${pct}%; background:#34a853; height:100%;"></div>
+              </div>
+            </div>
+          `;
+        }).join('');
       }
     }
   } catch (e) {}
@@ -1100,30 +1149,9 @@ function renderSidebar() {
     groupEl.appendChild(cList);
     container.appendChild(groupEl);
   });
-
-  document.querySelectorAll('button, span, a, div').forEach(el => {
-    if (el.children.length === 0) {
-      const txt = (el.textContent || '').trim();
-      if (txt === '全部展開') {
-        el.style.cursor = 'pointer';
-        el.onclick = () => {
-          SoundFX.playClick();
-          document.querySelectorAll('#topicListContainer .chapter-list').forEach(l => (l.style.display = 'block'));
-          document.querySelectorAll('#topicListContainer .toggle-icon').forEach(i => (i.textContent = '▼'));
-        };
-      } else if (txt === '全部收起') {
-        el.style.cursor = 'pointer';
-        el.onclick = () => {
-          SoundFX.playClick();
-          document.querySelectorAll('#topicListContainer .chapter-list').forEach(l => (l.style.display = 'none'));
-          document.querySelectorAll('#topicListContainer .toggle-icon').forEach(i => (i.textContent = '▶'));
-        };
-      }
-    }
-  });
 }
 
-// 11. 初始化與註冊系統 / 雙重驗證 / 頂部橫排控制
+// 11. 初始化與註冊系統 / Firebase
 document.addEventListener('DOMContentLoaded', () => {
   ChemStorage.loadMeta();
 
@@ -1240,7 +1268,7 @@ document.addEventListener('DOMContentLoaded', () => {
           const pass = passInput.value;
 
           if (!validateStudentId(rawId)) {
-            errMsg.textContent = '格式錯誤！用戶 ID 必須是 5a、5b、5c 或 5d 開頭，後面接 1 到 35 的數字（例如 5a12）。';
+            errMsg.textContent = '格式錯誤！用戶 ID 必須是 5a、5b、5c 或 5d 開頭，後面接 1 到 35 的數字。';
             return;
           }
 
@@ -1272,10 +1300,14 @@ document.addEventListener('DOMContentLoaded', () => {
         if (user) {
           window.chemApp.currentUser = user;
           authOverlay.style.display = 'none';
+          
+          // 登入後首頁預設隱藏側邊目錄
+          const sidebar = document.querySelector('aside') || document.querySelector('.sidebar') || document.querySelector('#sidebar') || document.querySelector('.left-panel');
+          if (sidebar) sidebar.style.display = 'none'; 
+          
           renderSidebar();
           updateCounts();
 
-          // 徹底清理頂部導覽列，只保留橫排的用戶名與返回首頁
           const navRight = document.querySelector('.nav-right');
           if (navRight && !document.getElementById('topUserDisplayBar')) {
             navRight.innerHTML = '';
@@ -1296,11 +1328,12 @@ document.addEventListener('DOMContentLoaded', () => {
               SoundFX.playClick();
               const wrapper = document.getElementById('chemChapterViewWrapper');
               if (wrapper) wrapper.style.display = 'none';
+              const actionGroup = document.getElementById('floatingActionGroup');
+              if (actionGroup) actionGroup.style.display = 'none';
               window.chemApp.dashboardNodes.forEach(node => {
                 if (node !== wrapper) node.style.display = '';
               });
-              const sidebar = document.querySelector('aside') || document.querySelector('.sidebar') || document.querySelector('#sidebar') || document.querySelector('.left-panel');
-              if (sidebar) sidebar.style.display = '';
+              if (sidebar) sidebar.style.display = 'none';
               updateDashboardStats();
             };
 
@@ -1337,7 +1370,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const floatBtn = document.createElement('button');
     floatBtn.id = 'mobileToggleSidebarBtn';
     floatBtn.innerHTML = '目錄選單';
-    floatBtn.style.cssText = 'position:fixed; bottom:24px; right:20px; z-index:9999; background:#1a73e8; color:#fff; border:none; padding:10px 16px; border-radius:24px; font-weight:bold; font-size:13px; box-shadow:0 4px 14px rgba(0,0,0,0.25); cursor:pointer; display:block;';
+    floatBtn.style.cssText = 'position:fixed; bottom:20px; right:20px; z-index:9999; background:#1a73e8; color:#fff; border:none; padding:10px 16px; border-radius:24px; font-weight:bold; font-size:13px; box-shadow:0 4px 14px rgba(0,0,0,0.25); cursor:pointer; display:block; height:40px; box-sizing:border-box;';
 
     floatBtn.onclick = () => {
       SoundFX.playClick();
