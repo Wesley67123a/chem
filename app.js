@@ -9,168 +9,26 @@
 
 // 1. 課程 65 章架構
 const SYLLABUS_CONFIG = [
-const SYLLABUS_CONFIG = [
-  { 
-    topicId: 'CHEM-01', 
-    topicName: 'CHEM-01 地球', 
-    chapters: [
-      { id: 1, name: '第 1 章：化學導論' }, 
-      { id: 2, name: '第 2 章：大氣' }, 
-      { id: 3, name: '第 3 章：海洋' }
-    ] 
-  },
-  { 
-    topicId: 'CHEM-02', 
-    topicName: 'CHEM-02 微觀世界 I', 
-    chapters: [
-      { id: 4, name: '第 4 章：岩石和礦物' }, 
-      { id: 5, name: '第 5 章：原子結構' }, 
-      { id: 6, name: '第 6 章：周期表' }, 
-      { id: 7, name: '第 7 章：金屬鍵和離子鍵' }, 
-      { id: 8, name: '第 8 章：共價鍵' }
-    ] 
-  },
-  { 
-    topicId: 'CHEM-03', 
-    topicName: 'CHEM-03 金屬', 
-    chapters: [
-      { id: 9, name: '第 9 章：物質的結構和性質' }, 
-      { id: 10, name: '第 10 章：金屬的存在和提取' }, 
-      { id: 11, name: '第 11 章：金屬的活性' }, 
-      { id: 12, name: '第 12 章：反應質量' }, 
-      { id: 13, name: '第 13 章：金屬的腐蝕和保護' }
-    ] 
-  },
-  { 
-    topicId: 'CHEM-04', 
-    topicName: 'CHEM-04 酸和鹽基', 
-    chapters: [
-      { id: 14, name: '第 14 章：酸和鹼的簡介' }, 
-      { id: 15, name: '第 15 章：溶液的濃度' }, 
-      { id: 16, name: '第 16 章：指示劑和pH' }, 
-      { id: 17, name: '第 17 章：酸和鹼的強度' }, 
-      { id: 18, name: '第 18 章：鹽和中和作用' }
-    ] 
-  },
-  { 
-    topicId: 'CHEM-05', 
-    topicName: 'CHEM-05 化石燃料', 
-    chapters: [
-      { id: 19, name: '第 19 章：涉及酸和鹼的容量分析' }, 
-      { id: 20, name: '第 20 章：來自化石燃料的烷' }, 
-      { id: 21, name: '第 21 章：同系列、結構式和碳化合物的命名' }, 
-      { id: 22, name: '第 22 章：烷烴和烯烴的化學反應' }, 
-      { id: 23, name: '第 23 章：加成聚合物' }
-    ] 
-  },
-  { 
-    topicId: 'CHEM-06', 
-    topicName: 'CHEM-06 微觀世界 II', 
-    chapters: [
-      { id: 24, name: '第 24 章：具有非八隅體結構的簡單分子及簡單分子的形狀' }, 
-      { id: 25, name: '第 25 章：鍵與分子的極性' }, 
-      { id: 26, name: '第 26 章：分子間作用力' }, 
-      { id: 27, name: '第 27 章：結構與物理性質' }
-    ] 
-  },
-  { 
-    topicId: 'CHEM-07', 
-    topicName: 'CHEM-07 氧化還原與電解', 
-    chapters: [
-      { id: 28, name: '第 28 章：氧化和還原' }, 
-      { id: 29, name: '第 29 章：化學電池' }, 
-      { id: 30, name: '第 30 章：氧化劑和還原劑' }, 
-      { id: 31, name: '第 31 章：電解' }, 
-      { id: 32, name: '第 32 章：工業電解' }
-    ] 
-  },
-  { 
-    topicId: 'CHEM-08', 
-    topicName: 'CHEM-08 化學反應與能量', 
-    chapters: [
-      { id: 33, name: '第 33 章：化學反應中的能量變化' }, 
-      { id: 34, name: '第 34 章：標準反應焓變' }, 
-      { id: 35, name: '第 35 章：赫斯定律' }
-    ] 
-  },
-  { 
-    topicId: 'CHEM-09', 
-    topicName: 'CHEM-09 反應速率', 
-    chapters: [
-      { id: 36, name: '第 36 章：化學反應的速率' }, 
-      { id: 37, name: '第 37 章：影響反應速率的因素' }, 
-      { id: 38, name: '第 38 章：碰撞理論' }, 
-      { id: 39, name: '第 39 章：催化劑' }
-    ] 
-  },
-  { 
-    topicId: 'CHEM-10', 
-    topicName: 'CHEM-10 化學平衡', 
-    chapters: [
-      { id: 40, name: '第 40 章：動態平衡' }, 
-      { id: 41, name: '第 41 章：濃度和溫度的變化對化學平衡的影響' },[span_3](start_span)[span_3](end_span)
-      { id: 42, name: '第 42 章：特定同系列的簡介' }[span_4](start_span)[span_4](end_span)
-    ] 
-  },
-  { 
-    topicId: 'CHEM-11', 
-    topicName: 'CHEM-11 碳化合物的化學', 
-    chapters: [
-      { id: 43, name: '第 43 章：同分異構' },[span_5](start_span)[span_5](end_span)
-      { id: 44, name: '第 44 章：各種官能基的典型化學反應' },[span_6](start_span)[span_6](end_span)
-      { id: 45, name: '第 45 章：碳化合物的互換' },[span_7](start_span)[span_7](end_span)
-      { id: 46, name: '第 46 章：重要有機物質' },[span_8](start_span)[span_8](end_span)[span_9](start_span)[span_9](end_span)
-      { id: 47, name: '第 47 章：由Na至Cl各元素物理性質的周期變化' },[span_10](start_span)[span_10](end_span)[span_11](start_span)[span_11](end_span)
-      { id: 48, name: '第 48 章：由Na至Cl各元素氧化物的結合、在水中的習性及酸鹼性質' }[span_12](start_span)[span_12](end_span)
-    ] 
-  },
-  { 
-    topicId: 'CHEM-12', 
-    topicName: 'CHEM-12 化學規律', 
-    chapters: [
-      { id: 49, name: '第 49 章：過渡性金屬的一般性質' },[span_13](start_span)[span_13](end_span)
-      { id: 50, name: '第 50 章：工業過程的重要性' }[span_14](start_span)[span_14](end_span)
-    ] 
-  },
-  { 
-    topicId: 'CHEM-13', 
-    topicName: 'CHEM-13 工業化學', 
-    chapters: [
-      { id: 51, name: '第 51 章：速率方程' },[span_15](start_span)[span_15](end_span)
-      { id: 52, name: '第 52 章：活化能' },[span_16](start_span)[span_16](end_span)
-      { id: 53, name: '第 53 章：催化作用和工業過程' }, 
-      { id: 54, name: '第 54 章：工業過程' }, 
-      { id: 55, name: '第 55 章：有關工業過程的綠色化學' }[span_17](start_span)[span_17](end_span)
-    ] 
-  },
-  { 
-    topicId: 'CHEM-14', 
-    topicName: 'CHEM-14 物料化學', 
-    chapters: [
-      { id: 56, name: '第 56 章：合金' }, 
-      { id: 57, name: '第 57 章：高分子材料' }, 
-      { id: 58, name: '第 58 章：現代材料' }, 
-      { id: 59, name: '第 59 章：納米材料' }, 
-      { id: 60, name: '第 60 章：物料回收' }
-    ] 
-  },
-  { 
-    topicId: 'CHEM-15', 
-    topicName: 'CHEM-15 分析化學', 
-    chapters: [
-      { id: 61, name: '第 61 章：檢測物質中的化學物種' },[span_18](start_span)[span_18](end_span)
-      { id: 62, name: '第 62 章：分離和提純的方法' },[span_19](start_span)[span_19](end_span)
-      { id: 63, name: '第 63 章：定量分析方法' },[span_20](start_span)[span_20](end_span)
-      { id: 64, name: '第 64 章：儀器分析方法' },[span_21](start_span)[span_21](end_span)
-      { id: 65, name: '第 65 章：分析化學對社會的貢獻' }[span_22](start_span)[span_22](end_span)
-    ] 
-  }
+  { topicId: 'CHEM-01', topicName: 'CHEM-01 地球', chapters: [{ id: 1, name: '第 1 章：大氣層與氣體' }, { id: 2, name: '第 2 章：海洋中的資源與食鹽' }, { id: 3, name: '第 3 章：岩石與礦物' }] },
+  { topicId: 'CHEM-02', topicName: 'CHEM-02 微觀世界 I', chapters: [{ id: 4, name: '第 4 章：原子結構' }, { id: 5, name: '第 5 章：元素週期表' }, { id: 6, name: '第 6 章：離子鍵' }, { id: 7, name: '第 7 章：共價鍵' }, { id: 8, name: '第 8 章：金屬鍵' }] },
+  { topicId: 'CHEM-03', topicName: 'CHEM-03 金屬', chapters: [{ id: 9, name: '第 9 章：金屬的提取' }, { id: 10, name: '第 10 章：金屬反應活性' }, { id: 11, name: '第 11 章：金屬活性序與置換' }, { id: 12, name: '第 12 章：防銹' }, { id: 13, name: '第 13 章：摩爾計算' }] },
+  { topicId: 'CHEM-04', topicName: 'CHEM-04 酸和鹽基', chapters: [{ id: 14, name: '第 14 章：酸鹼性質' }, { id: 15, name: '第 15 章：氫離子的角色' }, { id: 16, name: '第 16 章：pH 標度' }, { id: 17, name: '第 17 章：鹽的製備' }, { id: 18, name: '第 18 章：酸鹼滴定' }] },
+  { topicId: 'CHEM-05', topicName: 'CHEM-05 化石燃料', chapters: [{ id: 19, name: '第 19 章：化石燃料' }, { id: 20, name: '第 20 章：烷烴' }, { id: 21, name: '第 21 章：烯烴' }, { id: 22, name: '第 22 章：加成聚合物' }, { id: 23, name: '第 23 章：其他碳化合物' }] },
+  { topicId: 'CHEM-06', topicName: 'CHEM-06 微觀世界 II', chapters: [{ id: 24, name: '第 24 章：分子形狀' }, { id: 25, name: '第 25 章：分子極性' }, { id: 26, name: '第 26 章：分子間作用力' }, { id: 27, name: '第 27 章：結構與物理性質' }] },
+  { topicId: 'CHEM-07', topicName: 'CHEM-07 氧化還原與電解', chapters: [{ id: 28, name: '第 28 章：氧化還原' }, { id: 29, name: '第 29 章：化學電池' }, { id: 30, name: '第 30 章：氧化劑與還原劑' }, { id: 31, name: '第 31 章：電解' }, { id: 32, name: '第 32 章：工業電解' }] },
+  { topicId: 'CHEM-08', topicName: 'CHEM-08 化學反應與能量', chapters: [{ id: 33, name: '第 33 章：焓變' }, { id: 34, name: '第 34 章：標準焓變測定' }, { id: 35, name: '第 35 章：赫斯定律' }] },
+  { topicId: 'CHEM-09', topicName: 'CHEM-09 反應速率', chapters: [{ id: 36, name: '第 36 章：反應速率' }, { id: 37, name: '第 37 章：影響因素' }, { id: 38, name: '第 38 章：碰撞理論' }, { id: 39, name: '第 39 章：催化劑' }] },
+  { topicId: 'CHEM-10', topicName: 'CHEM-10 化學平衡', chapters: [{ id: 40, name: '第 40 章：動態平衡' }, { id: 41, name: '第 41 章：平衡常數 Kc' }, { id: 42, name: '第 42 章：勒沙特列原理' }] },
+  { topicId: 'CHEM-11', topicName: 'CHEM-11 碳化合物的化學', chapters: [{ id: 43, name: '第 43 章：同分異構體' }, { id: 44, name: '第 44 章：烷烴與烯烴反應機制' }, { id: 45, name: '第 45 章：醇與鹵代烷' }, { id: 46, name: '第 46 章：醛與酮' }, { id: 47, name: '第 47 章：羧酸與酯' }, { id: 48, name: '第 48 章：有機合成' }] },
+  { topicId: 'CHEM-12', topicName: 'CHEM-12 化學規律', chapters: [{ id: 49, name: '第 49 章：第三週期' }, { id: 50, name: '第 50 章：過渡金屬' }] },
+  { topicId: 'CHEM-13', topicName: 'CHEM-13 工業化學', chapters: [{ id: 51, name: '第 51 章：速率方程' }, { id: 52, name: '第 52 章：阿倫尼烏斯方程' }, { id: 53, name: '第 53 章：哈柏法' }, { id: 54, name: '第 54 章：接觸法' }, { id: 55, name: '第 55 章：綠色化學' }] },
+  { topicId: 'CHEM-14', topicName: 'CHEM-14 物料化學', chapters: [{ id: 56, name: '第 56 章：合金' }, { id: 57, name: '第 57 章：高分子材料' }, { id: 58, name: '第 58 章：現代材料' }, { id: 59, name: '第 59 章：納米材料' }, { id: 60, name: '第 60 章：物料回收' }] },
+  { topicId: 'CHEM-15', topicName: 'CHEM-15 分析化學', chapters: [{ id: 61, name: '第 61 章：無機定性分析' }, { id: 62, name: '第 62 章：紅外光譜' }, { id: 63, name: '第 63 章：質譜' }, { id: 64, name: '第 64 章：色譜分析' }, { id: 65, name: '第 65 章：結構綜合鑑定' }] }
 ];
-
 
 // 2. 全局狀態 (v0.0.30)
 window.chemApp = {
-  version: '0.0.33',
+  version: '0.0.30',
   currentLang: 'e', // 預設英文卷 (可於右上角切換)
   activeChapterId: null,
   questionsDB: {},
