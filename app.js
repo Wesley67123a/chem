@@ -157,9 +157,9 @@ const SYLLABUS_CONFIG = [
   }
 ];
 
-// 2. 全局狀態 (v0.0.36)
+// 2. 全局狀態 (v0.0.37)
 window.chemApp = {
-  version: '0.0.36',
+  version: '0.0.37',
   currentLang: 'e',
   activeChapterId: null,
   questionsDB: {},
@@ -168,13 +168,14 @@ window.chemApp = {
   dashboardNodes: [],
   timerSeconds: 0,
   timerInterval: null,
-  isTimerRunning: false
+  isTimerRunning: false,
+  currentUser: null
 };
 
 const CHAPTER_MAP = {};
-SYLLABUS_CONFIG.forEach(t => t.chapters.forEach(c => { CHAPTER_MAP[c.id] = { topic: t, chapter: c }; }));
+SYLLAPUS_CONFIG.forEach(t => t.chapters.forEach(c => { CHAPTER_MAP[c.id] = { topic: t, chapter: c }; }));
 
-// 2.2 全站通用音效系統 (Web Audio API)
+// 2.1 網頁音效系統 (Web Audio API)
 class SoundFX {
   static audioCtx = null;
   static getContext() {
@@ -210,7 +211,6 @@ class SoundFX {
         osc.start();
         osc.stop(ctx.currentTime + 0.35);
       } else {
-        // 一般按鈕點擊音效
         osc.frequency.setValueAtTime(440, ctx.currentTime);
         gain.gain.setValueAtTime(0.08, ctx.currentTime);
         gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.1);
@@ -221,13 +221,13 @@ class SoundFX {
   }
 }
 
-// 2.5 IndexedDB + localStorage 儲存引擎
+// 2.2 Firebase 雲端與本機儲存引擎
 class ChemStorage {
   static dbPromise = null;
   static getDB() {
     if (!this.dbPromise) {
       this.dbPromise = new Promise((resolve, reject) => {
-        const req = indexedDB.open('HKDSE_CHEM_QB_V36', 1);
+        const req = indexedDB.open('HKDSE_CHEM_QB_V37', 1);
         req.onupgradeneeded = (e) => {
           const db = e.target.result;
           if (!db.objectStoreNames.contains('chapters')) db.createObjectStore('chapters');
@@ -265,25 +265,30 @@ class ChemStorage {
 
   static loadMeta() {
     try {
-      const counts = localStorage.getItem('CHEM_COUNTS_V36');
+      const counts = localStorage.getItem('CHEM_COUNTS_V37');
       if (counts) window.chemApp.chapterCounts = JSON.parse(counts);
-      const ans = localStorage.getItem('CHEM_USER_ANS_V36');
+      const ans = localStorage.getItem('CHEM_USER_ANS_V37');
       if (ans) window.chemApp.userAnswers = JSON.parse(ans);
-      const savedLang = localStorage.getItem('CHEM_LANG_V36');
+      const savedLang = localStorage.getItem('CHEM_LANG_V37');
       if (savedLang === 'c' || savedLang === 'e') window.chemApp.currentLang = savedLang;
     } catch (e) {}
   }
 
   static saveMeta() {
     try {
-      localStorage.setItem('CHEM_COUNTS_V36', JSON.stringify(window.chemApp.chapterCounts));
-      localStorage.setItem('CHEM_USER_ANS_V36', JSON.stringify(window.chemApp.userAnswers));
-      localStorage.setItem('CHEM_LANG_V36', window.chemApp.currentLang);
+      localStorage.setItem('CHEM_COUNTS_V37', JSON.stringify(window.chemApp.chapterCounts));
+      localStorage.setItem('CHEM_USER_ANS_V37', JSON.stringify(window.chemApp.userAnswers));
+      localStorage.setItem('CHEM_LANG_V37', window.chemApp.currentLang);
     } catch (e) {}
+
+    // 如果用戶已登入 Firebase，同時同步到雲端
+    if (window.chemApp.currentUser && window.firebaseCloud) {
+      window.firebaseCloud.syncToCloud(window.chemApp.currentUser.uid, window.chemApp.userAnswers, window.chemApp.chapterCounts);
+    }
   }
 }
 
-// 3. 深度穿透式 DOM 切題引擎 (嚴格清理殘留方塊)
+// 3. 深度穿透式 DOM 切題引擎
 class DocxQuestionParser {
   static cleanInlineNoise(htmlStr) {
     return htmlStr
@@ -533,7 +538,7 @@ function updateTimerDisplay() {
   }
 }
 
-// 6. 視圖切換與全屏佈局控制 (UI 圓角加大至 20px)
+// 6. 視圖切換與全屏佈局控制
 function switchRightPanelToChapterView() {
   let wrapper = document.getElementById('chemChapterViewWrapper');
   if (!wrapper) {
@@ -754,7 +759,7 @@ async function openChapter(chapId, bypassCache = false) {
   }
 }
 
-// 8. 渲染題目卡片 (卡片圓角 20px、Times New Roman、徹底清除殘留方塊)
+// 8. 渲染題目卡片
 function renderQuestions(qList, chapId) {
   const wrapper = switchRightPanelToChapterView();
   const container = wrapper.querySelector('#questionList');
@@ -811,7 +816,6 @@ function renderQuestions(qList, chapId) {
       img.style.margin = '10px auto';
     });
 
-    // 徹底清除任何殘留的方塊符號與空白孤立元素
     card.querySelectorAll('p, div, span, table, td, tr').forEach(el => {
       const txt = (el.textContent || '').trim();
       if (txt === '□' || txt === '☐' || txt === '■' || txt === '' && el.children.length === 0) {
@@ -916,7 +920,7 @@ function updateDashboardStats() {
   } catch (e) {}
 }
 
-// 10. 左側選單渲染 (修復全部展開與收起按鈕點擊事件)
+// 10. 左側選單渲染
 function renderSidebar() {
   const container = document.getElementById('topicListContainer');
   if (!container) return;
@@ -965,7 +969,6 @@ function renderSidebar() {
     container.appendChild(groupEl);
   });
 
-  // 強制修復網頁原有的「全部展開 / 全部收起」按鈕點擊無效問題
   document.querySelectorAll('button, span, a, div').forEach(el => {
     if (el.children.length === 0) {
       const txt = (el.textContent || '').trim();
@@ -988,13 +991,128 @@ function renderSidebar() {
   });
 }
 
-// 11. 初始化與右下角目錄按鈕、全站按鈕音效委託
+// 11. 初始化與 Firebase 雲端模組掛載
 document.addEventListener('DOMContentLoaded', () => {
   ChemStorage.loadMeta();
   renderSidebar();
   updateCounts();
 
-  // 委託監聽全站按鈕點擊發出音效
+  // 動態引入 Firebase SDK 並初始化雲端同步
+  const loadFirebaseSDK = async () => {
+    try {
+      const { initializeApp } = await import("https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js");
+      const { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged } = await import("https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js");
+      const { getFirestore, doc, setDoc, getDoc } = await import("https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js");
+
+      const firebaseConfig = {
+        apiKey: "AIzaSyDzNzFelR1DLNgVcK-u3_U2s_zmtIrxu1w",
+        authDomain: "chem-b49bf.firebaseapp.com",
+        projectId: "chem-b49bf",
+        storageBucket: "chem-b49bf.firebasestorage.app",
+        messagingSenderId: "702426481564",
+        appId: "1:702426481564:web:987522a34c6c4e54d6fe59",
+        measurementId: "G-9EB0718DGR"
+      };
+
+      const app = initializeApp(firebaseConfig);
+      const auth = getAuth(app);
+      const db = getFirestore(app);
+
+      window.firebaseCloud = {
+        async syncToCloud(uid, answers, counts) {
+          try {
+            await setDoc(doc(db, "users_progress", uid), {
+              answers: answers,
+              counts: counts,
+              lastUpdated: new Date().toISOString()
+            }, { merge: true });
+          } catch (e) {}
+        }
+      };
+
+      // 建立頂部導覽列的登入/註冊 UI
+      const navRight = document.querySelector('.nav-right');
+      if (navRight) {
+        const authContainer = document.createElement('div');
+        authContainer.id = 'authBarContainer';
+        authContainer.style.cssText = 'display:inline-flex; align-items:center; gap:6px; margin-left:8px; font-size:11px;';
+        
+        authContainer.innerHTML = `
+          <div id="authLoggedOut" style="display:flex; gap:4px; align-items:center;">
+            <input type="email" id="authEmail" placeholder="電子郵件" style="padding:3px 6px; font-size:11px; border:1px solid #ccc; border-radius:6px; width:90px;" />
+            <input type="password" id="authPass" placeholder="密碼" style="padding:3px 6px; font-size:11px; border:1px solid #ccc; border-radius:6px; width:70px;" />
+            <button id="btnLogin" class="sound-trigger" style="background:#1a73e8; color:#fff; border:none; padding:3px 8px; border-radius:6px; cursor:pointer; font-weight:bold;">登入</button>
+            <button id="btnRegister" class="sound-trigger" style="background:#34a853; color:#fff; border:none; padding:3px 8px; border-radius:6px; cursor:pointer; font-weight:bold;">註冊</button>
+          </div>
+          <div id="authLoggedIn" style="display:none; gap:6px; align-items:center;">
+            <span id="userEmailDisplay" style="color:#1a73e8; font-weight:bold; max-width:100px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;"></span>
+            <button id="btnLogout" class="sound-trigger" style="background:#ea4335; color:#fff; border:none; padding:3px 8px; border-radius:6px; cursor:pointer; font-weight:bold;">登出</button>
+          </div>
+        `;
+        navRight.appendChild(authContainer);
+
+        const emailInput = authContainer.querySelector('#authEmail');
+        const passInput = authContainer.querySelector('#authPass');
+        const loggedOutDiv = authContainer.querySelector('#authLoggedOut');
+        const loggedInDiv = authContainer.querySelector('#authLoggedIn');
+        const userEmailSpan = authContainer.querySelector('#userEmailDisplay');
+
+        authContainer.querySelector('#btnLogin').onclick = async () => {
+          SoundFX.playClick();
+          try {
+            const res = await signInWithEmailAndPassword(auth, emailInput.value, passInput.value);
+            alert("登入成功！");
+          } catch (e) {
+            alert("登入失敗：" + e.message);
+          }
+        };
+
+        authContainer.querySelector('#btnRegister').onclick = async () => {
+          SoundFX.playClick();
+          try {
+            const res = await createUserWithEmailAndPassword(auth, emailInput.value, passInput.value);
+            alert("註冊並登入成功！");
+          } catch (e) {
+            alert("註冊失敗：" + e.message);
+          }
+        };
+
+        authContainer.querySelector('#btnLogout').onclick = async () => {
+          SoundFX.playClick();
+          await signOut(auth);
+          alert("已登出");
+        };
+
+        onAuthStateChanged(auth, async (user) => {
+          if (user) {
+            window.chemApp.currentUser = user;
+            loggedOutDiv.style.display = 'none';
+            loggedInDiv.style.display = 'flex';
+            userEmailSpan.textContent = user.email;
+
+            // 從雲端下載記錄
+            try {
+              const docSnap = await getDoc(doc(db, "users_progress", user.uid));
+              if (docSnap.exists()) {
+                const data = docSnap.data();
+                if (data.answers) window.chemApp.userAnswers = data.answers;
+                if (data.counts) window.chemApp.chapterCounts = data.counts;
+                ChemStorage.saveMeta();
+                updateCounts();
+              }
+            } catch (e) {}
+          } else {
+            window.chemApp.currentUser = null;
+            loggedOutDiv.style.display = 'flex';
+            loggedInDiv.style.display = 'none';
+          }
+        });
+      }
+    } catch (e) {}
+  };
+
+  loadFirebaseSDK();
+
   document.addEventListener('click', (e) => {
     const target = e.target.closest('button, .sound-trigger, input[type="file"]');
     if (target && !target.id.includes('timerToggleBtn') && !target.id.includes('timerResetBtn') && !target.classList.contains('opt-act-btn') && !target.classList.contains('peek-ans-btn')) {
@@ -1002,7 +1120,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-  // 目錄按鈕改回右下角固定顯示
   if (!document.getElementById('mobileToggleSidebarBtn')) {
     const floatBtn = document.createElement('button');
     floatBtn.id = 'mobileToggleSidebarBtn';
@@ -1031,12 +1148,8 @@ document.addEventListener('DOMContentLoaded', () => {
     document.body.appendChild(floatBtn);
   }
 
-  // 優化頂部標題列，確保中文/英文按鈕正常橫排不折行
   const navRight = document.querySelector('.nav-right');
   if (navRight) {
-    navRight.innerHTML = '';
-    navRight.style.cssText = 'display:flex; align-items:center; gap:4px; flex-wrap:nowrap; justify-content:flex-end; white-space:nowrap;';
-
     const bar = document.createElement('div');
     bar.id = 'langSwitchBar';
     bar.style.cssText = 'display:inline-flex; align-items:center; gap:4px; background:#f1f3f4; padding:2px 6px; border-radius:16px; white-space:nowrap;';
@@ -1070,15 +1183,6 @@ document.addEventListener('DOMContentLoaded', () => {
     verSpan.style.cssText = 'font-size:10px; font-weight:bold; color:#1a73e8; background:#e8f0fe; padding:2px 5px; border-radius:8px; border:1px solid #aecbfa; white-space:nowrap;';
     bar.appendChild(verSpan);
 
-    navRight.appendChild(bar);
-  }
-
-  const mainHeader = document.querySelector('header') || document.querySelector('.header') || document.querySelector('.top-nav');
-  if (mainHeader) {
-    mainHeader.style.cssText = 'display:flex; justify-content:space-between; align-items:center; padding:8px 12px; flex-wrap:nowrap; overflow:hidden;';
-    const titleTextEl = mainHeader.querySelector('h1, h2, .title, .logo');
-    if (titleTextEl) {
-      titleTextEl.style.cssText = 'font-size:12px; font-weight:bold; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; margin:0;';
-    }
+    navRight.insertBefore(bar, navRight.firstChild);
   }
 });
