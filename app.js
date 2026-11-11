@@ -612,3 +612,151 @@ window.chemApp.addPostProcessor((questions, rawText) => {
   });
   return questions;
 });
+// ==========================================
+// 專屬修正模組：ChemMCQ 題號 + (1)(2)(3) 陳述句 + 化學式 LaTeX + PDF 區塊裁切圖片
+// ==========================================
+(function setupChemMcqFix() {
+  // 1. 自動替換切題管線：嚴格以 ChemMCQxxxxx 為基準
+  QuestionParser.parseBlocks = function(cleanText, prefix) {
+    const list = [];
+    
+    // 嚴格依照 "ChemMCQ" 開頭的題號分割（如 ChemMCQ44053）
+    const regexQuestionSplit = /(?:^|\n)\s*(ChemMCQ\s*\d+)/gi;
+    const pieces = cleanText.split(regexQuestionSplit);
+
+    for (let i = 1; i < pieces.length; i += 2) {
+      const qNumCode = pieces[i].trim(); // 例如 ChemMCQ44053
+      const qBlock = pieces[i + 1] || '';
+
+      // 嚴格定位 A. B. C. D. 選項 (排除 (1)(2)(3) 的干擾)
+      const optMatch = qBlock.match(/(?:^|\n)\s*A[\.、\)]\s*([\s\S]*?)(?:^|\n)\s*B[\.、\)]\s*([\s\S]*?)(?:^|\n)\s*C[\.、\)]\s*([\s\S]*?)(?:^|\n)\s*D[\.、\)]\s*([\s\S]*?)(?=(?:\n\s*(?:Ans|Answer|答案|Exp|Explanation|解析|ChemMCQ)|$))/i);
+
+      if (optMatch) {
+        // A 選項之前的所有內容 = 題幹 + (1)(2)(3) 陳述句
+        let fullQuestionBody = qBlock.substring(0, qBlock.indexOf(optMatch[0])).trim();
+        let optA = optMatch[1].trim();
+        let optB = optMatch[2].trim();
+        let optC = optMatch[3].trim();
+        let optD = optMatch[4].trim();
+
+        // 提取答案
+        let ans = 'A';
+        const ansMatch = qBlock.match(/(?:Ans|Answer|答案)\s*[:：]?\s*\(?([A-D])\)?/i);
+        if (ansMatch) ans = ansMatch[1].toUpperCase();
+
+        // 提取解析
+        let exp = '';
+        const expMatch = qBlock.match(/(?:Exp|Explanation|解析|說明)\s*[:：]?\s*([\s\S]*)/i);
+        if (expMatch) exp = expMatch[1].trim();
+
+        // 清除選項 D 尾部可能殘留的標記
+        optD = optD.split(/(?:Ans|Answer|答案|Exp|Explanation|解析)/i)[0].trim();
+
+        // 格式化題幹中的 (1), (2), (3) 陳述句，使其自動分行
+        fullQuestionBody = fullQuestionBody
+          .replace(/(?:^|\n|\s)\(1\)\s*/g, '\n<div class="stmt-item"><b>(1)</b> ')
+          .replace(/(?:^|\n|\s)\(2\)\s*/g, '</div>\n<div class="stmt-item"><b>(2)</b> ')
+          .replace(/(?:^|\n|\s)\(3\)\s*/g, '</div>\n<div class="stmt-item"><b>(3)</b> ') + '</div>';
+
+        // 自動化學式標註（將化學式轉為 KaTeX mhchem: \ce{...}）
+        fullQuestionBody = autoFormatChemistryLaTeX(fullQuestionBody);
+
+        list.push({
+          id: `${qNumCode}_${Date.now()}_${i}`,
+          qNumDisplay: qNumCode, // 保留原題號 ChemMCQ44053
+          question: fullQuestionBody,
+          options: {
+            A: autoFormatChemistryLaTeX(optA),
+            B: autoFormatChemistryLaTeX(optB),
+            C: autoFormatChemistryLaTeX(optC),
+            D: autoFormatChemistryLaTeX(optD)
+          },
+          answer: ans,
+          explanation: exp || '本題無額外文字解析',
+          images: []
+        });
+      }
+    }
+
+    return list;
+  };
+
+  // 2. 自動將文字中的化學式、箭頭轉化為 KaTeX 格式
+  function autoFormatChemistryLaTeX(str) {
+    if (!str) return '';
+    // 將反應箭頭轉為 LaTeX 箭頭
+    let res = str.replace(/→/g, '$\\rightarrow$');
+    
+    // 如果字串包含常見化學式格式（例如 CH3, CH2, H2O, NaOH 等），包覆 KaTeX mhchem
+    res = res.replace(/\b([A-Z][a-z]?\d*(?:\([A-Z][a-z]?\d*\))?[A-Z0-9\(\)]+)\b/g, (match) => {
+      // 排除全大寫選項詞或普通英文單詞
+      if (/^(AND|ONLY|WHICH|FOLLOWING|THE|REACTIONS|CORRECT|EXHIBITS)$/i.test(match)) return match;
+      if (match.length <= 1) return match;
+      return `$\\ce{${match}}$`;
+    });
+    return res;
+  }
+
+  // 3. 強化圖片提取：若 PDF 中包含骨架式（向量圖），直接渲染頁面 Canvas 切片
+  PdfExtractor.extract = async function(pdfDoc, chapId) {
+    let allQuestions = [];
+    let combinedRawText = '';
+
+    for (let pageNum = 1; pageNum <= pdfDoc.numPages; pageNum++) {
+      const page = await pdfDoc.getPage(pageNum);
+
+      // 提取文字
+      const textContent = await page.getTextContent();
+      const pageText = textContent.items.map(item => item.str).join(' ');
+      combinedRawText += `\n--- PAGE ${pageNum} ---\n` + pageText;
+
+      const clean = QuestionParser.cleanRawText(pageText);
+      const questions = QuestionParser.parseBlocks(clean, `${chapId}_p${pageNum}`);
+
+      // 高畫質渲染整頁 Canvas 以擷取化學骨架式圖片
+      const viewport = page.getViewport({ scale: 1.5 });
+      const canvas = document.createElement('canvas');
+      canvas.width = viewport.width;
+      canvas.height = viewport.height;
+      const ctx = canvas.getContext('2d');
+      await page.render({ canvasContext: ctx, viewport }).promise;
+
+      // 若該題包含結構關鍵字（例如 structure, skeletal, isomerism），或文字特別短可能帶圖
+      questions.forEach((q) => {
+        if (/structure|isomerism|skeletal|compound|formula/i.test(q.question)) {
+          // 擷取頁面上半部重點圖形區（骨架圖通常位於題目中間）
+          const cropCanvas = document.createElement('canvas');
+          cropCanvas.width = canvas.width;
+          cropCanvas.height = canvas.height * 0.35; // 擷取核心題目圖形區域
+          const cropCtx = cropCanvas.getContext('2d');
+          cropCtx.drawImage(canvas, 0, 0, canvas.width, canvas.height * 0.35, 0, 0, cropCanvas.width, cropCanvas.height);
+          q.images.push(cropCanvas.toDataURL('image/png'));
+        }
+      });
+
+      allQuestions = allQuestions.concat(questions);
+    }
+
+    window.chemApp.debugLogs.lastRawText = combinedRawText;
+    window.chemApp.debugLogs.lastParsedQuestions = allQuestions;
+    return allQuestions;
+  };
+
+  // 4. 重寫渲染卡片，正確顯示 ChemMCQ 題號與結構圖
+  const origRender = renderQuestions;
+  window.renderQuestions = function(qList) {
+    origRender(qList);
+    // 更新題號為真實 ChemMCQ 編號
+    const cards = document.querySelectorAll('.question-card');
+    cards.forEach((card, idx) => {
+      const q = qList[idx];
+      if (q && q.qNumDisplay) {
+        const qNumEl = card.querySelector('.q-number');
+        if (qNumEl) qNumEl.textContent = `${q.qNumDisplay} (第 ${idx + 1} 題)`;
+      }
+    });
+  };
+
+  console.log('✅ [ChemFix] 專屬題目解析與化學圖片修復模組已載入');
+})();
+
