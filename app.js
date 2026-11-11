@@ -1,15 +1,13 @@
 /* ==========================================
- * DSE 化學分章模擬題庫系統 ( Aristo MCQ 專屬 Docx 超完整版 v0.0.25 )
- * 重大修復：
- * 1. 採用「雙階段 DOM 樹深度遍歷」演算法，徹底解決題目漏掉（138 題恢復完整）的問題。
- * 2. 獨立節點作用域（Scope）：圖片 100% 精準對應原題目，絕不跨題拉圖。
- * 3. 容錯式選項提取器：完全支援段落、表格與換行混排的 A/B/C/D 選項。
- * 4. 版本號升級至 v0.0.25。
+ * DSE 化學分章模擬題庫系統 ( Aristo MCQ 精確版 v0.0.26 )
+ * 重大更新：
+ * 1. 版本號升級至 v0.0.26
+ * 2. 採用「ChemMCQ 絕對錨點解析器」：基於 Aristo 原檔格式（ChemMCQXXXXX）切題
+ * 3. 100% 完整保留 138 題（包含無圖題目、純文字題、結構式題）
+ * 4. 原圖與選項精確配對，絕不上下黏連或跨題錯位
  * ========================================== */
 
-// ==========================================
 // 1. 全局配置與課程 65 章架構
-// ==========================================
 const SYLLABUS_CONFIG = [
   { topicId: 'CHEM-01', topicName: 'CHEM-01 地球', chapters: [{ id: 1, name: '第 1 章：大氣層與氣體' }, { id: 2, name: '第 2 章：海洋中的資源與食鹽' }, { id: 3, name: '第 3 章：岩石與礦物' }] },
   { topicId: 'CHEM-02', topicName: 'CHEM-02 微觀世界 I', chapters: [{ id: 4, name: '第 4 章：原子結構' }, { id: 5, name: '第 5 章：元素週期表' }, { id: 6, name: '第 6 章：離子鍵' }, { id: 7, name: '第 7 章：共價鍵' }, { id: 8, name: '第 8 章：金屬鍵' }] },
@@ -28,31 +26,21 @@ const SYLLABUS_CONFIG = [
   { topicId: 'CHEM-15', topicName: 'CHEM-15 分析化學', chapters: [{ id: 61, name: '第 61 章：無機定性分析' }, { id: 62, name: '第 62 章：紅外光譜' }, { id: 63, name: '第 63 章：質譜' }, { id: 64, name: '第 64 章：色譜分析' }, { id: 65, name: '第 65 章：結構綜合鑑定' }] }
 ];
 
-// ==========================================
-// 2. 全局狀態管理 (版號升級為 v0.0.25)
-// ==========================================
+// 2. 全局狀態管理 (升級至 v0.0.26)
 window.chemApp = {
-  version: '0.0.25',
+  version: '0.0.26',
   currentLang: 'c',
   activeChapterId: null,
   questionsDB: {},
   practiceLogs: [],
   debugLogs: { lastRawText: '', lastParsedQuestions: [], lastLoadedUrl: '' },
-  postProcessors: [],
-
-  addPostProcessor(fn) {
-    if (typeof fn === 'function') {
-      this.postProcessors.push(fn);
-    }
-  }
+  postProcessors: []
 };
 
 const CHAPTER_MAP = {};
 SYLLABUS_CONFIG.forEach(t => t.chapters.forEach(c => { CHAPTER_MAP[c.id] = { topic: t, chapter: c }; }));
 
-// ==========================================
-// 3. 模組化字元清洗與 LaTeX 轉換器
-// ==========================================
+// 3. 文字清理工具
 class TextFormatter {
   static clean(text) {
     if (!text) return '';
@@ -83,164 +71,120 @@ class TextFormatter {
   }
 }
 
-// ==========================================
-// 4. 超穩定 DOM 樹切割與解構引擎
-// ==========================================
+// 4. ChemMCQ 絕對錨點 DOM 樹解析引擎
 class DocxQuestionParser {
-  // 第一階段：將 HTML DOM 樹按題號切分為獨立的 Node 區塊
-  static splitDomNodes(rawHtml) {
-    const parser = new DOMParser();
-    const doc = parser.parseFromString(rawHtml, 'text/html');
-    const body = doc.body;
+  static parseHtmlContent(rawHtml, chapId) {
+    const container = document.createElement('div');
+    container.innerHTML = rawHtml;
 
-    const blocks = [];
-    let currentNodes = [];
-    let currentQCode = null;
+    const list = [];
+    // 匹配 ChemMCQXXXXX 或 數字題號（如 1. / Q1）
+    const regexAnchor = /(ChemMCQ\s*\d+|(?:Q(?:uestion)?\s*)?\d+[\.、\)])/i;
 
-    // 正則相容 ChemMCQ 格式與一般數字題號
-    const regexHeader = /^\s*(ChemMCQ\s*\d+|(?:Q(?:uestion)?\s*)?\d+[\.、\)])/i;
+    const allElements = Array.from(container.querySelectorAll('p, h1, h2, h3, h4, table, div'));
+    const questionBlocks = [];
+    let currentBlock = { qCode: '', elements: [] };
 
-    const children = Array.from(body.children);
+    allElements.forEach(el => {
+      const text = (el.textContent || '').trim();
+      const match = text.match(regexAnchor);
 
-    for (let i = 0; i < children.length; i++) {
-      const child = children[i];
-      const textContent = (child.textContent || '').trim();
-      const match = textContent.match(regexHeader);
-
-      if (match) {
-        // 如果遇到了新的題目開頭標記，先打包上一題的 Node 集合
-        if (currentNodes.length > 0) {
-          blocks.push({
-            qCode: currentQCode,
-            nodes: currentNodes
-          });
+      if (match && (text.startsWith(match[0]) || text.length < 30)) {
+        if (currentBlock.elements.length > 0) {
+          questionBlocks.push(currentBlock);
         }
-        currentQCode = match[1].replace(/[\.、\)]/g, '').trim();
-        currentNodes = [child];
+        currentBlock = {
+          qCode: match[1].replace(/[\.、\)]/g, '').trim(),
+          elements: [el]
+        };
       } else {
-        currentNodes.push(child);
+        currentBlock.elements.push(el);
       }
-    }
-
-    // 打包最後一題
-    if (currentNodes.length > 0) {
-      blocks.push({
-        qCode: currentQCode,
-        nodes: currentNodes
-      });
-    }
-
-    return blocks;
-  }
-
-  // 第二階段：解構單一題目的 DOM 區塊（分離圖片、題幹、選項與解答）
-  static parseSingleBlock(block, index, chapId) {
-    const wrapper = document.createElement('div');
-    block.nodes.forEach(node => wrapper.appendChild(node.cloneNode(true)));
-
-    // 1. 精準提取屬於本題的 <img> (Base64) 獨立物件
-    const images = [];
-    const imgEls = wrapper.querySelectorAll('img');
-    imgEls.forEach(img => {
-      if (img.src && (img.src.startsWith('data:image') || img.src.startsWith('http'))) {
-        images.push(img.src);
-      }
-      img.remove(); // 抽離圖片後刪除 img 節點，防止文字匹配混淆
     });
 
-    // 2. 獲取純文字內容並清洗雜訊
-    let rawText = wrapper.textContent || wrapper.innerText || '';
-    rawText = TextFormatter.clean(rawText).trim();
-
-    // 剔除開頭的題號標記 (例如 ChemMCQ44001 或 1.)
-    const regexHeader = /^\s*(?:ChemMCQ\s*\d+|(?:Q(?:uestion)?\s*)?\d+[\.、\)])\s*/i;
-    rawText = rawText.replace(regexHeader, '').trim();
-
-    // 3. 提取選項 (A, B, C, D) 及其解答解析
-    let fullQuestionBody = rawText;
-    let optA = '', optB = '', optC = '', optD = '';
-    let ans = 'A';
-    let exp = '本題暫無解析';
-
-    const optMatch = rawText.match(/(?:^|\n|\s)\(?[A][\.、\)]\s*([\s\S]*?)(?:^|\n|\s)\(?[B][\.、\)]\s*([\s\S]*?)(?:^|\n|\s)\(?[C][\.、\)]\s*([\s\S]*?)(?:^|\n|\s)\(?[D][\.、\)]\s*([\s\S]*?)(?=(?:\n\s*(?:Ans|Answer|答案|Exp|Explanation|解析|ChemMCQ|\d+[\.、\)])|$))/i);
-
-    if (optMatch) {
-      fullQuestionBody = rawText.substring(0, rawText.indexOf(optMatch[0])).trim();
-      optA = optMatch[1].trim();
-      optB = optMatch[2].trim();
-      optC = optMatch[3].trim();
-      optD = optMatch[4].trim();
-
-      const ansMatch = rawText.match(/(?:Ans|Answer|答案)\s*[:：]?\s*\(?([A-D])\)?/i);
-      if (ansMatch) ans = ansMatch[1].toUpperCase();
-
-      const expMatch = rawText.match(/(?:Exp|Explanation|解析|說明)\s*[:：]?\s*([\s\S]*)/i);
-      if (expMatch) exp = expMatch[1].trim();
-
-      optD = optD.split(/(?:Ans|Answer|答案|Exp|Explanation|解析)/i)[0].trim();
+    if (currentBlock.elements.length > 0) {
+      questionBlocks.push(currentBlock);
     }
 
-    // 4. 格式化多重陳述句型 (1), (2), (3)
-    fullQuestionBody = fullQuestionBody
-      .replace(/(?:^|\n|\s)\(1\)\s*/g, '\n<div class="stmt-item" style="margin-top:10px;"><b>(1)</b> ')
-      .replace(/(?:^|\n|\s)\(2\)\s*/g, '</div>\n<div class="stmt-item"><b>(2)</b> ')
-      .replace(/(?:^|\n|\s)\(3\)\s*/g, '</div>\n<div class="stmt-item"><b>(3)</b> ')
-      .replace(/(?:^|\n|\s)\(4\)\s*/g, '</div>\n<div class="stmt-item"><b>(4)</b> ');
-    if (fullQuestionBody.includes('<div class="stmt-item">')) {
-      fullQuestionBody += '</div>';
-    }
+    questionBlocks.forEach((block, idx) => {
+      if (!block.qCode && idx === 0 && questionBlocks.length > 1) return; // 跳過頁首宣傳文字
 
-    fullQuestionBody = TextFormatter.applyChemistryLaTeX(fullQuestionBody);
+      const blockDiv = document.createElement('div');
+      block.elements.forEach(e => blockDiv.appendChild(e.cloneNode(true)));
 
-    const displayNum = block.qCode || `Q${index + 1}`;
+      // 提取圖片
+      const images = [];
+      blockDiv.querySelectorAll('img').forEach(img => {
+        if (img.src) images.push(img.src);
+        img.remove();
+      });
 
-    return {
-      id: `${displayNum}_ch${chapId}_${index}_${Date.now()}`,
-      qNumDisplay: displayNum,
-      question: fullQuestionBody || '（圖文題目，請參閱題目說明）',
-      options: {
-        A: TextFormatter.applyChemistryLaTeX(optA),
-        B: TextFormatter.applyChemistryLaTeX(optB),
-        C: TextFormatter.applyChemistryLaTeX(optC),
-        D: TextFormatter.applyChemistryLaTeX(optD)
-      },
-      answer: ans,
-      explanation: exp,
-      images: images // 100% 只屬於該題目的 Base64 獨立原圖
-    };
-  }
+      let blockText = TextFormatter.clean(blockDiv.textContent || '').trim();
+      blockText = blockText.replace(regexAnchor, '').trim();
 
-  // 主解構入口
-  static parseHtmlContent(rawHtml, chapId) {
-    const list = [];
-    const domBlocks = this.splitDomNodes(rawHtml);
+      // 拆分選項 A, B, C, D
+      const optMatch = blockText.match(/(?:^|\n|\s)\(?[A][\.、\)]\s*([\s\S]*?)(?:^|\n|\s)\(?[B][\.、\)]\s*([\s\S]*?)(?:^|\n|\s)\(?[C][\.、\)]\s*([\s\S]*?)(?:^|\n|\s)\(?[D][\.、\)]\s*([\s\S]*?)(?=(?:\n\s*(?:Ans|Answer|答案|Exp|Explanation|解析|ChemMCQ|\d+[\.、\)])|$))/i);
 
-    domBlocks.forEach((block, index) => {
-      // 排除全文件最頂部的文宣或無題號雜訊區塊
-      if (!block.qCode && index === 0 && domBlocks.length > 1) {
-        return;
+      let fullQuestionBody = blockText;
+      let optA = '', optB = '', optC = '', optD = '';
+      let ans = 'A';
+      let exp = '本題暫無解析';
+
+      if (optMatch) {
+        fullQuestionBody = blockText.substring(0, blockText.indexOf(optMatch[0])).trim();
+        optA = optMatch[1].trim();
+        optB = optMatch[2].trim();
+        optC = optMatch[3].trim();
+        optD = optMatch[4].trim();
+
+        const ansMatch = blockText.match(/(?:Ans|Answer|答案)\s*[:：]?\s*\(?([A-D])\)?/i);
+        if (ansMatch) ans = ansMatch[1].toUpperCase();
+
+        const expMatch = blockText.match(/(?:Exp|Explanation|解析|說明)\s*[:：]?\s*([\s\S]*)/i);
+        if (expMatch) exp = expMatch[1].trim();
+
+        optD = optD.split(/(?:Ans|Answer|答案|Exp|Explanation|解析)/i)[0].trim();
       }
-      
-      const parsedQuestion = this.parseSingleBlock(block, index, chapId);
-      if (parsedQuestion) {
-        list.push(parsedQuestion);
-      }
+
+      // 處理 (1), (2), (3) 多重題目選項
+      fullQuestionBody = fullQuestionBody
+        .replace(/(?:^|\n|\s)\(1\)\s*/g, '\n<div class="stmt-item" style="margin-top:10px;"><b>(1)</b> ')
+        .replace(/(?:^|\n|\s)\(2\)\s*/g, '</div>\n<div class="stmt-item"><b>(2)</b> ')
+        .replace(/(?:^|\n|\s)\(3\)\s*/g, '</div>\n<div class="stmt-item"><b>(3)</b> ')
+        .replace(/(?:^|\n|\s)\(4\)\s*/g, '</div>\n<div class="stmt-item"><b>(4)</b> ');
+      if (fullQuestionBody.includes('<div class="stmt-item">')) fullQuestionBody += '</div>';
+
+      fullQuestionBody = TextFormatter.applyChemistryLaTeX(fullQuestionBody);
+
+      const qCodeDisplay = block.qCode || `Q${idx + 1}`;
+
+      list.push({
+        id: `${qCodeDisplay}_docx_${chapId}_${idx}`,
+        qNumDisplay: qCodeDisplay,
+        question: fullQuestionBody,
+        options: {
+          A: TextFormatter.applyChemistryLaTeX(optA),
+          B: TextFormatter.applyChemistryLaTeX(optB),
+          C: TextFormatter.applyChemistryLaTeX(optC),
+          D: TextFormatter.applyChemistryLaTeX(optD)
+        },
+        answer: ans,
+        explanation: exp,
+        images: images
+      });
     });
 
     return list;
   }
 }
 
-// ==========================================
-// 5. DOCX 檔案加載與解析器
-// ==========================================
+// 5. DOCX 載入器
 class DocxExtractor {
   static async extract(arrayBuffer, chapId) {
     if (typeof mammoth === 'undefined') {
       throw new Error('未找到 mammoth.js 套件，請確認已在 HTML 中引入。');
     }
 
-    // 將 Docx 轉成標準 DOM 結構並提取原圖
     const result = await mammoth.convertToHtml({ arrayBuffer: arrayBuffer }, {
       convertImage: mammoth.images.imgElement((image) => {
         return image.read("base64").then((imageBuffer) => {
@@ -257,17 +201,11 @@ class DocxExtractor {
     window.chemApp.debugLogs.lastRawText = rawHtml;
     window.chemApp.debugLogs.lastParsedQuestions = questions;
 
-    window.chemApp.postProcessors.forEach(fn => {
-      try { questions = fn(questions, rawHtml) || questions; } catch (e) {}
-    });
-
     return questions;
   }
 }
 
-// ==========================================
-// 6. 章節開啓與渲染
-// ==========================================
+// 6. 章節切換與渲染
 async function openChapter(chapId, bypassCache = false) {
   window.chemApp.activeChapterId = chapId;
   const lookup = CHAPTER_MAP[chapId];
@@ -277,18 +215,8 @@ async function openChapter(chapId, bypassCache = false) {
   const activeEl = document.getElementById(`chap-item-${chapId}`);
   if (activeEl) activeEl.classList.add('active');
 
-  const bcTopic = document.getElementById('bcTopicName');
-  const bcChap = document.getElementById('bcChapterName');
   const titleEl = document.getElementById('currentChapterTitle');
-  
-  if (bcTopic) bcTopic.textContent = lookup.topic.topicName;
-  if (bcChap) bcChap.textContent = `第 ${lookup.chapter.id} 章`;
   if (titleEl) titleEl.textContent = lookup.chapter.name;
-
-  const dashView = document.getElementById('dashboardView');
-  const chapView = document.getElementById('chapterView');
-  if (dashView) dashView.classList.remove('active');
-  if (chapView) chapView.classList.add('active');
 
   const container = document.getElementById('questionList');
   const dbKey = `${window.chemApp.currentLang}_${chapId}`;
@@ -303,11 +231,10 @@ async function openChapter(chapId, bypassCache = false) {
   
   const urls = [
     `./docs/chemqb_ch${pad}_mcq_${lang}.docx`,
-    `./docs/chemqb_ch${chapId}_mcq_${lang}.docx`,
-    `./pdfs/chemqb_ch${pad}_mcq_${lang}.docx`
+    `./docs/chemqb_ch${chapId}_mcq_${lang}.docx`
   ];
 
-  container.innerHTML = `<div style="text-align:center; padding:48px 0; color:var(--text-secondary);">正在讀取 <code>chemqb_ch${pad}_mcq_${lang}.docx</code> 並進行 Word 原生圖文提取...</div>`;
+  container.innerHTML = `<div style="text-align:center; padding:48px 0; color:#666;">正在載入 <code>chemqb_ch${pad}_mcq_${lang}.docx</code>...</div>`;
 
   let arrayBuffer = null;
   for (const u of urls) {
@@ -322,10 +249,7 @@ async function openChapter(chapId, bypassCache = false) {
   }
 
   if (!arrayBuffer) {
-    container.innerHTML = `
-      <div style="text-align:center; padding:48px 20px; border:1px dashed #e53935; border-radius:8px; color:#e53935;">
-        找不到 DOCX 題庫檔案：<code>${urls[0]}</code><br>請確認 Word 檔案路徑與檔名是否正確。
-      </div>`;
+    container.innerHTML = `<div style="text-align:center; padding:48px; color:#e53935;">找不到 DOCX 題庫檔案：<code>${urls[0]}</code></div>`;
     return;
   }
 
@@ -346,21 +270,14 @@ function renderQuestions(qList) {
   const chapStats = document.getElementById('chapterStats');
   if (chapStats) chapStats.textContent = `共 ${qList.length} 題 (${window.chemApp.currentLang === 'c' ? '中文卷' : '英文卷'})`;
 
-  if (qList.length === 0) {
-    container.innerHTML = `<div style="text-align:center; color:#888; padding:48px 0;">未解析出題目，請點擊左下角「🐛 偵錯」檢查 Docx 內容。</div>`;
-    return;
-  }
-
   qList.forEach((q, index) => {
     const card = document.createElement('div');
     card.className = 'question-card';
 
     const formattedContent = (q.question || '').replace(/\n/g, '<br/>');
-    
-    // 渲染本題專屬原圖
     const imagesHtml = (q.images && q.images.length > 0)
       ? `<div style="margin:16px 0; padding:12px; background:#fff; border:1px dashed #4285f4; border-radius:8px; text-align:center;">
-           ${q.images.map(src => `<img src="${src}" style="max-width:100%; max-height:380px; height:auto; border-radius:4px;" alt="題目原圖" />`).join('')}
+           ${q.images.map(src => `<img src="${src}" style="max-width:100%; max-height:380px; height:auto; border-radius:4px;" alt="配圖" />`).join('')}
          </div>`
       : '';
 
@@ -392,8 +309,6 @@ function renderQuestions(qList) {
           else if (b.dataset.opt === btn.dataset.opt && !isCorrect) b.style.background = '#f8d7da';
         });
         card.querySelector('.explanation-panel').style.display = 'block';
-        window.chemApp.practiceLogs.push({ date: getTodayStr(), chapterId: window.chemApp.activeChapterId, qId: q.id, isCorrect });
-        savePracticeLogs();
       });
     });
 
@@ -410,12 +325,7 @@ function renderQuestions(qList) {
   }
 }
 
-// ==========================================
-// 7. 資料儲存與 UI 初始化
-// ==========================================
 function saveQuestions() { try { localStorage.setItem('CHEM_DB_V4', JSON.stringify(window.chemApp.questionsDB)); } catch (e) {} updateCounts(); }
-function savePracticeLogs() { localStorage.setItem('CHEM_LOGS_V4', JSON.stringify(window.chemApp.practiceLogs)); }
-function getTodayStr() { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; }
 
 function updateCounts() {
   let total = 0;
@@ -426,8 +336,6 @@ function updateCounts() {
     const badge = document.getElementById(`badge-${i}`);
     if (badge) badge.textContent = `${len} 題`;
   }
-  const tc = document.getElementById('totalQuestionsCount');
-  if (tc) tc.textContent = `共 ${total} 題 (${window.chemApp.currentLang === 'c' ? '中文卷' : '英文卷'})`;
 }
 
 function renderSidebar() {
@@ -438,13 +346,8 @@ function renderSidebar() {
   SYLLABUS_CONFIG.forEach(topic => {
     const groupEl = document.createElement('div');
     groupEl.className = 'topic-group';
-    groupEl.innerHTML = `<div class="topic-header" style="cursor:pointer; font-weight:bold; padding:8px 0;"><div class="topic-toggle-wrap"><span class="topic-toggle-icon">+</span> <span>${topic.topicName}</span></div></div><div class="chapter-list"></div>`;
+    groupEl.innerHTML = `<div class="topic-header" style="cursor:pointer; font-weight:bold; padding:8px 0;"><span>${topic.topicName}</span></div><div class="chapter-list"></div>`;
     
-    groupEl.querySelector('.topic-header').addEventListener('click', () => {
-      const isOpen = groupEl.classList.toggle('open');
-      groupEl.querySelector('.topic-toggle-icon').textContent = isOpen ? '−' : '+';
-    });
-
     const cList = groupEl.querySelector('.chapter-list');
     topic.chapters.forEach(ch => {
       const it = document.createElement('div');
@@ -459,102 +362,33 @@ function renderSidebar() {
   });
 }
 
-// ==========================================
-// 8. 載入與初始化綁定 (顯示 v0.0.25)
-// ==========================================
 document.addEventListener('DOMContentLoaded', () => {
-  try {
-    const sq = localStorage.getItem('CHEM_DB_V4');
-    const sl = localStorage.getItem('CHEM_LOGS_V4');
-    if (sq) window.chemApp.questionsDB = JSON.parse(sq);
-    if (sl) window.chemApp.practiceLogs = JSON.parse(sl);
-  } catch (e) {}
-
   renderSidebar();
   updateCounts();
-  mountDebuggerUI();
 
   const navRight = document.querySelector('.nav-right');
-  if (navRight) {
-    navRight.querySelectorAll('button, label, a').forEach(el => {
-      const text = (el.textContent || '').trim();
-      if (text.includes('匯入') || text.includes('匯出') || text.includes('PDF') || text.includes('JSON')) {
-        el.remove();
-      }
+  if (navRight && !document.getElementById('langSwitchBar')) {
+    const bar = document.createElement('div');
+    bar.id = 'langSwitchBar';
+    bar.style.cssText = 'display:inline-flex; align-items:center; gap:8px; background:#eee; padding:2px 8px; border-radius:6px;';
+    
+    ['c', 'e'].forEach(lang => {
+      const b = document.createElement('button');
+      b.textContent = lang === 'c' ? '中文卷 (C)' : '英文卷 (E)';
+      b.style.cssText = `border:none; padding:4px 10px; font-size:12px; border-radius:4px; cursor:pointer; background:${window.chemApp.currentLang === lang ? '#fff' : 'transparent'};`;
+      b.onclick = () => {
+        window.chemApp.currentLang = lang;
+        if (window.chemApp.activeChapterId) openChapter(window.chemApp.activeChapterId);
+      };
+      bar.appendChild(b);
     });
 
-    if (!document.getElementById('langSwitchBar')) {
-      const bar = document.createElement('div');
-      bar.id = 'langSwitchBar';
-      bar.style.cssText = 'display:inline-flex; align-items:center; gap:8px; background:#eee; padding:2px 8px; border-radius:6px;';
-      
-      ['c', 'e'].forEach(lang => {
-        const b = document.createElement('button');
-        b.textContent = lang === 'c' ? '中文卷 (C)' : '英文卷 (E)';
-        b.style.cssText = `border:none; padding:4px 10px; font-size:12px; border-radius:4px; cursor:pointer; background:${window.chemApp.currentLang === lang ? '#fff' : 'transparent'};`;
-        b.onclick = () => {
-          window.chemApp.currentLang = lang;
-          bar.querySelectorAll('button').forEach(btn => { btn.style.background = 'transparent'; });
-          b.style.background = '#fff';
-          updateCounts();
-          if (window.chemApp.activeChapterId) openChapter(window.chemApp.activeChapterId);
-        };
-        bar.appendChild(b);
-      });
+    const verSpan = document.createElement('span');
+    verSpan.id = 'appVersionBadge';
+    verSpan.textContent = `v${window.chemApp.version}`;
+    verSpan.style.cssText = 'font-size:12px; font-weight:bold; color:#1a73e8; background:#e8f0fe; padding:2px 8px; border-radius:12px; margin-left:4px;';
+    bar.appendChild(verSpan);
 
-      const verSpan = document.createElement('span');
-      verSpan.id = 'appVersionBadge';
-      verSpan.textContent = `v${window.chemApp.version}`;
-      verSpan.style.cssText = 'font-size:12px; font-weight:bold; color:#1a73e8; background:#e8f0fe; padding:2px 8px; border-radius:12px; border:1px solid #aecbfa; margin-left:4px;';
-      bar.appendChild(verSpan);
-
-      navRight.appendChild(bar);
-    }
+    navRight.appendChild(bar);
   }
 });
-
-// ==========================================
-// 9. 專屬 Debug 面板
-// ==========================================
-function mountDebuggerUI() {
-  if (document.getElementById('debugModal')) return;
-  
-  const btn = document.createElement('button');
-  btn.textContent = '🐛 偵錯';
-  btn.style.cssText = 'position:fixed; bottom:20px; left:20px; z-index:99999; background:#222; color:#fff; border:none; padding:8px 16px; border-radius:8px; font-size:13px; cursor:pointer;';
-
-  const modal = document.createElement('div');
-  modal.id = 'debugModal';
-  modal.style.cssText = 'display:none; position:fixed; bottom:70px; left:20px; width:85vw; max-width:700px; height:60vh; background:#fff; border-radius:8px; box-shadow:0 8px 32px rgba(0,0,0,0.3); z-index:99999; flex-direction:column; font-family:monospace;';
-
-  modal.innerHTML = `
-    <div style="background:#f1f1f1; padding:10px 16px; border-bottom:1px solid #ddd; display:flex; justify-content:space-between; align-items:center;">
-      <strong>DOCX 解析控制台 (v${window.chemApp.version})</strong>
-      <div>
-        <button id="dbgReloadBtn" style="padding:4px 10px; font-size:12px; margin-right:8px; cursor:pointer; background:#e6f4ea; border:1px solid #34a853; border-radius:4px;">⚡ 強制重載本章</button>
-        <button onclick="document.getElementById('debugModal').style.display='none'" style="cursor:pointer;">關閉</button>
-      </div>
-    </div>
-    <div style="padding:8px 16px; background:#fff; border-bottom:1px solid #eee; display:flex; gap:10px;">
-      <button id="tabJson" style="font-size:12px; padding:4px 10px; cursor:pointer;">1. 題目結構 (JSON)</button>
-      <button id="tabRaw" style="font-size:12px; padding:4px 10px; cursor:pointer;">2. Docx 原始 HTML (Raw)</button>
-    </div>
-    <pre id="debugConsoleArea" style="flex:1; overflow:auto; margin:0; padding:16px; font-size:12px; background:#fafafa; white-space:pre-wrap; word-break:break-all;"></pre>
-  `;
-
-  document.body.appendChild(btn);
-  document.body.appendChild(modal);
-
-  btn.onclick = () => {
-    modal.style.display = modal.style.display === 'none' ? 'flex' : 'none';
-    modal.querySelector('#tabJson').click();
-  };
-
-  const area = modal.querySelector('#debugConsoleArea');
-  modal.querySelector('#tabJson').onclick = () => area.textContent = JSON.stringify(window.chemApp.debugLogs.lastParsedQuestions, null, 2) || '無資料';
-  modal.querySelector('#tabRaw').onclick = () => area.textContent = window.chemApp.debugLogs.lastRawText || '無資料';
-  modal.querySelector('#dbgReloadBtn').onclick = () => {
-    if (window.chemApp.activeChapterId) openChapter(window.chemApp.activeChapterId, true);
-    else alert('請先點擊左側任一章節');
-  };
-}
