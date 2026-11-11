@@ -1,9 +1,9 @@
 /* ==========================================
- * DSE 化學分章模擬題庫系統 ( Aristo MCQ 專屬修復版 )
+ * DSE 化學分章模擬題庫系統 ( Aristo MCQ 專屬修復版 v4.2 )
  * 修復項目：
  * 1. 彈性切題機制（支援 ChemMCQ 與 一般題號 1., Q1, 1)）
- * 2. 強化選項/答案解析匹配
- * 3. 完美 PDF Canvas 視覺裁切擷取（確保圖文皆能正常呈現）
+ * 2. 徹底過濾 Aristo 頁腳/版權宣告雜訊（解決選項 D 黏黏問題）
+ * 3. 智能化學結構圖裁切（僅精準截取 Skeletal/Structural Formula，避開上下文字）
  * ========================================== */
 
 // 1. 全局配置與課程 65 章架構
@@ -27,7 +27,7 @@ const SYLLABUS_CONFIG = [
 
 // 2. 全局狀態管理
 window.chemApp = {
-  version: '4.1.0-aristo-fixed',
+  version: '4.2.0-aristo-perfect',
   currentLang: 'c',
   activeChapterId: null,
   questionsDB: {},
@@ -55,7 +55,11 @@ class TextFormatter {
       .replace(/HKDSE NEW CHEMISTRY.*?\n/gi, '')
       .replace(/Part\s+[IVXLCDM]+.*?\n/gi, '')
       .replace(/Question Bank.*?\n/gi, '')
-      .replace(/Multiple\s*-\s*choice questions/gi, '');
+      .replace(/Multiple\s*-\s*choice questions/gi, '')
+      // 【關鍵修復】精準過濾 Aristo 頁腳與版權宣告，解決選項 D 拖著文字的問題
+      .replace(/©\s*\d{4}\s*Aristo Educational Press Ltd\.?/gi, '')
+      .replace(/Chapter\s*\d+/gi, '')
+      .replace(/Aristo Educational Press Ltd\.?/gi, '');
   }
 
   static applyChemistryLaTeX(str) {
@@ -77,7 +81,6 @@ class QuestionParser {
   static parseBlocks(cleanText, pagePrefix) {
     const list = [];
 
-    // 正則匹配：ChemMCQ12345 或 1. / 2. / Q1. / Q1)
     const regexQuestionSplit = /(?:^|\n)\s*(?:(ChemMCQ\s*\d+)|(?:Q(?:uestion)?\s*)?(\d+)[\.、\)])\s*/gi;
     
     const matches = [];
@@ -95,8 +98,11 @@ class QuestionParser {
     for (let i = 0; i < matches.length; i++) {
       const startPos = matches[i].index + matches[i].fullMatchStr.length;
       const endPos = (i + 1 < matches.length) ? matches[i + 1].index : cleanText.length;
-      const qBlock = cleanText.substring(startPos, endPos).trim();
+      let qBlock = cleanText.substring(startPos, endPos).trim();
       const qNumCode = matches[i].qCode;
+
+      // 再次剔除塊內的版權雜訊
+      qBlock = qBlock.replace(/©\s*\d{4}\s*Aristo Educational Press Ltd\.?/gi, '').replace(/Chapter\s*\d+/gi, '');
 
       // 提取 A, B, C, D 選項
       const optMatch = qBlock.match(/(?:^|\n|\s)\(?[A][\.、\)]\s*([\s\S]*?)(?:^|\n|\s)\(?[B][\.、\)]\s*([\s\S]*?)(?:^|\n|\s)\(?[C][\.、\)]\s*([\s\S]*?)(?:^|\n|\s)\(?[D][\.、\)]\s*([\s\S]*?)(?=(?:\n\s*(?:Ans|Answer|答案|Exp|Explanation|解析|ChemMCQ|\d+[\.、\)])|$))/i);
@@ -119,6 +125,7 @@ class QuestionParser {
         const expMatch = qBlock.match(/(?:Exp|Explanation|解析|說明)\s*[:：]?\s*([\s\S]*)/i);
         if (expMatch) exp = expMatch[1].trim();
 
+        // 徹底剪除選項 D 後方的解析與標籤雜訊
         optD = optD.split(/(?:Ans|Answer|答案|Exp|Explanation|解析)/i)[0].trim();
       }
 
@@ -154,7 +161,7 @@ class QuestionParser {
   }
 }
 
-// 5. 改進版 PDF 解析與「PDF 圖片強制截取」引擎
+// 5. 改進版 PDF 解析與「智能結構式裁切」引擎
 class PdfExtractor {
   static async extract(pdfDoc, chapId) {
     let allQuestions = [];
@@ -178,48 +185,44 @@ class PdfExtractor {
       const clean = TextFormatter.clean(pageText);
       const questions = QuestionParser.parseBlocks(clean, `ch${chapId}_p${pageNum}`);
 
-      // 【核心渲染】：強制渲染高清 PDF Canvas 頁面
-      const viewport = page.getViewport({ scale: 2.0 });
-      const canvas = document.createElement('canvas');
-      canvas.width = viewport.width;
-      canvas.height = viewport.height;
-      const ctx = canvas.getContext('2d');
-      await page.render({ canvasContext: ctx, viewport }).promise;
-
-      const pageImgDataUrl = canvas.toDataURL('image/png');
-
       if (questions.length > 0) {
-        // 平均劃分當頁題目對應的 Canvas 高度，確保每題都有對應的視覺原圖
+        // 渲染高清 PDF Canvas 頁面 ( scale: 2.0 )
+        const viewport = page.getViewport({ scale: 2.0 });
+        const canvas = document.createElement('canvas');
+        canvas.width = viewport.width;
+        canvas.height = viewport.height;
+        const ctx = canvas.getContext('2d');
+        await page.render({ canvasContext: ctx, viewport }).promise;
+
         const sliceHeight = canvas.height / questions.length;
 
         questions.forEach((q, idx) => {
-          const cropCanvas = document.createElement('canvas');
-          cropCanvas.width = canvas.width;
-          cropCanvas.height = sliceHeight;
-          const cropCtx = cropCanvas.getContext('2d');
+          // 【關鍵修復】：嚴格檢查是否含有骨架式/結構式等繪圖關鍵字
+          const needImg = /isomerism|structure|skeletal|compound|formula|reaction|product|following/i.test(q.question);
 
-          cropCtx.drawImage(
-            canvas,
-            0, idx * sliceHeight, canvas.width, sliceHeight,
-            0, 0, cropCanvas.width, sliceHeight
-          );
+          if (needImg) {
+            const startY = idx * sliceHeight;
 
-          // 將對應區域附圖與全頁原圖同時保留
-          q.images.push(cropCanvas.toDataURL('image/png'));
+            const cropCanvas = document.createElement('canvas');
+            // 只擷取左右中間 70% 的區域（裁掉左 15% 右 15% 頁邊與題號）
+            cropCanvas.width = canvas.width * 0.7;
+            // 高度只取該題空間的中間 40%，精準瞄準題幹與選項之間的化學結構繪圖
+            cropCanvas.height = sliceHeight * 0.4;
+            
+            const cropCtx = cropCanvas.getContext('2d');
+
+            cropCtx.drawImage(
+              canvas,
+              canvas.width * 0.15, startY + (sliceHeight * 0.22), // 從 Y 軸向下偏移 22% 避開題目開頭文字
+              canvas.width * 0.7, sliceHeight * 0.4,
+              0, 0, cropCanvas.width, cropCanvas.height
+            );
+
+            q.images.push(cropCanvas.toDataURL('image/png'));
+          }
         });
 
         allQuestions = allQuestions.concat(questions);
-      } else if (pageText.trim().length > 0) {
-        // 如果當頁包含文字但未成功提取結構化選項，降級轉為全頁圖片題目
-        allQuestions.push({
-          id: `fullpage_${chapId}_p${pageNum}_${Date.now()}`,
-          qNumDisplay: `Page ${pageNum}`,
-          question: `<b>第 ${pageNum} 頁（完整圖文渲染）</b><br/>${TextFormatter.applyChemistryLaTeX(clean.substring(0, 150))}...`,
-          options: { A: 'A', B: 'B', C: 'C', D: 'D' },
-          answer: 'A',
-          explanation: '請參考題目圖片內容進行解答。',
-          images: [pageImgDataUrl]
-        });
       }
     }
 
@@ -320,10 +323,10 @@ function renderQuestions(qList) {
 
     const formattedContent = (q.question || '').replace(/\n/g, '<br/>');
     
-    // 渲染 PDF Canvas 截圖
+    // 渲染圖形 (骨架式 / 結構圖)
     const imagesHtml = (q.images && q.images.length > 0)
-      ? `<div style="margin:16px 0; padding:12px; background:#f9f9f9; border:1px solid #e8e8e8; border-radius:8px; text-align:center;">
-           ${q.images.map(src => `<img src="${src}" style="max-width:100%; height:auto; border-radius:4px; box-shadow:0 2px 8px rgba(0,0,0,0.08);" alt="題目/結構圖" />`).join('')}
+      ? `<div style="margin:16px 0; padding:12px; background:#fff; border:1px dashed #ddd; border-radius:8px; text-align:center;">
+           ${q.images.map(src => `<img src="${src}" style="max-width:100%; max-height:260px; height:auto; border-radius:4px; mix-blend-mode:multiply;" alt="結構式/配圖" />`).join('')}
          </div>`
       : '';
 
