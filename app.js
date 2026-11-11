@@ -157,9 +157,12 @@ const SYLLABUS_CONFIG = [
   }
 ];
 
-// 2. 全局狀態 (v0.0.45)
+// 全站總題目設定
+const TOTAL_APP_QUESTIONS = 5309;
+
+// 2. 全局狀態 (v0.0.46)
 window.chemApp = {
-  version: '0.0.45',
+  version: '0.0.46',
   currentLang: 'e',
   activeChapterId: null,
   questionsDB: {},
@@ -228,7 +231,7 @@ class ChemStorage {
   static getDB() {
     if (!this.dbPromise) {
       this.dbPromise = new Promise((resolve, reject) => {
-        const req = indexedDB.open('HKDSE_CHEM_QB_V45', 1);
+        const req = indexedDB.open('HKDSE_CHEM_QB_V46', 1);
         req.onupgradeneeded = (e) => {
           const db = e.target.result;
           if (!db.objectStoreNames.contains('chapters')) db.createObjectStore('chapters');
@@ -266,29 +269,29 @@ class ChemStorage {
 
   static loadMeta() {
     try {
-      const counts = localStorage.getItem('CHEM_COUNTS_V45');
+      const counts = localStorage.getItem('CHEM_COUNTS_V46');
       if (counts) window.chemApp.chapterCounts = JSON.parse(counts);
-      const ans = localStorage.getItem('CHEM_USER_ANS_V45');
+      const ans = localStorage.getItem('CHEM_USER_ANS_V46');
       if (ans) window.chemApp.userAnswers = JSON.parse(ans);
-      const savedLang = localStorage.getItem('CHEM_LANG_V45');
+      const savedLang = localStorage.getItem('CHEM_LANG_V46');
       if (savedLang === 'c' || savedLang === 'e') window.chemApp.currentLang = savedLang;
-      const streak = localStorage.getItem('CHEM_STREAK_V45');
+      const streak = localStorage.getItem('CHEM_STREAK_V46');
       if (streak) window.chemApp.currentStreak = parseInt(streak, 10);
     } catch (e) {}
   }
 
   static saveMeta() {
     try {
-      localStorage.setItem('CHEM_COUNTS_V45', JSON.stringify(window.chemApp.chapterCounts));
-      localStorage.setItem('CHEM_USER_ANS_V45', JSON.stringify(window.chemApp.userAnswers));
-      localStorage.setItem('CHEM_LANG_V45', window.chemApp.currentLang);
-      localStorage.setItem('CHEM_STREAK_V45', window.chemApp.currentStreak.toString());
+      localStorage.setItem('CHEM_COUNTS_V46', JSON.stringify(window.chemApp.chapterCounts));
+      localStorage.setItem('CHEM_USER_ANS_V46', JSON.stringify(window.chemApp.userAnswers));
+      localStorage.setItem('CHEM_LANG_V46', window.chemApp.currentLang);
+      localStorage.setItem('CHEM_STREAK_V46', window.chemApp.currentStreak.toString());
     } catch (e) {}
 
     if (window.chemApp.currentUser && window.firebaseCloud) {
       window.firebaseCloud.syncToCloud(window.chemApp.currentUser.uid, window.chemApp.userAnswers, window.chemApp.chapterCounts, window.chemApp.currentStreak);
     }
-    // 儲存進度時不強制切換到首頁，只在背景更新統計資料卡片
+    // 背景靜默更新儀表板，不強制切換畫面
     updateDashboardStats(false);
   }
 }
@@ -567,7 +570,6 @@ function switchRightPanelToChapterView() {
           </div>
         </div>
         <div style="display:flex; align-items:center; gap:6px; flex-wrap:nowrap; white-space:nowrap;">
-          <span id="chapterStats" style="font-size:12px; color:#555; font-weight:bold;"></span>
           <label style="padding:5px 10px; font-size:11px; border:1px solid #dadce0; border-radius:12px; background:#f8f9fa; cursor:pointer; color:#333; font-weight:bold;" class="sound-trigger">
             載入檔案
             <input type="file" id="manualDocxInput" accept=".docx" style="display:none;" />
@@ -576,64 +578,7 @@ function switchRightPanelToChapterView() {
       </div>
       <div id="questionList"></div>
     `;
-
     rightMain.insertBefore(wrapper, rightMain.firstChild);
-
-    const confirmModalHTML = `
-      <div id="inlineConfirmModal" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.4); z-index:99999; justify-content:center; align-items:center;">
-        <div style="background:#fff; padding:24px 28px; border-radius:28px; width:90%; max-width:320px; text-align:center; box-shadow:0 8px 30px rgba(0,0,0,0.2); border:1px solid #e0e0e0;">
-          <p id="confirmModalText" style="font-size:15px; font-weight:bold; color:#111; margin-bottom:20px; line-height:1.5;">確定要結束當前 MC 練習嗎？</p>
-          <div style="display:flex; gap:12px;">
-            <button id="confirmYesBtn" class="sound-trigger" style="flex:1; background:#ea4335; color:#fff; border:none; padding:10px; border-radius:12px; font-weight:bold; font-size:14px; cursor:pointer;">是</button>
-            <button id="confirmNoBtn" class="sound-trigger" style="flex:1; background:#f1f3f4; color:#333; border:1px solid #ccc; padding:10px; border-radius:12px; font-weight:bold; font-size:14px; cursor:pointer;">否</button>
-          </div>
-        </div>
-      </div>
-    `;
-    document.body.insertAdjacentHTML('beforeend', confirmModalHTML);
-
-    let endClickCount = 0;
-    let endTimer = null;
-    const modal = document.getElementById('inlineConfirmModal');
-    const modalText = document.getElementById('confirmModalText');
-    const yesBtn = document.getElementById('confirmYesBtn');
-    const noBtn = document.getElementById('confirmNoBtn');
-
-    window.triggerEndChapter = () => {
-      SoundFX.playClick();
-      endClickCount++;
-      if (endClickCount === 1) {
-        modalText.textContent = "確定要結束當前 MC 練習嗎？請再按一次確認（是 / 否）";
-        modal.style.display = 'flex';
-        endTimer = setTimeout(() => { endClickCount = 0; modal.style.display = 'none'; }, 6000);
-      } else if (endClickCount >= 2) {
-        clearTimeout(endTimer);
-        endClickCount = 0;
-        modal.style.display = 'none';
-        pauseTimer();
-        wrapper.style.display = 'none';
-        window.chemApp.dashboardNodes.forEach(n => n.style.display = '');
-        updateDashboardStats(true);
-      }
-    };
-
-    yesBtn.onclick = () => {
-      SoundFX.playClick();
-      clearTimeout(endTimer);
-      endClickCount = 0;
-      modal.style.display = 'none';
-      pauseTimer();
-      wrapper.style.display = 'none';
-      window.chemApp.dashboardNodes.forEach(n => n.style.display = '');
-      updateDashboardStats(true);
-    };
-
-    noBtn.onclick = () => {
-      SoundFX.playClick();
-      clearTimeout(endTimer);
-      endClickCount = 0;
-      modal.style.display = 'none';
-    };
 
     const tBtn = wrapper.querySelector('#timerToggleBtn');
     const rBtn = wrapper.querySelector('#timerResetBtn');
@@ -682,8 +627,13 @@ function switchRightPanelToChapterView() {
   });
   wrapper.style.display = 'block';
 
-  const actionGroup = document.getElementById('floatingActionGroup');
-  if (actionGroup) actionGroup.style.display = 'flex';
+  // 顯示右下角控制按鈕群組
+  const actionGrp = document.getElementById('floatingActionGroup');
+  if (actionGrp) actionGrp.style.display = 'flex';
+  const fStreak = document.getElementById('footerStreakBox');
+  if (fStreak) fStreak.style.display = 'flex';
+  const eBtn = document.getElementById('endChapterBtn');
+  if (eBtn) eBtn.style.display = 'flex';
 
   return wrapper;
 }
@@ -771,10 +721,8 @@ async function openChapter(chapId) {
 function renderQuestions(qList, chapId, resetState = true) {
   const wrapper = switchRightPanelToChapterView();
   const container = wrapper.querySelector('#questionList');
-  const chapStats = wrapper.querySelector('#chapterStats');
 
   container.innerHTML = '';
-  if (chapStats) chapStats.textContent = `共 ${qList.length} 題`;
 
   qList.forEach((q, index) => {
     const card = document.createElement('div');
@@ -824,9 +772,10 @@ function renderQuestions(qList, chapId, resetState = true) {
       img.style.margin = '10px auto';
     });
 
+    // 終極防護：徹底移除殘留空節點與無用方塊符號
     card.querySelectorAll('p, div, span, table, td, tr').forEach(el => {
-      const txt = (el.textContent || '').trim();
-      if (txt === '□' || txt === '☐' || txt === '■' || txt === '' && el.children.length === 0) {
+      const txt = (el.textContent || '').replace(/[\u200B-\u200D\uFEFF]/g, '').trim();
+      if (/^[□☐■\u25A1\u2610\u25A0\u25AA\uF06F]+$/.test(txt) || (txt === '' && el.children.length === 0)) {
         if (!el.querySelector('img')) el.remove();
       }
     });
@@ -903,7 +852,7 @@ function renderQuestions(qList, chapId, resetState = true) {
   });
 }
 
-// 9. 首頁大改版 (顯示每日清單、日期記錄模態框、總覽卡片)
+// 9. 首頁大改版 (顯示每日清單與總覽，不會跳轉離開作答區)
 function updateDashboardStats(forceDisplay = false) {
   const rightMain = document.querySelector('main') || document.body;
   
@@ -911,7 +860,12 @@ function updateDashboardStats(forceDisplay = false) {
     const wrapper = document.getElementById('chemChapterViewWrapper');
     if (wrapper) wrapper.style.display = 'none';
     const actionGroup = document.getElementById('floatingActionGroup');
-    if (actionGroup) actionGroup.style.display = 'none';
+    if (actionGroup) {
+      const fStreak = actionGroup.querySelector('#footerStreakBox');
+      const eBtn = actionGroup.querySelector('#endChapterBtn');
+      if(fStreak) fStreak.style.display = 'none';
+      if(eBtn) eBtn.style.display = 'none';
+    }
 
     Array.from(rightMain.children).forEach(child => {
       if (child.id !== 'chemChapterViewWrapper' && child.id !== 'inlineConfirmModal' && child.id !== 'floatingActionGroup' && child.tagName !== 'SCRIPT') {
@@ -924,16 +878,14 @@ function updateDashboardStats(forceDisplay = false) {
   if (!dashboardEl) {
     dashboardEl = document.createElement('div');
     dashboardEl.id = 'chemDashboardHome';
-    dashboardEl.style.cssText = 'width:100%; max-width:600px; margin:0 auto; padding:16px; box-sizing:border-box; font-family:sans-serif; margin-top:20px;';
+    dashboardEl.style.cssText = 'width:100%; max-width:600px; margin:0 auto; padding:16px; box-sizing:border-box; font-family:sans-serif; margin-top:10px;';
     rightMain.appendChild(dashboardEl);
   }
   if (forceDisplay) dashboardEl.style.display = 'block';
 
   const recordsArr = Object.values(window.chemApp.userAnswers).map(v => typeof v === 'string' ? { chosen: v, correct: false, date: '' } : v);
   
-  // 計算 Recent Topic 的當前章節數據
   let recentTopicName = "尚未選擇課題";
-  let curChapTotal = 0;
   let curChapAns = 0;
   let curChapCorrect = 0;
   let curChapWrong = 0;
@@ -941,10 +893,6 @@ function updateDashboardStats(forceDisplay = false) {
   if (window.chemApp.activeChapterId && CHAPTER_MAP[window.chemApp.activeChapterId]) {
     const chInfo = CHAPTER_MAP[window.chemApp.activeChapterId];
     recentTopicName = `${chInfo.topic.topicName.replace('topic / chapter: ', '')} - ${chInfo.chapter.name}`;
-    
-    const k = `${window.chemApp.currentLang}_${window.chemApp.activeChapterId}`;
-    curChapTotal = window.chemApp.chapterCounts[k] || 0;
-
     const chapRecords = Object.entries(window.chemApp.userAnswers)
       .filter(([id, _]) => id.endsWith(`_ch${window.chemApp.activeChapterId}`))
       .map(([_, v]) => v);
@@ -953,7 +901,6 @@ function updateDashboardStats(forceDisplay = false) {
     curChapCorrect = chapRecords.filter(r => r.correct).length;
     curChapWrong = chapRecords.filter(r => !r.correct).length;
   }
-  const curChapRate = curChapTotal > 0 ? Math.round((curChapAns / curChapTotal) * 100) : 0;
   
   const todayStr = new Date().toISOString().slice(0, 10);
   
@@ -976,10 +923,8 @@ function updateDashboardStats(forceDisplay = false) {
     ? window.chemApp.currentUser.email.split('@')[0].toUpperCase() 
     : "GUEST";
 
-  // 計算總完成度
-  let allTotal = 0;
-  Object.values(window.chemApp.chapterCounts).forEach(v => allTotal += v);
-  const totalPct = allTotal > 0 ? Math.round((recordsArr.length / allTotal) * 100) : 0;
+  const totalPct = Math.round((recordsArr.length / TOTAL_APP_QUESTIONS) * 100);
+  const curChapRate = curChapAns > 0 ? Math.round((curChapCorrect / curChapAns) * 100) : 0;
 
   dashboardEl.innerHTML = `
     <!-- 頂部大圓角導覽列 -->
@@ -1034,15 +979,15 @@ function updateDashboardStats(forceDisplay = false) {
       </div>
     </div>
 
-    <!-- 總覽統計卡片 -->
+    <!-- 總覽統計卡片 (總題數固定為 5309) -->
     <div style="background:#fff; border:2px solid #e0e0e0; border-radius:20px; padding:20px; text-align:center; display:flex; justify-content:space-around; align-items:center;">
       <div>
         <div style="font-size:12px; color:#e67c73; font-weight:bold;">總 Topic</div>
         <div style="font-size:24px; font-weight:bold; color:#333;">15</div>
       </div>
       <div>
-        <div style="font-size:12px; color:#e67c73; font-weight:bold;">總 Chapter</div>
-        <div style="font-size:24px; font-weight:bold; color:#333;">65</div>
+        <div style="font-size:12px; color:#e67c73; font-weight:bold;">總題目</div>
+        <div style="font-size:24px; font-weight:bold; color:#333;">${TOTAL_APP_QUESTIONS}</div>
       </div>
       <div>
         <div style="font-size:12px; color:#e67c73; font-weight:bold;">整體完成度</div>
@@ -1051,7 +996,6 @@ function updateDashboardStats(forceDisplay = false) {
     </div>
   `;
 
-  // 日期點擊展開紀錄模態框
   dashboardEl.querySelectorAll('.daily-record-item').forEach(item => {
     item.onclick = (e) => {
       SoundFX.playClick();
@@ -1111,13 +1055,13 @@ function updateDashboardStats(forceDisplay = false) {
     SoundFX.playClick();
     window.chemApp.currentLang = 'e';
     ChemStorage.saveMeta();
-    updateDashboardStats(false);
+    updateDashboardStats(true);
   };
   dashboardEl.querySelector('#langZhBtn').onclick = () => {
     SoundFX.playClick();
     window.chemApp.currentLang = 'c';
     ChemStorage.saveMeta();
-    updateDashboardStats(false);
+    updateDashboardStats(true);
   };
 }
 
@@ -1189,7 +1133,7 @@ function renderCenterDirectoryModal() {
   });
 }
 
-// 11. 初始化與註冊系統 / Firebase
+// 11. 初始化與全域事件綁定
 document.addEventListener('DOMContentLoaded', () => {
   ChemStorage.loadMeta();
   renderCenterDirectoryModal();
@@ -1219,8 +1163,7 @@ document.addEventListener('DOMContentLoaded', () => {
         projectId: "chem-b49bf",
         storageBucket: "chem-b49bf.firebasestorage.app",
         messagingSenderId: "702426481564",
-        appId: "1:702426481564:web:987522a34c6c4e54d6fe59",
-        measurementId: "G-9EB0718DGR"
+        appId: "1:702426481564:web:987522a34c6c4e54d6fe59"
       };
 
       const app = initializeApp(firebaseConfig);
@@ -1350,19 +1293,20 @@ document.addEventListener('DOMContentLoaded', () => {
             }
           } catch (e) {}
 
-          updateDashboardStats(true); // 登入後強制載入首頁
-
-          // 顯示右下角目錄按鈕與 Streak 群組
+          updateDashboardStats(true); 
+          
+          // 右下角懸浮操作區 (Streak & 按鈕 統一高度對齊)
           const floatGroup = document.getElementById('floatingActionGroup');
           if (!floatGroup) {
             const grp = document.createElement('div');
             grp.id = 'floatingActionGroup';
             grp.style.cssText = 'position:fixed; bottom:20px; right:20px; z-index:9998; display:flex; flex-direction:column; gap:10px; align-items:flex-end;';
             grp.innerHTML = `
-              <div id="footerStreakBox" style="display:none; background:#e8f0fe; padding:10px 16px; border-radius:24px; border:1px solid #aecbfa; font-size:13px; font-weight:bold; color:#1a73e8; box-shadow:0 4px 14px rgba(0,0,0,0.15); align-items:center; justify-content:center; height:40px; box-sizing:border-box;">
+              <div id="footerStreakBox" style="display:none; background:#e8f0fe; padding:0 16px; border-radius:20px; border:1px solid #aecbfa; font-size:13px; font-weight:bold; color:#1a73e8; box-shadow:0 4px 14px rgba(0,0,0,0.15); align-items:center; justify-content:center; height:40px; box-sizing:border-box;">
                 Streak: <span id="footerStreakCount" style="margin-left:4px;">${window.chemApp.currentStreak}</span>
               </div>
-              <button id="mobileToggleSidebarBtn" class="sound-trigger" style="background:#1a73e8; color:#fff; border:none; padding:10px 16px; border-radius:24px; font-weight:bold; font-size:13px; box-shadow:0 4px 14px rgba(0,0,0,0.25); cursor:pointer; height:40px; box-sizing:border-box; display:flex; align-items:center; justify-content:center;">目錄選單</button>
+              <button id="endChapterBtn" class="sound-trigger" style="display:none; background:#ea4335; color:#fff; border:none; padding:0 16px; border-radius:20px; font-weight:bold; font-size:13px; box-shadow:0 4px 14px rgba(0,0,0,0.25); cursor:pointer; height:40px; box-sizing:border-box; align-items:center; justify-content:center;">結束當前 MC</button>
+              <button id="mobileToggleSidebarBtn" class="sound-trigger" style="display:flex; background:#1a73e8; color:#fff; border:none; padding:0 16px; border-radius:20px; font-weight:bold; font-size:13px; box-shadow:0 4px 14px rgba(0,0,0,0.25); cursor:pointer; height:40px; box-sizing:border-box; align-items:center; justify-content:center;">目錄選單</button>
             `;
             document.body.appendChild(grp);
 
@@ -1371,10 +1315,58 @@ document.addEventListener('DOMContentLoaded', () => {
               const m = document.getElementById('centerDirectoryModal');
               if (m) m.style.display = 'flex';
             };
+            
+            // 全域榜定確認按鈕邏輯
+            let endClickCount = 0;
+            let endTimer = null;
+            const modal = document.getElementById('inlineConfirmModal');
+            if(modal) {
+               const modalText = document.getElementById('confirmModalText');
+               const yesBtn = document.getElementById('confirmYesBtn');
+               const noBtn = document.getElementById('confirmNoBtn');
+
+               grp.querySelector('#endChapterBtn').onclick = () => {
+                 SoundFX.playClick();
+                 endClickCount++;
+                 if (endClickCount === 1) {
+                   modalText.textContent = "確定要結束當前 MC 練習嗎？請再按一次確認（是 / 否）";
+                   modal.style.display = 'flex';
+                   endTimer = setTimeout(() => { endClickCount = 0; modal.style.display = 'none'; }, 6000);
+                 } else if (endClickCount >= 2) {
+                   clearTimeout(endTimer);
+                   endClickCount = 0;
+                   modal.style.display = 'none';
+                   pauseTimer();
+                   const wrapper = document.getElementById('chemChapterViewWrapper');
+                   if(wrapper) wrapper.style.display = 'none';
+                   updateDashboardStats(true);
+                 }
+               };
+
+               yesBtn.onclick = () => {
+                 SoundFX.playClick();
+                 clearTimeout(endTimer);
+                 endClickCount = 0;
+                 modal.style.display = 'none';
+                 pauseTimer();
+                 const wrapper = document.getElementById('chemChapterViewWrapper');
+                 if(wrapper) wrapper.style.display = 'none';
+                 updateDashboardStats(true);
+               };
+
+               noBtn.onclick = () => {
+                 SoundFX.playClick();
+                 clearTimeout(endTimer);
+                 endClickCount = 0;
+                 modal.style.display = 'none';
+               };
+            }
           } else {
             floatGroup.style.display = 'flex';
             const fStreak = floatGroup.querySelector('#footerStreakBox');
-            if (fStreak) fStreak.style.display = 'none'; // 首頁隱藏 streak
+            const eBtn = floatGroup.querySelector('#endChapterBtn');
+            if (fStreak) fStreak.style.display = 'none';
+            if (eBtn) eBtn.style.display = 'none';
           }
 
         } else {
@@ -1387,9 +1379,24 @@ document.addEventListener('DOMContentLoaded', () => {
     } catch (e) {}
   };
 
+  // 確保全域有確認彈窗的 HTML
+  if (!document.getElementById('inlineConfirmModal')) {
+    const confirmModalHTML = `
+      <div id="inlineConfirmModal" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.4); z-index:99999; justify-content:center; align-items:center;">
+        <div style="background:#fff; padding:24px 28px; border-radius:28px; width:90%; max-width:320px; text-align:center; box-shadow:0 8px 30px rgba(0,0,0,0.2); border:1px solid #e0e0e0;">
+          <p id="confirmModalText" style="font-size:15px; font-weight:bold; color:#111; margin-bottom:20px; line-height:1.5;">確定要結束當前 MC 練習嗎？</p>
+          <div style="display:flex; gap:12px;">
+            <button id="confirmYesBtn" class="sound-trigger" style="flex:1; background:#ea4335; color:#fff; border:none; padding:10px; border-radius:12px; font-weight:bold; font-size:14px; cursor:pointer;">是</button>
+            <button id="confirmNoBtn" class="sound-trigger" style="flex:1; background:#f1f3f4; color:#333; border:1px solid #ccc; padding:10px; border-radius:12px; font-weight:bold; font-size:14px; cursor:pointer;">否</button>
+          </div>
+        </div>
+      </div>
+    `;
+    document.body.insertAdjacentHTML('beforeend', confirmModalHTML);
+  }
+
   loadFirebaseSDK();
 
-  // 清除舊版的 header 與 sidebars
   const mainHeader = document.querySelector('header') || document.querySelector('.header') || document.querySelector('.top-nav');
   if (mainHeader) mainHeader.remove();
   
