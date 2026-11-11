@@ -157,9 +157,9 @@ const SYLLABUS_CONFIG = [
   }
 ];
 
-// 2. 全局狀態 (v0.0.33)
+// 2. 全局狀態 (v0.0.35)
 window.chemApp = {
-  version: '0.0.33',
+  version: '0.0.35',
   currentLang: 'e',
   activeChapterId: null,
   questionsDB: {},
@@ -196,15 +196,15 @@ class SoundFX {
       gain.connect(ctx.destination);
 
       if (isCorrect) {
-        osc.frequency.setValueAtTime(587.33, ctx.currentTime); // D5
-        osc.frequency.setValueAtTime(880, ctx.currentTime + 0.08); // A5
+        osc.frequency.setValueAtTime(587.33, ctx.currentTime);
+        osc.frequency.setValueAtTime(880, ctx.currentTime + 0.08);
         gain.gain.setValueAtTime(0.15, ctx.currentTime);
         gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.3);
         osc.start();
         osc.stop(ctx.currentTime + 0.3);
       } else {
-        osc.frequency.setValueAtTime(220, ctx.currentTime); // A3
-        osc.frequency.setValueAtTime(164.81, ctx.currentTime + 0.1); // E3
+        osc.frequency.setValueAtTime(220, ctx.currentTime);
+        osc.frequency.setValueAtTime(164.81, ctx.currentTime + 0.1);
         gain.gain.setValueAtTime(0.2, ctx.currentTime);
         gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.35);
         osc.start();
@@ -220,7 +220,7 @@ class ChemStorage {
   static getDB() {
     if (!this.dbPromise) {
       this.dbPromise = new Promise((resolve, reject) => {
-        const req = indexedDB.open('HKDSE_CHEM_QB_V33', 1);
+        const req = indexedDB.open('HKDSE_CHEM_QB_V35', 1);
         req.onupgradeneeded = (e) => {
           const db = e.target.result;
           if (!db.objectStoreNames.contains('chapters')) db.createObjectStore('chapters');
@@ -258,25 +258,25 @@ class ChemStorage {
 
   static loadMeta() {
     try {
-      const counts = localStorage.getItem('CHEM_COUNTS_V33');
+      const counts = localStorage.getItem('CHEM_COUNTS_V35');
       if (counts) window.chemApp.chapterCounts = JSON.parse(counts);
-      const ans = localStorage.getItem('CHEM_USER_ANS_V33');
+      const ans = localStorage.getItem('CHEM_USER_ANS_V35');
       if (ans) window.chemApp.userAnswers = JSON.parse(ans);
-      const savedLang = localStorage.getItem('CHEM_LANG_V33');
+      const savedLang = localStorage.getItem('CHEM_LANG_V35');
       if (savedLang === 'c' || savedLang === 'e') window.chemApp.currentLang = savedLang;
     } catch (e) {}
   }
 
   static saveMeta() {
     try {
-      localStorage.setItem('CHEM_COUNTS_V33', JSON.stringify(window.chemApp.chapterCounts));
-      localStorage.setItem('CHEM_USER_ANS_V33', JSON.stringify(window.chemApp.userAnswers));
-      localStorage.setItem('CHEM_LANG_V33', window.chemApp.currentLang);
+      localStorage.setItem('CHEM_COUNTS_V35', JSON.stringify(window.chemApp.chapterCounts));
+      localStorage.setItem('CHEM_USER_ANS_V35', JSON.stringify(window.chemApp.userAnswers));
+      localStorage.setItem('CHEM_LANG_V35', window.chemApp.currentLang);
     } catch (e) {}
   }
 }
 
-// 3. 深度穿透式 DOM 切題引擎 (自動過濾方塊符號)
+// 3. 深度穿透式 DOM 切題引擎
 class DocxQuestionParser {
   static cleanInlineNoise(htmlStr) {
     return htmlStr
@@ -300,7 +300,8 @@ class DocxQuestionParser {
       /^Multiple-choice questions$/i,
       /^香港中學文憑\s*現代化學/i,
       /^問題庫$/,
-      /^多項選擇題$/
+      /^多項選擇題$/,
+      /^[\u25A1\u2610\u25A0\u25AA\uF06F□☐\s]*$/
     ];
     return patterns.some(p => p.test(t));
   }
@@ -427,17 +428,17 @@ class DocxQuestionParser {
 
           if (node.style) {
             if (/^[A-D][\.\)]\s*/.test(txt)) {
-              node.style.cssText = 'padding-left: 24px; margin: 4px 0;';
+              node.style.cssText = 'padding-left: 24px; margin: 4px 0; font-family: "Times New Roman", "Noto Serif TC", "PMingLiU", serif;';
             } else if (isTable) {
-              node.style.cssText = 'border-collapse: collapse; margin: 12px 0; width: auto;';
+              node.style.cssText = 'border-collapse: collapse; margin: 12px 0; width: auto; font-family: "Times New Roman", "Noto Serif TC", "PMingLiU", serif;';
             } else {
-              node.style.cssText = 'margin: 6px 0;';
+              node.style.cssText = 'margin: 6px 0; font-family: "Times New Roman", "Noto Serif TC", "PMingLiU", serif;';
             }
           }
           stemDiv.appendChild(node);
         } else {
           if (txt.length > 0 || hasImg || isTable) {
-            if (node.style) node.style.cssText = 'margin: 6px 0; line-height: 1.65;';
+            if (node.style) node.style.cssText = 'margin: 6px 0; line-height: 1.65; font-family: "Times New Roman", "Noto Serif TC", "PMingLiU", serif;';
             expDiv.appendChild(node);
           }
         }
@@ -525,7 +526,7 @@ function updateTimerDisplay() {
   }
 }
 
-// 6. 視圖切換與全屏佈局控制
+// 6. 視圖切換與全屏佈局控制 (調整手機版卡片寬度與圓角)
 function switchRightPanelToChapterView() {
   let wrapper = document.getElementById('chemChapterViewWrapper');
   if (!wrapper) {
@@ -541,30 +542,29 @@ function switchRightPanelToChapterView() {
 
     wrapper = document.createElement('div');
     wrapper.id = 'chemChapterViewWrapper';
-    // 佔滿全寬，取消不必要的邊距
-    wrapper.style.cssText = 'width: 100%; max-width: 100%; margin: 0 auto; padding: 12px 16px 60px 16px; box-sizing: border-box;';
+    // 手機版寬度拉寬，左右貼邊
+    wrapper.style.cssText = 'width: 100%; max-width: 100%; margin: 0 auto; padding: 12px 6px 60px 6px; box-sizing: border-box;';
 
     wrapper.innerHTML = `
-      <div id="chapterHeaderBar" style="display:flex; flex-wrap:wrap; justify-content:space-between; align-items:center; gap:12px; background:#fff; padding:14px 20px; border-radius:10px; border:1px solid #e0e0e0; margin-bottom:16px; box-shadow:0 2px 6px rgba(0,0,0,0.04);">
-        <div style="display:flex; align-items:center; gap:16px;">
+      <div id="chapterHeaderBar" style="display:flex; flex-wrap:wrap; justify-content:space-between; align-items:center; gap:10px; background:#fff; padding:12px 14px; border-radius:12px; border:1px solid #e0e0e0; margin-bottom:14px; box-shadow:0 2px 6px rgba(0,0,0,0.04);">
+        <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
           <div>
-            <h2 id="currentChapterTitle" style="margin:0; font-size:18px; color:#111;">請選擇章節</h2>
+            <h2 id="currentChapterTitle" style="margin:0; font-size:16px; color:#111; font-family:'Times New Roman', 'Noto Serif TC', serif;">請選擇章節</h2>
           </div>
-          <!-- 內建計時器元件 -->
-          <div style="display:flex; align-items:center; gap:6px; background:#f8f9fa; padding:4px 10px; border-radius:20px; border:1px solid #dadce0;">
-            ⏱️ <span id="chapterTimerDisplay" style="font-family:monospace; font-weight:bold; font-size:14px; color:#1a73e8;">00:00</span>
+          <div style="display:flex; align-items:center; gap:6px; background:#f8f9fa; padding:4px 10px; border-radius:20px; border:1px solid #dadce0; font-size:13px;">
+            計時 <span id="chapterTimerDisplay" style="font-family:monospace; font-weight:bold; font-size:13px; color:#1a73e8;">00:00</span>
             <button id="timerToggleBtn" style="border:none; background:#1a73e8; color:#fff; font-size:11px; padding:2px 8px; border-radius:10px; cursor:pointer;">開始</button>
             <button id="timerResetBtn" style="border:none; background:#e0e0e0; color:#333; font-size:11px; padding:2px 8px; border-radius:10px; cursor:pointer;">重置</button>
           </div>
         </div>
-        <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
-          <span id="chapterStats" style="font-size:13px; color:#555; font-weight:bold; margin-right:4px;"></span>
-          <label style="padding:6px 12px; font-size:12px; border:1px solid #dadce0; border-radius:6px; background:#f8f9fa; cursor:pointer; color:#333; font-weight:bold;">
-            📂 載入 DOCX
+        <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
+          <span id="chapterStats" style="font-size:12px; color:#555; font-weight:bold;"></span>
+          <label style="padding:5px 10px; font-size:11px; border:1px solid #dadce0; border-radius:6px; background:#f8f9fa; cursor:pointer; color:#333; font-weight:bold;">
+            載入檔案
             <input type="file" id="manualDocxInput" accept=".docx" style="display:none;" />
           </label>
-          <button id="reloadChapBtn" style="padding:6px 12px; font-size:12px; border:1px solid #dadce0; border-radius:6px; background:#fff; cursor:pointer; color:#333; font-weight:bold;">🔄 重新讀取</button>
-          <button id="backToDashboardBtn" style="padding:6px 12px; font-size:12px; border:1px solid #1a73e8; border-radius:6px; background:#e8f0fe; cursor:pointer; color:#1a73e8; font-weight:bold;">📊 總覽</button>
+          <button id="reloadChapBtn" style="padding:5px 10px; font-size:11px; border:1px solid #dadce0; border-radius:6px; background:#fff; cursor:pointer; color:#333; font-weight:bold;">重新讀取</button>
+          <button id="backToDashboardBtn" style="padding:5px 10px; font-size:11px; border:1px solid #1a73e8; border-radius:6px; background:#e8f0fe; cursor:pointer; color:#1a73e8; font-weight:bold;">總覽</button>
         </div>
       </div>
       <div id="questionList"></div>
@@ -572,7 +572,6 @@ function switchRightPanelToChapterView() {
 
     rightMain.insertBefore(wrapper, rightMain.firstChild);
 
-    // 計時器按鈕事件綁定
     const tBtn = wrapper.querySelector('#timerToggleBtn');
     const rBtn = wrapper.querySelector('#timerResetBtn');
     tBtn.onclick = () => {
@@ -598,7 +597,6 @@ function switchRightPanelToChapterView() {
       window.chemApp.dashboardNodes.forEach(node => {
         if (node !== wrapper) node.style.display = '';
       });
-      // 離開全屏時恢復側邊欄顯示
       const sidebar = document.querySelector('aside') || document.querySelector('.sidebar') || document.querySelector('#sidebar') || document.querySelector('.left-panel');
       if (sidebar) sidebar.style.display = '';
       updateDashboardStats();
@@ -635,26 +633,23 @@ function switchRightPanelToChapterView() {
   });
   wrapper.style.display = 'block';
 
-  // 進入章節全屏時自動隱藏側邊欄，釋放全部空間
   const sidebar = document.querySelector('aside') || document.querySelector('.sidebar') || document.querySelector('#sidebar') || document.querySelector('.left-panel');
   if (sidebar) sidebar.style.display = 'none';
 
   return wrapper;
 }
 
-// 7. 開啟章節
+// 7. 開啟章節 (計時器預設停止，用戶自行開始)
 async function openChapter(chapId, bypassCache = false) {
   window.chemApp.activeChapterId = chapId;
   const lookup = CHAPTER_MAP[chapId];
   if (!lookup) return;
 
-  // 重置並自動開始計時
   resetTimer();
-  startTimer();
   const tBtn = document.getElementById('timerToggleBtn');
   if (tBtn) {
-    tBtn.textContent = '暫停';
-    tBtn.style.background = '#ea4335';
+    tBtn.textContent = '開始';
+    tBtn.style.background = '#1a73e8';
   }
 
   document.querySelectorAll('.chapter-item').forEach(el => {
@@ -672,7 +667,6 @@ async function openChapter(chapId, bypassCache = false) {
   }
 
   const wrapper = switchRightPanelToChapterView();
-  // 需求：chapter topic 隱藏，讓題目全屏
   const topicSub = wrapper.querySelector('#currentTopicSubtitle');
   if (topicSub) topicSub.style.display = 'none';
 
@@ -708,9 +702,9 @@ async function openChapter(chapId, bypassCache = false) {
   ];
 
   container.innerHTML = `
-    <div style="text-align:center; padding:56px 20px; background:#fff; border-radius:10px; border:1px solid #e0e0e0; color:#555;">
-      <div style="font-size:16px; font-weight:bold; color:#1a73e8; margin-bottom:8px;">⏳ 正在從 GitHub 載入並解析題庫...</div>
-      <div style="font-size:13px; color:#888;">目標檔案：<code>./docs/chemqb_ch${pad}_mcq_${lang}.docx</code></div>
+    <div style="text-align:center; padding:56px 20px; background:#fff; border-radius:16px; border:1px solid #e0e0e0; color:#555;">
+      <div style="font-size:15px; font-weight:bold; color:#1a73e8; margin-bottom:8px;">正在從 GitHub 載入並解析題庫...</div>
+      <div style="font-size:12px; color:#888;">目標檔案：<code>./docs/chemqb_ch${pad}_mcq_${lang}.docx</code></div>
     </div>
   `;
 
@@ -727,10 +721,10 @@ async function openChapter(chapId, bypassCache = false) {
 
   if (!arrayBuffer) {
     container.innerHTML = `
-      <div style="text-align:center; padding:48px 24px; background:#fff; border-radius:10px; border:1px solid #ffcdd2; color:#c62828;">
-        <div style="font-size:17px; font-weight:bold; margin-bottom:10px;">⚠️ 找不到遠端題庫檔案：<code>chemqb_ch${pad}_mcq_${lang}.docx</code></div>
-        <div style="font-size:13px; color:#555; line-height:1.7; max-width:540px; margin:0 auto;">
-          請確認 GitHub <code>docs/</code> 資料夾內已上傳對應檔案，或點擊上方 <b>「📂 載入 DOCX」</b> 按鈕立即練習！
+      <div style="text-align:center; padding:48px 24px; background:#fff; border-radius:16px; border:1px solid #ffcdd2; color:#c62828;">
+        <div style="font-size:16px; font-weight:bold; margin-bottom:10px;">找不到遠端題庫檔案：<code>chemqb_ch${pad}_mcq_${lang}.docx</code></div>
+        <div style="font-size:12px; color:#555; line-height:1.7; max-width:540px; margin:0 auto;">
+          請確認 GitHub <code>docs/</code> 資料夾內已上傳對應檔案，或點擊上方<b>「載入檔案」</b>按鈕立即練習！
         </div>
       </div>
     `;
@@ -746,11 +740,11 @@ async function openChapter(chapId, bypassCache = false) {
     updateCounts();
     renderQuestions(list, chapId);
   } catch (err) {
-    container.innerHTML = `<div style="color:#e53935; padding:32px; background:#fff; border-radius:8px;">解析 DOCX 失敗：${err.message}</div>`;
+    container.innerHTML = `<div style="color:#e53935; padding:32px; background:#fff; border-radius:16px;">解析 DOCX 失敗：${err.message}</div>`;
   }
 }
 
-// 8. 渲染題目卡片 (去除左下角方塊、支援音效)
+// 8. 渲染題目卡片 (設定 Times New Roman、加大圓角、滿版寬度)
 function renderQuestions(qList, chapId) {
   const wrapper = switchRightPanelToChapterView();
   const container = wrapper.querySelector('#questionList');
@@ -762,49 +756,56 @@ function renderQuestions(qList, chapId) {
   qList.forEach((q, index) => {
     const card = document.createElement('div');
     card.className = 'question-card';
-    card.style.cssText = 'background:#fff; border-radius:10px; padding:20px 24px; margin-bottom:20px; box-shadow:0 2px 8px rgba(0,0,0,0.06); border:1px solid #e0e0e0; font-family:"Times New Roman", "Noto Serif TC", "PMingLiU", serif; box-sizing: border-box; width:100%;';
+    // 圓角加至 16px，寬度撐滿手機版
+    card.style.cssText = 'background:#fff; border-radius:16px; padding:18px 20px; margin-bottom:16px; box-shadow:0 2px 8px rgba(0,0,0,0.06); border:1px solid #e0e0e0; font-family:"Times New Roman", "Noto Serif TC", "PMingLiU", serif; box-sizing: border-box; width:100%;';
 
     const hasExplanation = q.explanationHtml && q.explanationHtml.length > 0;
 
     card.innerHTML = `
       <div class="q-header" style="margin-bottom:10px; display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #f0f0f0; padding-bottom:8px;">
-        <span class="q-number" style="color:#111; font-weight:bold; font-size:16px; font-family:Arial, sans-serif;">${q.qNumDisplay || `Q${index + 1}`}</span>
+        <span class="q-number" style="color:#111; font-weight:bold; font-size:15px; font-family:Arial, sans-serif;">${q.qNumDisplay || `Q${index + 1}`}</span>
         <span style="font-size:12px; color:#888; font-family:sans-serif;">第 ${index + 1} / ${qList.length} 題</span>
       </div>
-      <div class="q-native-body" style="line-height:1.7; font-size:16px; color:#111; overflow-x:auto; word-break:break-word;">
+      <div class="q-native-body" style="line-height:1.7; font-size:16px; color:#111; overflow-x:auto; word-break:break-word; font-family:'Times New Roman', 'Noto Serif TC', 'PMingLiU', serif;">
         ${q.htmlContent}
       </div>
-      <div class="interactive-action-bar" style="margin-top:18px; padding-top:14px; border-top:1px dashed #ddd; font-family:sans-serif;">
+      <div class="interactive-action-bar" style="margin-top:16px; padding-top:12px; border-top:1px dashed #ddd; font-family:sans-serif;">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
-          <span style="font-weight:bold; color:#555; font-size:13px;">請選擇答案：</span>
-          <button class="peek-ans-btn" style="border:none; background:transparent; color:#1a73e8; font-size:12px; cursor:pointer; padding:2px 6px; font-weight:bold;">👁️ 顯示/隱藏解析</button>
+          <span style="font-weight:bold; color:#555; font-size:12px;">請選擇答案：</span>
+          <button class="peek-ans-btn" style="border:none; background:transparent; color:#1a73e8; font-size:12px; cursor:pointer; padding:2px 6px; font-weight:bold;">顯示/隱藏解析</button>
         </div>
-        <div class="options-btn-group" style="display:flex; gap:8px;">
+        <div class="options-btn-group" style="display:flex; gap:6px;">
           ${['A', 'B', 'C', 'D'].map(k => `
-            <button class="opt-act-btn" data-opt="${k}" style="flex:1; padding:10px 4px; border:1px solid #1a73e8; border-radius:6px; background:#fff; color:#1a73e8; font-weight:bold; cursor:pointer; font-size:14px;">
+            <button class="opt-act-btn" data-opt="${k}" style="flex:1; padding:9px 2px; border:1px solid #1a73e8; border-radius:6px; background:#fff; color:#1a73e8; font-weight:bold; cursor:pointer; font-size:14px;">
               ${k}
             </button>
           `).join('')}
         </div>
       </div>
-      <div class="explanation-panel" style="display:none; margin-top:16px; padding:14px 16px; background:#f8fafd; border-left:4px solid #1a73e8; border-radius:4px;">
-        <div class="exp-title" style="font-weight:bold; color:#1a73e8; font-size:15px; font-family:Arial, sans-serif; margin-bottom:${hasExplanation ? '8px' : '0'};">
+      <div class="explanation-panel" style="display:none; margin-top:14px; padding:12px 14px; background:#f8fafd; border-left:4px solid #1a73e8; border-radius:4px; font-family:'Times New Roman', 'Noto Serif TC', serif;">
+        <div class="exp-title" style="font-weight:bold; color:#1a73e8; font-size:14px; font-family:Arial, sans-serif; margin-bottom:${hasExplanation ? '6px' : '0'};">
           Answer: ${q.answer}
         </div>
         ${hasExplanation
-          ? `<div class="exp-body" style="font-size:15px; color:#111; line-height:1.65; word-break:break-word;">${q.explanationHtml}</div>`
-          : `<div style="font-size:13px; color:#888; font-family:sans-serif; margin-top:4px;">（本題原檔無附帶文字解析）</div>`
+          ? `<div class="exp-body" style="font-size:14px; color:#111; line-height:1.65; word-break:break-word;">${q.explanationHtml}</div>`
+          : `<div style="font-size:12px; color:#888; font-family:sans-serif; margin-top:4px;">（本題原檔無附帶文字解析）</div>`
         }
       </div>
     `;
 
     card.querySelectorAll('img').forEach(img => {
       img.style.maxWidth = '100%';
-      img.style.maxHeight = '240px';
+      img.style.maxHeight = '216px';
       img.style.width = 'auto';
       img.style.height = 'auto';
       img.style.display = 'block';
-      img.style.margin = '12px auto';
+      img.style.margin = '10px auto';
+    });
+
+    card.querySelectorAll('p, div, span').forEach(el => {
+      if ((el.textContent || '').trim() === '□' || (el.textContent || '').trim() === '☐' || (el.textContent || '').trim() === '■') {
+        el.remove();
+      }
     });
 
     const optBtns = card.querySelectorAll('.opt-act-btn');
@@ -903,7 +904,7 @@ function updateDashboardStats() {
   } catch (e) {}
 }
 
-// 10. 左側選單渲染與手機側邊欄開關控制
+// 10. 左側選單渲染
 function renderSidebar() {
   const container = document.getElementById('topicListContainer');
   if (!container) return;
@@ -917,7 +918,7 @@ function renderSidebar() {
     const headerEl = document.createElement('div');
     headerEl.className = 'topic-header';
     headerEl.style.cssText = 'cursor:pointer; font-weight:bold; padding:10px 12px; background:#fafafa; display:flex; justify-content:space-between; align-items:center; user-select:none; font-size:13px; color:#333;';
-    headerEl.innerHTML = `<span>${topic.topicName}</span><span class="toggle-icon" style="font-size:11px; color:#888;">▶</span>`;
+    headerEl.innerHTML = `<span>${topic.topicName}</span><span class="toggle-icon" style="font-size:11px; color:#888;">▼</span>`;
 
     const cList = document.createElement('div');
     cList.className = 'chapter-list';
@@ -951,17 +952,18 @@ function renderSidebar() {
   });
 }
 
-// 11. 初始化與浮動目錄按鈕
+// 11. 初始化與左上角目錄按鈕 (調整位置與字體，防止頂部文字直排)
 document.addEventListener('DOMContentLoaded', () => {
   ChemStorage.loadMeta();
   renderSidebar();
   updateCounts();
 
+  // 目錄按鈕防擋字：位置下移或獨立行距
   if (!document.getElementById('mobileToggleSidebarBtn')) {
     const floatBtn = document.createElement('button');
     floatBtn.id = 'mobileToggleSidebarBtn';
-    floatBtn.innerHTML = '📱 目錄選單';
-    floatBtn.style.cssText = 'position:fixed; bottom:20px; right:20px; z-index:9999; background:#1a73e8; color:#fff; border:none; padding:12px 18px; border-radius:30px; font-weight:bold; font-size:14px; box-shadow:0 4px 12px rgba(0,0,0,0.25); cursor:pointer; display:block;';
+    floatBtn.innerHTML = '目錄選單';
+    floatBtn.style.cssText = 'position:fixed; top:52px; left:12px; z-index:9999; background:#1a73e8; color:#fff; border:none; padding:6px 12px; border-radius:18px; font-weight:bold; font-size:12px; box-shadow:0 2px 8px rgba(0,0,0,0.2); cursor:pointer; display:block;';
 
     floatBtn.onclick = () => {
       const sidebar = document.querySelector('aside') || document.querySelector('.sidebar') || document.querySelector('#sidebar') || document.querySelector('.left-panel');
@@ -984,20 +986,21 @@ document.addEventListener('DOMContentLoaded', () => {
     document.body.appendChild(floatBtn);
   }
 
+  // 優化頂部標題列，確保文字正常橫排不折行成直排
   const navRight = document.querySelector('.nav-right');
   if (navRight) {
     navRight.innerHTML = '';
-    navRight.style.cssText = 'display:flex; align-items:center; gap:6px; flex-wrap:wrap; justify-content:flex-end;';
+    navRight.style.cssText = 'display:flex; align-items:center; gap:4px; flex-wrap:nowrap; justify-content:flex-end; white-space:nowrap;';
 
     const bar = document.createElement('div');
     bar.id = 'langSwitchBar';
-    bar.style.cssText = 'display:inline-flex; align-items:center; gap:6px; background:#f1f3f4; padding:3px 8px; border-radius:20px;';
+    bar.style.cssText = 'display:inline-flex; align-items:center; gap:4px; background:#f1f3f4; padding:2px 6px; border-radius:16px; white-space:nowrap;';
 
     ['c', 'e'].forEach(lang => {
       const isSelected = window.chemApp.currentLang === lang;
       const b = document.createElement('button');
       b.textContent = lang === 'c' ? '中文' : '英文';
-      b.style.cssText = `border:none; padding:4px 10px; font-size:11px; border-radius:14px; cursor:pointer; font-weight:bold; background:${isSelected ? '#fff' : 'transparent'}; color:${isSelected ? '#1a73e8' : '#5f6368'}; box-shadow:${isSelected ? '0 1px 3px rgba(0,0,0,0.1)' : 'none'};`;
+      b.style.cssText = `border:none; padding:3px 8px; font-size:10px; border-radius:12px; cursor:pointer; font-weight:bold; background:${isSelected ? '#fff' : 'transparent'}; color:${isSelected ? '#1a73e8' : '#5f6368'}; box-shadow:${isSelected ? '0 1px 3px rgba(0,0,0,0.1)' : 'none'}; white-space:nowrap;`;
       b.onclick = () => {
         window.chemApp.currentLang = lang;
         ChemStorage.saveMeta();
@@ -1018,9 +1021,19 @@ document.addEventListener('DOMContentLoaded', () => {
     const verSpan = document.createElement('span');
     verSpan.id = 'appVersionBadge';
     verSpan.textContent = `v${window.chemApp.version}`;
-    verSpan.style.cssText = 'font-size:11px; font-weight:bold; color:#1a73e8; background:#e8f0fe; padding:2px 6px; border-radius:10px; border:1px solid #aecbfa;';
+    verSpan.style.cssText = 'font-size:10px; font-weight:bold; color:#1a73e8; background:#e8f0fe; padding:2px 5px; border-radius:8px; border:1px solid #aecbfa; white-space:nowrap;';
     bar.appendChild(verSpan);
 
     navRight.appendChild(bar);
+  }
+
+  // 同時調整頂部左側的大標題與子標題字體，防止手機版擠壓變直排
+  const mainHeader = document.querySelector('header') || document.querySelector('.header') || document.querySelector('.top-nav');
+  if (mainHeader) {
+    mainHeader.style.cssText = 'display:flex; justify-content:space-between; align-items:center; padding:8px 12px; flex-wrap:nowrap; overflow:hidden;';
+    const titleTextEl = mainHeader.querySelector('h1, h2, .title, .logo');
+    if (titleTextEl) {
+      titleTextEl.style.cssText = 'font-size:12px; font-weight:bold; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; margin:0;';
+    }
   }
 });
