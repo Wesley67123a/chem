@@ -7,24 +7,24 @@ const SYLLABUS_CONFIG = [
       { id: 1, name: '第 1 章：化學導論' }, 
       { id: 2, name: '第 2 章：大氣' }, 
       { id: 3, name: '第 3 章：海洋' }
+      { id: 4, name: '第 4 章：岩石和礦物' }, 
     ] 
   },
   { 
     topicId: 'CHEM-02', 
     topicName: 'CHEM-02 微觀世界 I', 
     chapters: [
-      { id: 4, name: '第 4 章：岩石和礦物' }, 
       { id: 5, name: '第 5 章：原子結構' }, 
       { id: 6, name: '第 6 章：周期表' }, 
       { id: 7, name: '第 7 章：金屬鍵和離子鍵' }, 
       { id: 8, name: '第 8 章：共價鍵' }
+      { id: 9, name: '第 9 章：物質的結構和性質' }, 
     ] 
   },
   { 
     topicId: 'CHEM-03', 
     topicName: 'CHEM-03 金屬', 
     chapters: [
-      { id: 9, name: '第 9 章：物質的結構和性質' }, 
       { id: 10, name: '第 10 章：金屬的存在和提取' }, 
       { id: 11, name: '第 11 章：金屬的活性' }, 
       { id: 12, name: '第 12 章：反應質量' }, 
