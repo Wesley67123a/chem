@@ -1,17 +1,4 @@
-
-
-
-
-
-/* ==========================================
- * DSE 化學分章模擬題庫系統 ( Aristo MCQ 手機 RWD 終極修復版 v0.0.32 )
- * 更新重點：
- * 1. 手機端響應式 RWD 佈局：自動修正頂部標題、語言切換與版本號擠壓換行問題
- * 2. 新增「📱 目錄選單」手機浮動按鈕：可隨時展開/收起左側大課題與章節列表，手機閱讀不卡畫面
- * 3. 完整整合 65 章 Aristo 課本原名、IndexedDB 大容量快取與 Word 深度穿透切題引擎
- * ========================================== */
-
-// 1. 課程 65 章完整架構 (已對應 Notability 筆記修正)
+// 1. 課程 65 章完整架構
 const SYLLABUS_CONFIG = [
   { 
     topicId: 'CHEM-01', 
@@ -111,39 +98,39 @@ const SYLLABUS_CONFIG = [
     topicName: 'CHEM-10 化學平衡', 
     chapters: [
       { id: 40, name: '第 40 章：動態平衡' }, 
-      { id: 41, name: '第 41 章：濃度和溫度的變化對化學平衡的影響' },[span_2](start_span)[span_2](end_span)
-      { id: 42, name: '第 42 章：特定同系列的簡介' }[span_3](start_span)[span_3](end_span)
+      { id: 41, name: '第 41 章：濃度和溫度的變化對化學平衡的影響' },
+      { id: 42, name: '第 42 章：特定同系列的簡介' }
     ] 
   },
   { 
     topicId: 'CHEM-11', 
     topicName: 'CHEM-11 碳化合物的化學', 
     chapters: [
-      { id: 43, name: '第 43 章：同分異構' },[span_4](start_span)[span_4](end_span)
-      { id: 44, name: '第 44 章：各種官能基的典型化學反應' },[span_5](start_span)[span_5](end_span)
-      { id: 45, name: '第 45 章：碳化合物的互換' },[span_6](start_span)[span_6](end_span)
-      { id: 46, name: '第 46 章：重要有機物質' },[span_7](start_span)[span_7](end_span)[span_8](start_span)[span_8](end_span)
-      { id: 47, name: '第 47 章：由Na至Cl各元素物理性質的周期變化' },[span_9](start_span)[span_9](end_span)[span_10](start_span)[span_10](end_span)
-      { id: 48, name: '第 48 章：由Na至Cl各元素氧化物的結合、在水中的習性及酸鹼性質' }[span_11](start_span)[span_11](end_span)
+      { id: 43, name: '第 43 章：同分異構' },
+      { id: 44, name: '第 44 章：各種官能基的典型化學反應' },
+      { id: 45, name: '第 45 章：碳化合物的互換' },
+      { id: 46, name: '第 46 章：重要有機物質' },
+      { id: 47, name: '第 47 章：由Na至Cl各元素物理性質的周期變化' },
+      { id: 48, name: '第 48 章：由Na至Cl各元素氧化物的結合、在水中的習性及酸鹼性質' }
     ] 
   },
   { 
     topicId: 'CHEM-12', 
     topicName: 'CHEM-12 化學規律', 
     chapters: [
-      { id: 49, name: '第 49 章：過渡性金屬的一般性質' },[span_12](start_span)[span_12](end_span)
-      { id: 50, name: '第 50 章：工業過程的重要性' }[span_13](start_span)[span_13](end_span)
+      { id: 49, name: '第 49 章：過渡性金屬的一般性質' },
+      { id: 50, name: '第 50 章：工業過程的重要性' }
     ] 
   },
   { 
     topicId: 'CHEM-13', 
     topicName: 'CHEM-13 工業化學', 
     chapters: [
-      { id: 51, name: '第 51 章：速率方程' },[span_14](start_span)[span_14](end_span)
-      { id: 52, name: '第 52 章：活化能' },[span_15](start_span)[span_15](end_span)
+      { id: 51, name: '第 51 章：速率方程' },
+      { id: 52, name: '第 52 章：活化能' },
       { id: 53, name: '第 53 章：催化作用和工業過程' }, 
       { id: 54, name: '第 54 章：工業過程' }, 
-      { id: 55, name: '第 55 章：有關工業過程的綠色化學' }[span_16](start_span)[span_16](end_span)
+      { id: 55, name: '第 55 章：有關工業過程的綠色化學' }
     ] 
   },
   { 
@@ -161,43 +148,82 @@ const SYLLABUS_CONFIG = [
     topicId: 'CHEM-15', 
     topicName: 'CHEM-15 分析化學', 
     chapters: [
-      { id: 61, name: '第 61 章：檢測物質中的化學物種' },[span_17](start_span)[span_17](end_span)
-      { id: 62, name: '第 62 章：分離和提純的方法' },[span_18](start_span)[span_18](end_span)
-      { id: 63, name: '第 63 章：定量分析方法' },[span_19](start_span)[span_19](end_span)
-      { id: 64, name: '第 64 章：儀器分析方法' },[span_20](start_span)[span_20](end_span)
-      { id: 65, name: '第 65 章：分析化學對社會的貢獻' }[span_21](start_span)[span_21](end_span)
+      { id: 61, name: '第 61 章：檢測物質中的化學物種' },
+      { id: 62, name: '第 62 章：分離和提純的方法' },
+      { id: 63, name: '第 63 章：定量分析方法' },
+      { id: 64, name: '第 64 章：儀器分析方法' },
+      { id: 65, name: '第 65 章：分析化學對社會的貢獻' }
     ] 
   }
 ];
 
-// 2. 全局狀態 (v0.0.32)
+// 2. 全局狀態 (v0.0.33)
 window.chemApp = {
-  version: '0.0.32',
+  version: '0.0.33',
   currentLang: 'e',
   activeChapterId: null,
   questionsDB: {},
   chapterCounts: {},
   userAnswers: {},
   dashboardNodes: [],
-  debugLogs: { lastRawText: [], lastParsedQuestions: [], lastLoadedUrl: '' }
+  timerSeconds: 0,
+  timerInterval: null,
+  isTimerRunning: false
 };
 
 const CHAPTER_MAP = {};
 SYLLABUS_CONFIG.forEach(t => t.chapters.forEach(c => { CHAPTER_MAP[c.id] = { topic: t, chapter: c }; }));
 
+// 2.2 網頁音效系統 (Web Audio API)
+class SoundFX {
+  static audioCtx = null;
+  static getContext() {
+    if (!this.audioCtx) {
+      const AudioContext = window.AudioContext || window.webkitAudioContext;
+      if (AudioContext) this.audioCtx = new AudioContext();
+    }
+    return this.audioCtx;
+  }
+  static playClick(isCorrect) {
+    try {
+      const ctx = this.getContext();
+      if (!ctx) return;
+      if (ctx.state === 'suspended') ctx.resume();
+
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+
+      if (isCorrect) {
+        osc.frequency.setValueAtTime(587.33, ctx.currentTime); // D5
+        osc.frequency.setValueAtTime(880, ctx.currentTime + 0.08); // A5
+        gain.gain.setValueAtTime(0.15, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.3);
+        osc.start();
+        osc.stop(ctx.currentTime + 0.3);
+      } else {
+        osc.frequency.setValueAtTime(220, ctx.currentTime); // A3
+        osc.frequency.setValueAtTime(164.81, ctx.currentTime + 0.1); // E3
+        gain.gain.setValueAtTime(0.2, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.35);
+        osc.start();
+        osc.stop(ctx.currentTime + 0.35);
+      }
+    } catch (e) {}
+  }
+}
+
 // 2.5 IndexedDB + localStorage 儲存引擎
 class ChemStorage {
   static dbPromise = null;
-
   static getDB() {
     if (!this.dbPromise) {
       this.dbPromise = new Promise((resolve, reject) => {
-        const req = indexedDB.open('HKDSE_CHEM_QB_V32', 1);
+        const req = indexedDB.open('HKDSE_CHEM_QB_V33', 1);
         req.onupgradeneeded = (e) => {
           const db = e.target.result;
-          if (!db.objectStoreNames.contains('chapters')) {
-            db.createObjectStore('chapters');
-          }
+          if (!db.objectStoreNames.contains('chapters')) db.createObjectStore('chapters');
         };
         req.onsuccess = (e) => resolve(e.target.result);
         req.onerror = (e) => reject(e.target.error);
@@ -215,9 +241,7 @@ class ChemStorage {
         tx.oncomplete = () => resolve(true);
         tx.onerror = () => resolve(false);
       });
-    } catch (e) {
-      return false;
-    }
+    } catch (e) { return false; }
   }
 
   static async loadChapter(dbKey) {
@@ -229,32 +253,30 @@ class ChemStorage {
         req.onsuccess = () => resolve(req.result || null);
         req.onerror = () => resolve(null);
       });
-    } catch (e) {
-      return null;
-    }
+    } catch (e) { return null; }
   }
 
   static loadMeta() {
     try {
-      const counts = localStorage.getItem('CHEM_COUNTS_V32');
+      const counts = localStorage.getItem('CHEM_COUNTS_V33');
       if (counts) window.chemApp.chapterCounts = JSON.parse(counts);
-      const ans = localStorage.getItem('CHEM_USER_ANS_V32');
+      const ans = localStorage.getItem('CHEM_USER_ANS_V33');
       if (ans) window.chemApp.userAnswers = JSON.parse(ans);
-      const savedLang = localStorage.getItem('CHEM_LANG_V32');
+      const savedLang = localStorage.getItem('CHEM_LANG_V33');
       if (savedLang === 'c' || savedLang === 'e') window.chemApp.currentLang = savedLang;
     } catch (e) {}
   }
 
   static saveMeta() {
     try {
-      localStorage.setItem('CHEM_COUNTS_V32', JSON.stringify(window.chemApp.chapterCounts));
-      localStorage.setItem('CHEM_USER_ANS_V32', JSON.stringify(window.chemApp.userAnswers));
-      localStorage.setItem('CHEM_LANG_V32', window.chemApp.currentLang);
+      localStorage.setItem('CHEM_COUNTS_V33', JSON.stringify(window.chemApp.chapterCounts));
+      localStorage.setItem('CHEM_USER_ANS_V33', JSON.stringify(window.chemApp.userAnswers));
+      localStorage.setItem('CHEM_LANG_V33', window.chemApp.currentLang);
     } catch (e) {}
   }
 }
 
-// 3. 深度穿透式 DOM 切題引擎
+// 3. 深度穿透式 DOM 切題引擎 (自動過濾方塊符號)
 class DocxQuestionParser {
   static cleanInlineNoise(htmlStr) {
     return htmlStr
@@ -312,20 +334,15 @@ class DocxQuestionParser {
 
       const cleanedHtml = this.cleanInlineNoise(node.innerHTML);
       if (/<br\s*\/?>/i.test(cleanedHtml)) {
-        const parts = cleanedHtml.split(/<br\s*\/?>/i);
-        parts.forEach(part => {
+        cleanedHtml.split(/<br\s*\/?>/i).forEach(part => {
           const p = document.createElement('p');
           p.innerHTML = part.trim();
-          if ((p.textContent || '').trim() || p.querySelector('img')) {
-            blocks.push(p);
-          }
+          if ((p.textContent || '').trim() || p.querySelector('img')) blocks.push(p);
         });
       } else {
         const p = node.cloneNode(true);
         p.innerHTML = cleanedHtml.trim();
-        if ((p.textContent || '').trim() || p.querySelector('img') || tag === 'TABLE') {
-          blocks.push(p);
-        }
+        if ((p.textContent || '').trim() || p.querySelector('img') || tag === 'TABLE') blocks.push(p);
       }
     };
     Array.from(root.children).forEach(child => walk(child));
@@ -365,9 +382,7 @@ class DocxQuestionParser {
         if (afterText.length > 0 || hasImg) {
           const cloned = node.cloneNode(true);
           cloned.innerHTML = cloned.innerHTML.replace(match[0], '').trim();
-          if ((cloned.textContent || '').trim() || hasImg) {
-            currentBlock.nodes.push(cloned);
-          }
+          if ((cloned.textContent || '').trim() || hasImg) currentBlock.nodes.push(cloned);
         }
       } else {
         if (currentBlock) currentBlock.nodes.push(node.cloneNode(true));
@@ -413,8 +428,6 @@ class DocxQuestionParser {
           if (node.style) {
             if (/^[A-D][\.\)]\s*/.test(txt)) {
               node.style.cssText = 'padding-left: 24px; margin: 4px 0;';
-            } else if (/^\(\d+\)\s*/.test(txt)) {
-              node.style.cssText = 'margin: 4px 0;';
             } else if (isTable) {
               node.style.cssText = 'border-collapse: collapse; margin: 12px 0; width: auto;';
             } else {
@@ -482,7 +495,37 @@ class DocxExtractor {
   }
 }
 
-// 5. 視圖切換器與手機響應式抽屜選單控制
+// 5. 計時器控制函數
+function startTimer() {
+  if (window.chemApp.isTimerRunning) return;
+  window.chemApp.isTimerRunning = true;
+  window.chemApp.timerInterval = setInterval(() => {
+    window.chemApp.timerSeconds++;
+    updateTimerDisplay();
+  }, 1000);
+}
+
+function pauseTimer() {
+  window.chemApp.isTimerRunning = false;
+  clearInterval(window.chemApp.timerInterval);
+}
+
+function resetTimer() {
+  pauseTimer();
+  window.chemApp.timerSeconds = 0;
+  updateTimerDisplay();
+}
+
+function updateTimerDisplay() {
+  const el = document.getElementById('chapterTimerDisplay');
+  if (el) {
+    const mins = String(Math.floor(window.chemApp.timerSeconds / 60)).padStart(2, '0');
+    const secs = String(window.chemApp.timerSeconds % 60).padStart(2, '0');
+    el.textContent = `${mins}:${secs}`;
+  }
+}
+
+// 6. 視圖切換與全屏佈局控制
 function switchRightPanelToChapterView() {
   let wrapper = document.getElementById('chemChapterViewWrapper');
   if (!wrapper) {
@@ -491,39 +534,28 @@ function switchRightPanelToChapterView() {
       document.querySelector('.main-content') ||
       document.querySelector('#mainContent') ||
       document.querySelector('.content-area') ||
-      document.querySelector('.right-panel');
-
-    if (!rightMain) {
-      const allDivs = Array.from(document.querySelectorAll('div, section, main'));
-      const statsEl = allDivs.find(el =>
-        (el.textContent || '').includes('練習進度') &&
-        (el.textContent || '').includes('最近 12 週練習記錄') &&
-        !el.contains(document.getElementById('topicListContainer'))
-      );
-      if (statsEl) {
-        rightMain = statsEl;
-        while (
-          rightMain.parentElement &&
-          rightMain.parentElement !== document.body &&
-          !rightMain.parentElement.contains(document.getElementById('topicListContainer'))
-        ) {
-          rightMain = rightMain.parentElement;
-        }
-      }
-    }
-    if (!rightMain) rightMain = document.body;
+      document.querySelector('.right-panel') ||
+      document.body;
 
     window.chemApp.dashboardNodes = Array.from(rightMain.children);
 
     wrapper = document.createElement('div');
     wrapper.id = 'chemChapterViewWrapper';
-    wrapper.style.cssText = 'width: 100%; max-width: 960px; margin: 0 auto; padding: 8px 4px 48px 4px; box-sizing: border-box;';
+    // 佔滿全寬，取消不必要的邊距
+    wrapper.style.cssText = 'width: 100%; max-width: 100%; margin: 0 auto; padding: 12px 16px 60px 16px; box-sizing: border-box;';
 
     wrapper.innerHTML = `
-      <div id="chapterHeaderBar" style="display:flex; flex-wrap:wrap; justify-content:space-between; align-items:center; gap:12px; background:#fff; padding:16px 20px; border-radius:10px; border:1px solid #e0e0e0; margin-bottom:20px; box-shadow:0 2px 6px rgba(0,0,0,0.04);">
-        <div>
-          <div id="currentTopicSubtitle" style="font-size:12px; color:#1a73e8; font-weight:bold; margin-bottom:4px;"></div>
-          <h2 id="currentChapterTitle" style="margin:0; font-size:18px; color:#111;">請選擇章節</h2>
+      <div id="chapterHeaderBar" style="display:flex; flex-wrap:wrap; justify-content:space-between; align-items:center; gap:12px; background:#fff; padding:14px 20px; border-radius:10px; border:1px solid #e0e0e0; margin-bottom:16px; box-shadow:0 2px 6px rgba(0,0,0,0.04);">
+        <div style="display:flex; align-items:center; gap:16px;">
+          <div>
+            <h2 id="currentChapterTitle" style="margin:0; font-size:18px; color:#111;">請選擇章節</h2>
+          </div>
+          <!-- 內建計時器元件 -->
+          <div style="display:flex; align-items:center; gap:6px; background:#f8f9fa; padding:4px 10px; border-radius:20px; border:1px solid #dadce0;">
+            ⏱️ <span id="chapterTimerDisplay" style="font-family:monospace; font-weight:bold; font-size:14px; color:#1a73e8;">00:00</span>
+            <button id="timerToggleBtn" style="border:none; background:#1a73e8; color:#fff; font-size:11px; padding:2px 8px; border-radius:10px; cursor:pointer;">開始</button>
+            <button id="timerResetBtn" style="border:none; background:#e0e0e0; color:#333; font-size:11px; padding:2px 8px; border-radius:10px; cursor:pointer;">重置</button>
+          </div>
         </div>
         <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
           <span id="chapterStats" style="font-size:13px; color:#555; font-weight:bold; margin-right:4px;"></span>
@@ -540,11 +572,35 @@ function switchRightPanelToChapterView() {
 
     rightMain.insertBefore(wrapper, rightMain.firstChild);
 
+    // 計時器按鈕事件綁定
+    const tBtn = wrapper.querySelector('#timerToggleBtn');
+    const rBtn = wrapper.querySelector('#timerResetBtn');
+    tBtn.onclick = () => {
+      if (window.chemApp.isTimerRunning) {
+        pauseTimer();
+        tBtn.textContent = '繼續';
+        tBtn.style.background = '#34a853';
+      } else {
+        startTimer();
+        tBtn.textContent = '暫停';
+        tBtn.style.background = '#ea4335';
+      }
+    };
+    rBtn.onclick = () => {
+      resetTimer();
+      tBtn.textContent = '開始';
+      tBtn.style.background = '#1a73e8';
+    };
+
     wrapper.querySelector('#backToDashboardBtn').onclick = () => {
+      pauseTimer();
       wrapper.style.display = 'none';
       window.chemApp.dashboardNodes.forEach(node => {
         if (node !== wrapper) node.style.display = '';
       });
+      // 離開全屏時恢復側邊欄顯示
+      const sidebar = document.querySelector('aside') || document.querySelector('.sidebar') || document.querySelector('#sidebar') || document.querySelector('.left-panel');
+      if (sidebar) sidebar.style.display = '';
       updateDashboardStats();
     };
 
@@ -579,20 +635,27 @@ function switchRightPanelToChapterView() {
   });
   wrapper.style.display = 'block';
 
-  // 手機版切換章節時，自動收起側邊欄讓畫面變大
-  if (window.innerWidth <= 768) {
-    const sidebar = document.querySelector('aside') || document.querySelector('.sidebar') || document.querySelector('#sidebar') || document.querySelector('.left-panel');
-    if (sidebar) sidebar.style.display = 'none';
-  }
+  // 進入章節全屏時自動隱藏側邊欄，釋放全部空間
+  const sidebar = document.querySelector('aside') || document.querySelector('.sidebar') || document.querySelector('#sidebar') || document.querySelector('.left-panel');
+  if (sidebar) sidebar.style.display = 'none';
 
   return wrapper;
 }
 
-// 6. 開啟章節
+// 7. 開啟章節
 async function openChapter(chapId, bypassCache = false) {
   window.chemApp.activeChapterId = chapId;
   const lookup = CHAPTER_MAP[chapId];
   if (!lookup) return;
+
+  // 重置並自動開始計時
+  resetTimer();
+  startTimer();
+  const tBtn = document.getElementById('timerToggleBtn');
+  if (tBtn) {
+    tBtn.textContent = '暫停';
+    tBtn.style.background = '#ea4335';
+  }
 
   document.querySelectorAll('.chapter-item').forEach(el => {
     el.classList.remove('active');
@@ -606,20 +669,16 @@ async function openChapter(chapId, bypassCache = false) {
     activeEl.style.background = '#e8f0fe';
     activeEl.style.color = '#1a73e8';
     activeEl.style.fontWeight = 'bold';
-    const parentList = activeEl.parentElement;
-    if (parentList && parentList.style.display === 'none') {
-      parentList.style.display = 'block';
-      const icon = parentList.previousElementSibling?.querySelector('.toggle-icon');
-      if (icon) icon.textContent = '▼';
-    }
   }
 
   const wrapper = switchRightPanelToChapterView();
+  // 需求：chapter topic 隱藏，讓題目全屏
   const topicSub = wrapper.querySelector('#currentTopicSubtitle');
+  if (topicSub) topicSub.style.display = 'none';
+
   const titleEl = wrapper.querySelector('#currentChapterTitle');
   const container = wrapper.querySelector('#questionList');
 
-  if (topicSub) topicSub.textContent = lookup.topic.topicName;
   if (titleEl) titleEl.textContent = lookup.chapter.name;
 
   const dbKey = `${window.chemApp.currentLang}_${chapId}`;
@@ -691,7 +750,7 @@ async function openChapter(chapId, bypassCache = false) {
   }
 }
 
-// 7. 渲染題目卡片
+// 8. 渲染題目卡片 (去除左下角方塊、支援音效)
 function renderQuestions(qList, chapId) {
   const wrapper = switchRightPanelToChapterView();
   const container = wrapper.querySelector('#questionList');
@@ -703,7 +762,7 @@ function renderQuestions(qList, chapId) {
   qList.forEach((q, index) => {
     const card = document.createElement('div');
     card.className = 'question-card';
-    card.style.cssText = 'background:#fff; border-radius:10px; padding:20px 24px; margin-bottom:20px; box-shadow:0 2px 8px rgba(0,0,0,0.06); border:1px solid #e0e0e0; font-family:"Times New Roman", "Noto Serif TC", "PMingLiU", serif; box-sizing: border-box;';
+    card.style.cssText = 'background:#fff; border-radius:10px; padding:20px 24px; margin-bottom:20px; box-shadow:0 2px 8px rgba(0,0,0,0.06); border:1px solid #e0e0e0; font-family:"Times New Roman", "Noto Serif TC", "PMingLiU", serif; box-sizing: border-box; width:100%;';
 
     const hasExplanation = q.explanationHtml && q.explanationHtml.length > 0;
 
@@ -752,7 +811,10 @@ function renderQuestions(qList, chapId) {
     const expPanel = card.querySelector('.explanation-panel');
     const peekBtn = card.querySelector('.peek-ans-btn');
 
-    const applyAnswerUI = (selectedOpt) => {
+    const applyAnswerUI = (selectedOpt, playSound = false) => {
+      const isCorrect = (selectedOpt === q.answer);
+      if (playSound) SoundFX.playClick(isCorrect);
+
       optBtns.forEach(b => {
         b.style.background = '#fff';
         b.style.color = '#1a73e8';
@@ -773,7 +835,7 @@ function renderQuestions(qList, chapId) {
     const savedRecord = window.chemApp.userAnswers[q.id];
     if (savedRecord) {
       const chosen = typeof savedRecord === 'string' ? savedRecord : savedRecord.chosen;
-      if (chosen) applyAnswerUI(chosen);
+      if (chosen) applyAnswerUI(chosen, false);
     }
 
     optBtns.forEach(btn => {
@@ -782,7 +844,7 @@ function renderQuestions(qList, chapId) {
         const today = new Date().toISOString().slice(0, 10);
         window.chemApp.userAnswers[q.id] = { chosen: chosen, correct: chosen === q.answer, date: today };
         ChemStorage.saveMeta();
-        applyAnswerUI(chosen);
+        applyAnswerUI(chosen, true);
         updateDashboardStats();
       });
     });
@@ -796,7 +858,7 @@ function renderQuestions(qList, chapId) {
   });
 }
 
-// 8. 統計更新
+// 9. 統計更新
 function updateCounts() {
   for (let i = 1; i <= 65; i++) {
     const key = `${window.chemApp.currentLang}_${i}`;
@@ -841,7 +903,7 @@ function updateDashboardStats() {
   } catch (e) {}
 }
 
-// 9. 左側選單渲染與手機側邊欄開關控制
+// 10. 左側選單渲染與手機側邊欄開關控制
 function renderSidebar() {
   const container = document.getElementById('topicListContainer');
   if (!container) return;
@@ -877,11 +939,8 @@ function renderSidebar() {
       it.onclick = (e) => {
         e.stopPropagation();
         openChapter(ch.id);
-        // 在手機上點擊章節後自動隱藏側邊欄
-        if (window.innerWidth <= 768) {
-          const sidebar = document.querySelector('aside') || document.querySelector('.sidebar') || document.querySelector('#sidebar') || document.querySelector('.left-panel');
-          if (sidebar) sidebar.style.display = 'none';
-        }
+        const sidebar = document.querySelector('aside') || document.querySelector('.sidebar') || document.querySelector('#sidebar') || document.querySelector('.left-panel');
+        if (sidebar) sidebar.style.display = 'none';
       };
       cList.appendChild(it);
     });
@@ -890,67 +949,41 @@ function renderSidebar() {
     groupEl.appendChild(cList);
     container.appendChild(groupEl);
   });
-
-  // 自動修復「全部展開 / 全部收起」按鈕點擊事件
-  document.querySelectorAll('button, span, a, div').forEach(el => {
-    if (el.children.length === 0) {
-      const txt = (el.textContent || '').trim();
-      if (txt === '全部展開') {
-        el.style.cursor = 'pointer';
-        el.onclick = () => {
-          document.querySelectorAll('#topicListContainer .chapter-list').forEach(l => (l.style.display = 'block'));
-          document.querySelectorAll('#topicListContainer .toggle-icon').forEach(i => (i.textContent = '▼'));
-        };
-      } else if (txt === '全部收起') {
-        el.style.cursor = 'pointer';
-        el.onclick = () => {
-          document.querySelectorAll('#topicListContainer .chapter-list').forEach(l => (l.style.display = 'none'));
-          document.querySelectorAll('#topicListContainer .toggle-icon').forEach(i => (i.textContent = '▶'));
-        };
-      }
-    }
-  });
 }
 
-// 10. 初始化與手機懸浮目錄按鈕建立
+// 11. 初始化與浮動目錄按鈕
 document.addEventListener('DOMContentLoaded', () => {
   ChemStorage.loadMeta();
   renderSidebar();
   updateCounts();
 
-  // 建立手機專用「📱 目錄選單」浮動按鈕（讓手機隨時能收起/展開章節）
   if (!document.getElementById('mobileToggleSidebarBtn')) {
     const floatBtn = document.createElement('button');
     floatBtn.id = 'mobileToggleSidebarBtn';
     floatBtn.innerHTML = '📱 目錄選單';
-    floatBtn.style.cssText = 'position:fixed; bottom:20px; right:20px; z-index:9999; background:#1a73e8; color:#fff; border:none; padding:12px 18px; border-radius:30px; font-weight:bold; font-size:14px; box-shadow:0 4px 12px rgba(0,0,0,0.25); cursor:pointer; display:none;';
-    
-    // 只有手機尺寸 (寬度 <= 768px) 時才顯示浮動按鈕
-    if (window.innerWidth <= 768) floatBtn.style.display = 'block';
-    window.addEventListener('resize', () => {
-      floatBtn.style.display = window.innerWidth <= 768 ? 'block' : 'none';
-    });
+    floatBtn.style.cssText = 'position:fixed; bottom:20px; right:20px; z-index:9999; background:#1a73e8; color:#fff; border:none; padding:12px 18px; border-radius:30px; font-weight:bold; font-size:14px; box-shadow:0 4px 12px rgba(0,0,0,0.25); cursor:pointer; display:block;';
 
     floatBtn.onclick = () => {
       const sidebar = document.querySelector('aside') || document.querySelector('.sidebar') || document.querySelector('#sidebar') || document.querySelector('.left-panel');
       if (sidebar) {
         const isHidden = (sidebar.style.display === 'none' || window.getComputedStyle(sidebar).display === 'none');
         sidebar.style.display = isHidden ? 'block' : 'none';
-        sidebar.style.position = isHidden ? 'fixed' : '';
-        sidebar.style.zIndex = isHidden ? '9998' : '';
-        sidebar.style.background = isHidden ? '#fff' : '';
-        sidebar.style.width = isHidden ? '85%' : '';
-        sidebar.style.height = isHidden ? '100vh' : '';
-        sidebar.style.top = isHidden ? '0' : '';
-        sidebar.style.left = isHidden ? '0' : '';
-        sidebar.style.overflowY = isHidden ? 'auto' : '';
-        sidebar.style.boxShadow = isHidden ? '4px 0 15px rgba(0,0,0,0.2)' : '';
+        if (isHidden) {
+          sidebar.style.position = 'fixed';
+          sidebar.style.zIndex = '9998';
+          sidebar.style.background = '#fff';
+          sidebar.style.width = '85%';
+          sidebar.style.height = '100vh';
+          sidebar.style.top = '0';
+          sidebar.style.left = '0';
+          sidebar.style.overflowY = 'auto';
+          sidebar.style.boxShadow = '4px 0 15px rgba(0,0,0,0.2)';
+        }
       }
     };
     document.body.appendChild(floatBtn);
   }
 
-  // 優化右上角導覽列 RWD 佈局，避免手機擠壓換行
   const navRight = document.querySelector('.nav-right');
   if (navRight) {
     navRight.innerHTML = '';
