@@ -1,7 +1,7 @@
 /**
  * ============================================================================
- * HKDSE Chemistry Question Bank - Main UI & Question Engine (app.js)
- * Version: 0.0.47 (Paired with userlog.js v1.0.0)
+ * HKDSE Chemistry Question Bank - Main UI & Material You Engine (app.js)
+ * Version: 0.0.48 (Complete Standalone File - Paired with userlog.js v3.0.0)
  * ============================================================================
  */
 
@@ -169,13 +169,12 @@ const TOTAL_APP_QUESTIONS = 5309;
 const CHAPTER_MAP = {};
 SYLLABUS_CONFIG.forEach(t => t.chapters.forEach(c => { CHAPTER_MAP[c.id] = { topic: t, chapter: c }; }));
 
-// 暴露給 userlog.js 取用
 window.SYLLABUS_CONFIG = SYLLABUS_CONFIG;
 window.CHAPTER_MAP = CHAPTER_MAP;
 
-// 2. 全局 UI 狀態 (v0.0.47)
+// 2. 全局 UI 狀態
 window.chemApp = {
-  version: '0.0.47',
+  version: '0.0.48',
   currentLang: localStorage.getItem('CHEM_LANG_V47') || 'e',
   activeChapterId: null,
   currentView: 'home', // 'home' | 'chapter'
@@ -186,7 +185,6 @@ window.chemApp = {
   isTimerRunning: false
 };
 
-// Firebase 設定檔
 const FIREBASE_CONFIG = {
   apiKey: "AIzaSyDzNzFelR1DLNgVcK-u3_U2s_zmtIrxu1w",
   authDomain: "chem-b49bf.firebaseapp.com",
@@ -197,7 +195,7 @@ const FIREBASE_CONFIG = {
   measurementId: "G-9EB0718DGR"
 };
 
-// 3. 網頁音效系統 (Web Audio API)
+// 3. 網頁音效系統
 class SoundFX {
   static audioCtx = null;
   static getContext() {
@@ -243,13 +241,13 @@ class SoundFX {
   }
 }
 
-// 4. IndexedDB 題庫快取引擎 (專責儲存解析後的 DOCX 題目內容)
+// 4. IndexedDB 題庫快取引擎
 class ChemChapterCache {
   static dbPromise = null;
   static getDB() {
     if (!this.dbPromise) {
       this.dbPromise = new Promise((resolve, reject) => {
-        const req = indexedDB.open('HKDSE_CHEM_QB_CACHE_V47', 1);
+        const req = indexedDB.open('HKDSE_CHEM_QB_CACHE_V48', 1);
         req.onupgradeneeded = (e) => {
           const db = e.target.result;
           if (!db.objectStoreNames.contains('chapters')) db.createObjectStore('chapters');
@@ -286,11 +284,10 @@ class ChemChapterCache {
   }
 }
 
-// 5. 深度穿透式 DOM 切題引擎 (含終極灰色方塊拔除過濾器)
+// 5. 深度穿透式 DOM 切題引擎 (含終極灰色方塊拔除)
 class DocxQuestionParser {
   static cleanInlineNoise(htmlStr) {
     return htmlStr
-      // 徹底移除所有萬國碼方塊、核取方塊、灰黑方塊字元
       .replace(/[\u25A0-\u25FF\u2610-\u2612\u2B1B\u2B1C\uF06F\uF071\uF0A7\uF0FC\uFFFD□☐■▪▫▬▭▮▯]/g, '')
       .replace(/©\s*\d{4}\s*Aristo Educational Press Ltd\.?/gi, '')
       .replace(/HKDSE NEW CHEMISTRY\s*[—\-–]\s*A Modern View/gi, '')
@@ -322,12 +319,10 @@ class DocxQuestionParser {
 
   static stripGrayBoxNodes(rootEl) {
     if (!rootEl) return;
-    // 移除所有空標籤、灰色色塊 span/div、或只含空白符號的節點
     rootEl.querySelectorAll('span, div, p, td, th, font, s, u, b, i').forEach(el => {
       const hasImg = el.querySelector && el.querySelector('img') !== null;
       if (hasImg) return;
 
-      // 移除 Word 轉出時常見的灰底色塊樣式
       if (el.style) {
         el.style.backgroundColor = 'transparent';
         el.style.background = 'none';
@@ -345,11 +340,10 @@ class DocxQuestionParser {
       }
     });
 
-    // 若圖片本身是 Word 內建極小的灰色核取方塊圖示 (例如寬高小於 22px 的單色方塊)，予以過濾
     rootEl.querySelectorAll('img').forEach(img => {
       const w = parseInt(img.getAttribute('width') || '0', 10);
       const h = parseInt(img.getAttribute('height') || '0', 10);
-      if ((w > 0 && w <= 18 && h > 0 && h <= 18)) {
+      if (w > 0 && w <= 18 && h > 0 && h <= 18) {
         img.remove();
       }
     });
@@ -586,7 +580,7 @@ function updateTimerDisplay() {
   }
 }
 
-// 8. 右下角懸浮按鈕組 (Streak、結束當前 MC、目錄選單 — 高度 40px 與間距 10px 完全一致，無 Emoji)
+// 8. 右下角懸浮按鈕組 (Streak、結束當前 MC、目錄選單 — 高度 40px 與間距 10px 對齊，無 Emoji)
 function ensureFloatingActionGroup() {
   let grp = document.getElementById('floatingActionGroup');
   if (!grp) {
@@ -679,7 +673,7 @@ function openEndChapterConfirmModal() {
       </div>
     `;
 
-    modal.querySelector('#confirmYesBtn').onclick = () => {
+    modal.querySelector('#confirmYesBtn').onclick = async () => {
       SoundFX.playClick();
       noCount = 0;
       yesCount += 1;
@@ -691,9 +685,8 @@ function openEndChapterConfirmModal() {
       } else if (yesCount >= 2) {
         modal.style.display = 'none';
         pauseTimer();
-        // 呼叫 userlog.js 清空該章節當次 Session 選項並將 Streak 歸零
         if (window.ChemUserLog) {
-          window.ChemUserLog.finalizeAndResetChapterSession(
+          await window.ChemUserLog.finalizeAndResetChapterSession(
             window.chemApp.activeChapterId,
             window.chemApp.currentLang
           );
@@ -719,7 +712,7 @@ function openEndChapterConfirmModal() {
 
   renderModalStep(
     '確定要結束當前 MC 練習嗎？',
-    '為防止誤觸，「是」或「否」均需連續按兩次確認。'
+    '若未結束直接登出或關閉，下次登入會自動保留當次作答。'
   );
   modal.style.display = 'flex';
 }
@@ -745,7 +738,7 @@ function switchRightPanelToChapterView() {
   const homeEl = document.getElementById('chemDashboardHome');
   if (homeEl) homeEl.style.display = 'none';
 
-  let rightMain = document.getElementById('chemAppRootContainer') || document.querySelector('main') || document.body;
+  let rightMain = document.getElementById('chemAppRootContainer') || document.body;
   let wrapper = document.getElementById('chemChapterViewWrapper');
 
   if (!wrapper) {
@@ -769,7 +762,7 @@ function switchRightPanelToChapterView() {
             載入檔案
             <input type="file" id="manualDocxInput" accept=".docx" style="display:none;" />
           </label>
-          <button id="backHomeTopBtn" class="sound-trigger" style="padding:5px 12px; font-size:11px; border:1px solid #1a73e8; border-radius:12px; background:#e8f0fe; color:#1a73e8; font-weight:bold; cursor:pointer;">回到首頁</button>
+          <button id="backHomeTopBtn" class="sound-trigger" style="padding:5px 12px; font-size:11px; border:1px solid #1a73e8; border-radius:12px; background:#e8f0fe; color:#1a73e8; font-weight:bold; cursor:pointer;">返回首頁 (保留作答)</button>
         </div>
       </div>
       <div id="questionList"></div>
@@ -851,7 +844,6 @@ async function openChapter(chapId) {
   const lang = window.chemApp.currentLang;
   const dbKey = `${lang}_${chapId}`;
 
-  // 1. 先檢查記憶體快取
   if (window.chemApp.questionsDB[dbKey] && window.chemApp.questionsDB[dbKey].length > 0) {
     const list = window.chemApp.questionsDB[dbKey];
     if (window.ChemUserLog) window.ChemUserLog.setActiveChapter(chapId, list.length, lang);
@@ -859,7 +851,6 @@ async function openChapter(chapId) {
     return;
   }
 
-  // 2. 檢查 IndexedDB 快取
   const cachedList = await ChemChapterCache.loadChapter(dbKey);
   if (cachedList && cachedList.length > 0) {
     window.chemApp.questionsDB[dbKey] = cachedList;
@@ -869,7 +860,6 @@ async function openChapter(chapId) {
     return;
   }
 
-  // 3. 從 GitHub docs/ 載入 DOCX
   container.innerHTML = `
     <div style="text-align:center; padding:56px 20px; background:#fff; border-radius:24px; border:1px solid #e0e0e0; color:#555;">
       <div style="font-size:15px; font-weight:bold; color:#1a73e8; margin-bottom:8px;">正在從 GitHub 載入並解析題庫...</div>
@@ -916,7 +906,7 @@ async function openChapter(chapId) {
   }
 }
 
-// 12. 渲染題目卡片（與 userlog.js 的 Session 狀態連動：開關目錄不消失，按結束才清零）
+// 12. 渲染題目卡片（未按「結束當前 MC」前，換瀏覽器或重新登入皆自動恢復作答狀態）
 function renderQuestions(qList, chapId) {
   const wrapper = switchRightPanelToChapterView();
   const container = wrapper.querySelector('#questionList');
@@ -927,7 +917,7 @@ function renderQuestions(qList, chapId) {
 
   qList.forEach((q, index) => {
     const card = document.createElement('div');
-    card.className = 'question-card';
+    card.className = 'question-card m3-card';
     card.style.cssText = 'background:#fff; border-radius:24px; padding:20px 22px; margin-bottom:18px; box-shadow:0 2px 10px rgba(0,0,0,0.06); border:1px solid #e0e0e0; font-family:"Times New Roman", "Noto Serif TC", "PMingLiU", serif; box-sizing: border-box; width:100%;';
 
     const hasExplanation = q.explanationHtml && q.explanationHtml.length > 0;
@@ -973,7 +963,6 @@ function renderQuestions(qList, chapId) {
       img.style.margin = '10px auto';
     });
 
-    // 再次執行 DOM 級別灰色殘留方塊拔除
     DocxQuestionParser.stripGrayBoxNodes(card.querySelector('.q-native-body'));
 
     const optBtns = card.querySelectorAll('.opt-act-btn');
@@ -1001,7 +990,6 @@ function renderQuestions(qList, chapId) {
       expPanel.style.display = 'block';
     };
 
-    // 檢查當次未結束的 Session 是否已答過此題（開關目錄不消失；若已按過結束則為 null，呈現乾淨重置狀態）
     if (window.ChemUserLog) {
       const sessionRec = window.ChemUserLog.getSessionAnswer(chapId, q.id);
       if (sessionRec && sessionRec.chosen) {
@@ -1039,9 +1027,9 @@ function renderQuestions(qList, chapId) {
   });
 }
 
-// 13. 首頁 Dashboard 渲染（僅更新內容，絕不打斷正在作答的章節視圖！）
+// 13. 首頁 Dashboard 渲染
 function renderHomeDashboard() {
-  let rightMain = document.getElementById('chemAppRootContainer') || document.querySelector('main') || document.body;
+  let rightMain = document.getElementById('chemAppRootContainer') || document.body;
   let dashboardEl = document.getElementById('chemDashboardHome');
 
   if (!dashboardEl) {
@@ -1051,32 +1039,19 @@ function renderHomeDashboard() {
     rightMain.appendChild(dashboardEl);
   }
 
-  // 如果用戶目前正在做題目 (currentView === 'chapter')，保持首頁隱藏，絕不跳回首頁！
   dashboardEl.style.display = window.chemApp.currentView === 'home' ? 'block' : 'none';
 
   const summary = window.ChemUserLog
     ? window.ChemUserLog.getDashboardSummary()
     : {
         studentId: 'GUEST',
-        isAdmin: false,
+        cloudStatus: 'connecting',
         totalAppQuestions: TOTAL_APP_QUESTIONS,
         totalTopics: 15,
         totalChapters: 65,
         totalUniqueAnswered: 0,
-        totalUniqueCorrect: 0,
-        totalUniqueWrong: 0,
         overallCompletionText: '0%',
-        overallAccuracyRate: 0,
-        recentTopic: {
-          chapId: null,
-          topicName: '尚未選擇課題',
-          chapterName: '請點擊右下角「目錄選單」開始練習',
-          answered: 0,
-          correct: 0,
-          wrong: 0,
-          completionRate: 0,
-          remainingRate: 100
-        },
+        recentTopic: { chapId: null, topicName: '尚未選擇課題', chapterName: '', answered: 0, correct: 0, wrong: 0, completionRate: 0, remainingRate: 100 },
         dailyList: []
       };
 
@@ -1087,13 +1062,20 @@ function renderHomeDashboard() {
     ? `${rt.topicName} — ${rt.chapterName}`
     : '尚未選擇課題（請點右下角「目錄選單」開始）';
 
+  const cloudBadge =
+    summary.cloudStatus === 'synced'
+      ? `<span style="font-size:11px; color:#137333; background:#e6f4ea; padding:3px 8px; border-radius:10px; font-weight:bold;">☁️ 雲端已同步</span>`
+      : summary.cloudStatus === 'error'
+      ? `<span title="${summary.cloudErrorMsg || ''}" style="font-size:11px; color:#c5221f; background:#fce8e6; padding:3px 8px; border-radius:10px; font-weight:bold;">⚠️ 雲端權限未開</span>`
+      : `<span style="font-size:11px; color:#666; background:#f1f3f4; padding:3px 8px; border-radius:10px;">連線中...</span>`;
+
   const dailyListHtml =
     summary.dailyList.length === 0
       ? `<div style="font-size:13px; color:#888; text-align:center; padding:18px 0;">尚無作答記錄，快去開始練習吧！</div>`
       : summary.dailyList
           .map(
             item => `
-        <div class="daily-record-item sound-trigger" data-date="${item.date}" style="display:flex; justify-content:space-between; align-items:center; padding:11px 16px; background:#fff; border-radius:14px; margin-bottom:8px; border:1px solid #e6e8ec; cursor:pointer; transition:transform 0.1s;">
+        <div class="daily-record-item sound-trigger" data-date="${item.date}" style="display:flex; justify-content:space-between; align-items:center; padding:11px 16px; background:#fff; border-radius:14px; margin-bottom:8px; border:1px solid #e6e8ec; cursor:pointer;">
           <div style="display:flex; align-items:center; gap:8px;">
             <span style="font-weight:bold; color:#222; font-size:14px;">${item.date}</span>
             <span style="font-size:11px; color:#34a853; background:#e6f4ea; padding:2px 7px; border-radius:8px; font-weight:bold;">對 ${item.correctCount}</span>
@@ -1106,9 +1088,12 @@ function renderHomeDashboard() {
           .join('');
 
   dashboardEl.innerHTML = `
-    <!-- 頂部大圓角導覽列 (位置上移、橫排圓角背景) -->
+    <!-- 頂部大圓角導覽列 -->
     <div style="background:#fff; border:1.5px solid #dbe2ef; border-radius:28px; padding:11px 18px; margin-top:4px; margin-bottom:18px; box-shadow:0 4px 14px rgba(26,115,232,0.07); display:flex; justify-content:space-between; align-items:center; flex-wrap:nowrap; gap:8px; overflow-x:auto; white-space:nowrap;">
-      <span style="font-size:17px; color:#1a73e8; font-weight:800; font-style:italic; letter-spacing:0.5px;">CHEM QB</span>
+      <div style="display:flex; align-items:center; gap:8px;">
+        <span style="font-size:17px; color:#1a73e8; font-weight:800; font-style:italic;">CHEM QB</span>
+        ${cloudBadge}
+      </div>
       <span style="font-weight:bold; color:#555; font-size:13px; background:#f4f6f9; padding:4px 10px; border-radius:12px;">${todayStr}</span>
       <div style="display:flex; align-items:center; gap:6px;">
         <span style="font-size:12px; font-weight:bold; color:#1a73e8; background:#e8f0fe; padding:4px 10px; border-radius:12px; border:1px solid #aecbfa;">USER: [ ${summary.studentId} ]</span>
@@ -1118,7 +1103,7 @@ function renderHomeDashboard() {
     </div>
 
     <!-- Recent Topic / Chapter 卡片 -->
-    <div style="background:#fff; border:2px solid #e0e0e0; border-radius:24px; padding:18px 20px; margin-bottom:16px; box-shadow:0 4px 12px rgba(0,0,0,0.04);">
+    <div class="m3-card" style="background:#fff; border:2px solid #e0e0e0; border-radius:24px; padding:18px 20px; margin-bottom:16px; box-shadow:0 4px 12px rgba(0,0,0,0.04);">
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px; flex-wrap:wrap; gap:6px;">
         <span style="font-size:13px; color:#e67c73; font-weight:bold;">Recent topic / Chapter</span>
         ${
@@ -1136,7 +1121,6 @@ function renderHomeDashboard() {
         }
       </div>
 
-      <!-- 進度條 -->
       <div style="width:100%; background:#edf2f7; height:8px; border-radius:4px; overflow:hidden; margin-bottom:16px;">
         <div style="width:${rt.completionRate || 0}%; background:#34a853; height:100%; transition:width 0.3s;"></div>
       </div>
@@ -1161,13 +1145,13 @@ function renderHomeDashboard() {
       </div>
     </div>
 
-    <!-- 每日練習記錄卡片 (支援選擇日期與查看明細) -->
-    <div style="background:#f8f9fa; border:2px solid #e0e0e0; border-radius:24px; padding:18px 20px; margin-bottom:16px;">
+    <!-- 每日練習記錄卡片 -->
+    <div class="m3-card" style="background:#f8f9fa; border:2px solid #e0e0e0; border-radius:24px; padding:18px 20px; margin-bottom:16px;">
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; flex-wrap:wrap; gap:8px;">
         <h3 style="margin:0; font-size:15px; color:#222;">每日練習記錄</h3>
         <div style="display:flex; align-items:center; gap:6px;">
           <input type="date" id="homeQuickDatePicker" value="${todayStr}" style="padding:4px 8px; border:1px solid #ccc; border-radius:10px; font-size:12px; cursor:pointer; background:#fff;" />
-          <button id="openFullDailyInspectorBtn" class="sound-trigger" style="background:#e8f0fe; color:#1a73e8; border:1px solid #aecbfa; padding:5px 10px; border-radius:10px; font-size:12px; font-weight:bold; cursor:pointer;">查看紀錄</button>
+          <button id="openFullDailyInspectorBtn" class="sound-trigger" style="background:#e8f0fe; color:#1a73e8; border:1px solid #aecbfa; padding:5px 10px; border-radius:10px; font-size:12px; font-weight:bold; cursor:pointer;">查看紀錄 / 登入時間</button>
         </div>
       </div>
       <div style="max-height:175px; overflow-y:auto; padding-right:2px;">
@@ -1176,7 +1160,7 @@ function renderHomeDashboard() {
     </div>
 
     <!-- MC 語言切換卡片 -->
-    <div style="background:#fff; border:2px solid #e0e0e0; border-radius:24px; padding:14px 20px; margin-bottom:16px; display:flex; justify-content:space-between; align-items:center;">
+    <div class="m3-card" style="background:#fff; border:2px solid #e0e0e0; border-radius:24px; padding:14px 20px; margin-bottom:16px; display:flex; justify-content:space-between; align-items:center;">
       <span style="font-weight:bold; font-size:14px; color:#333;">MC 語言 <span style="color:#888; font-weight:normal; font-size:12px;">(Stay tuned)</span></span>
       <div style="display:flex; background:#f1f3f4; border-radius:20px; padding:4px; gap:4px;">
         <button id="langEnBtn" class="sound-trigger" style="border:none; background:${window.chemApp.currentLang === 'e' ? '#1a73e8' : 'transparent'}; color:${window.chemApp.currentLang === 'e' ? '#fff' : '#555'}; font-weight:bold; padding:6px 14px; border-radius:16px; font-size:13px; cursor:pointer;">英</button>
@@ -1184,8 +1168,8 @@ function renderHomeDashboard() {
       </div>
     </div>
 
-    <!-- 底部總覽卡片 (總 Topic: 15 | 總 Chapter: 65 | 總題目: 5309 | 完成度) -->
-    <div style="background:#fff; border:2px solid #e0e0e0; border-radius:24px; padding:18px 16px; text-align:center; display:flex; justify-content:space-around; align-items:center; flex-wrap:wrap; gap:10px;">
+    <!-- 底部總覽卡片 -->
+    <div class="m3-card" style="background:#fff; border:2px solid #e0e0e0; border-radius:24px; padding:18px 16px; text-align:center; display:flex; justify-content:space-around; align-items:center; flex-wrap:wrap; gap:10px;">
       <div>
         <div style="font-size:12px; color:#e67c73; font-weight:bold;">總 Topic</div>
         <div style="font-size:22px; font-weight:bold; color:#222; margin-top:2px;">15</div>
@@ -1205,7 +1189,6 @@ function renderHomeDashboard() {
     </div>
   `;
 
-  // 綁定首頁按鈕事件
   const resumeBtn = dashboardEl.querySelector('#resumeRecentChapBtn');
   if (resumeBtn && rt.chapId) {
     resumeBtn.onclick = () => {
@@ -1273,6 +1256,7 @@ function renderCenterDirectoryModal() {
   }
 
   const uniqueAns = (window.ChemUserLog && window.ChemUserLog.state.uniqueAnswers) || {};
+  const sessionAns = (window.ChemUserLog && window.ChemUserLog.state.sessionAnswers) || {};
 
   let contentHtml = `
     <div style="background:#fff; width:100%; max-width:440px; height:82vh; max-height:640px; border-radius:28px; box-shadow:0 14px 44px rgba(0,0,0,0.25); display:flex; flex-direction:column; overflow:hidden; border:1px solid #e0e0e0;">
@@ -1298,12 +1282,13 @@ function renderCenterDirectoryModal() {
     `;
     topic.chapters.forEach(ch => {
       const doneInChap = Object.values(uniqueAns).filter(r => parseInt(r.chapId, 10) === ch.id).length;
+      const inProgressCount = sessionAns[ch.id] ? Object.keys(sessionAns[ch.id]).length : 0;
       const isActive = ch.id === window.chemApp.activeChapterId;
       contentHtml += `
           <div class="dir-chapter-item sound-trigger" data-chid="${ch.id}" style="padding:12px 16px 12px 22px; border-top:1px solid #f0f0f0; font-size:13px; color:${isActive ? '#1a73e8' : '#444'}; background:${isActive ? '#e8f0fe' : '#fff'}; font-weight:${isActive ? 'bold' : 'normal'}; cursor:pointer; display:flex; justify-content:space-between; align-items:center;">
             <span>${ch.name}</span>
             <span style="font-size:12px; color:#1a73e8; font-weight:bold; white-space:nowrap; margin-left:8px;">
-              ${doneInChap > 0 ? `已答 ${doneInChap} 題 · ` : ''}進入 &rsaquo;
+              ${inProgressCount > 0 ? `<span style="color:#e67c73;">進行中(${inProgressCount})</span> · ` : doneInChap > 0 ? `已答 ${doneInChap} 題 · ` : ''}進入 &rsaquo;
             </span>
           </div>
       `;
@@ -1344,7 +1329,7 @@ function renderCenterDirectoryModal() {
   });
 }
 
-// 15. 全屏登入 / 註冊閘道 (支援 5a/b/c/d + 1~35 雙重驗證 & Admin Wesley)
+// 15. 全屏登入 / 註冊閘道
 function ensureAuthOverlay() {
   let authOverlay = document.getElementById('chemAuthOverlay');
   if (authOverlay) return authOverlay;
@@ -1361,7 +1346,7 @@ function ensureAuthOverlay() {
       <div style="display:flex; flex-direction:column; gap:14px; text-align:left;">
         <div>
           <label style="font-size:12px; font-weight:bold; color:#333; display:block; margin-bottom:4px;">用戶 ID (5a/b/c/d + 1~35 或 Admin)</label>
-          <input type="text" id="customUserIdInput" placeholder="例如: 5A12 或 5D28" style="width:100%; padding:11px 14px; border:1px solid #ccc; border-radius:12px; font-size:14px; box-sizing:border-box;" />
+          <input type="text" id="customUserIdInput" placeholder="例如: 5A1 或 5D28" style="width:100%; padding:11px 14px; border:1px solid #ccc; border-radius:12px; font-size:14px; box-sizing:border-box;" />
         </div>
         <div>
           <label style="font-size:12px; font-weight:bold; color:#333; display:block; margin-bottom:4px;">密碼 (沒有限制)</label>
@@ -1418,11 +1403,14 @@ function ensureAuthOverlay() {
   const submitAuth = async () => {
     SoundFX.playClick();
     errMsg.style.color = '#1a73e8';
-    errMsg.textContent = '驗證中，請稍候...';
+    errMsg.textContent = '正在連線雲端驗證中...';
 
     if (!window.ChemUserLog) {
+      await ensureUserLogModuleLoaded();
+    }
+    if (!window.ChemUserLog) {
       errMsg.style.color = '#ea4335';
-      errMsg.textContent = '系統模組載入中，請再按一次！';
+      errMsg.textContent = '找不到 userlog.js！請確認 GitHub 根目錄已有 userlog.js。';
       return;
     }
 
@@ -1458,34 +1446,44 @@ function ensureAuthOverlay() {
   return authOverlay;
 }
 
-// 16. 確保自動載入 ./userlog.js 並啟動系統
-async function ensureUserLogModuleLoaded() {
-  if (window.ChemUserLog) return true;
-  return new Promise((resolve) => {
-    const s = document.createElement('script');
-    s.src = `./userlog.js?v=${Date.now()}`;
-    s.onload = () => resolve(true);
-    s.onerror = () => {
-      console.error('無法載入 ./userlog.js，請確認檔案已上傳至相同目錄！');
-      resolve(false);
-    };
-    document.head.appendChild(s);
-  });
+// 16. 自動載入 style.css 與 userlog.js (免改 index.html)
+function ensureStyleCssLoaded() {
+  if (document.querySelector('link[href*="style.css"]')) return;
+  const link = document.createElement('link');
+  link.rel = 'stylesheet';
+  link.href = `./style.css?v=${Date.now()}`;
+  document.head.appendChild(link);
 }
 
-function cleanLegacyPageLayout() {
-  // 移除舊版 HTML 殘留的導覽列、側邊欄與舊區塊，建立純淨容器
-  document.querySelectorAll('header, .header, .top-nav, aside, .sidebar, #sidebar, .left-panel').forEach(el => el.remove());
+async function ensureUserLogModuleLoaded() {
+  if (window.ChemUserLog) return true;
+  const candidates = [`./userlog.js?v=${Date.now()}`, `./userlog2.js?v=${Date.now()}`];
+  for (const src of candidates) {
+    const ok = await new Promise((resolve) => {
+      const s = document.createElement('script');
+      s.src = src;
+      s.onload = () => resolve(!!window.ChemUserLog);
+      s.onerror = () => resolve(false);
+      document.head.appendChild(s);
+    });
+    if (ok) return true;
+  }
+  return false;
+}
 
-  let mainEl = document.querySelector('main') || document.body;
-  Array.from(mainEl.children).forEach(child => {
+// 徹底清除舊版 HTML 骨架，只顯示新版介面
+function cleanLegacyPageLayout() {
+  Array.from(document.body.children).forEach(child => {
     if (
       child.tagName !== 'SCRIPT' &&
       child.id !== 'chemAppRootContainer' &&
       child.id !== 'chemAuthOverlay' &&
       child.id !== 'floatingActionGroup' &&
       child.id !== 'centerDirectoryModal' &&
-      child.id !== 'inlineConfirmModal'
+      child.id !== 'inlineConfirmModal' &&
+      child.id !== 'chemAdminFullModal' &&
+      child.id !== 'chemDailyLogInspectorModal' &&
+      child.id !== 'chemAdminPassModal'
     ) {
       child.style.display = 'none';
     }
@@ -1496,17 +1494,17 @@ function cleanLegacyPageLayout() {
     rootContainer = document.createElement('div');
     rootContainer.id = 'chemAppRootContainer';
     rootContainer.style.cssText = 'width:100%; min-height:100vh; background:#f4f6f9; padding-top:6px; box-sizing:border-box;';
-    mainEl.insertBefore(rootContainer, mainEl.firstChild);
+    document.body.insertBefore(rootContainer, document.body.firstChild);
   }
 }
 
 // 17. 主程式啟動入口
-document.addEventListener('DOMContentLoaded', async () => {
+async function bootChemApp() {
+  ensureStyleCssLoaded();
   cleanLegacyPageLayout();
   const authOverlay = ensureAuthOverlay();
   ensureFloatingActionGroup();
 
-  // 全站一般按鈕點擊音效代理
   document.addEventListener('click', (e) => {
     const target = e.target.closest('button, .sound-trigger');
     if (
@@ -1520,11 +1518,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
   });
 
-  // 自動載入 userlog.js
   await ensureUserLogModuleLoaded();
 
   if (window.ChemUserLog) {
-    // 當登入或登出狀態改變時
     window.ChemUserLog.onAuthChange((user, isAdmin) => {
       if (user) {
         authOverlay.style.display = 'none';
@@ -1542,14 +1538,18 @@ document.addEventListener('DOMContentLoaded', async () => {
       }
     });
 
-    // 當數據狀態更新時（只在背景更新首頁與 Streak，絕不強制中斷答題！）
     window.ChemUserLog.onStateChange((state) => {
       const streakEl = document.getElementById('footerStreakCount');
       if (streakEl) streakEl.textContent = state.currentStreak || 0;
       renderHomeDashboard();
     });
 
-    // 初始化 Firebase 認證與雲端同步
     await window.ChemUserLog.initFirebase(FIREBASE_CONFIG);
   }
-});
+}
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', bootChemApp);
+} else {
+  bootChemApp();
+}
