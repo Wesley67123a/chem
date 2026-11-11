@@ -157,9 +157,9 @@ const SYLLABUS_CONFIG = [
   }
 ];
 
-// 2. 全局狀態 (v0.0.38)
+// 2. 全局狀態 (v0.0.39)
 window.chemApp = {
-  version: '0.0.38',
+  version: '0.0.39',
   currentLang: 'e',
   activeChapterId: null,
   questionsDB: {},
@@ -221,13 +221,13 @@ class SoundFX {
   }
 }
 
-// 2.2 IndexedDB + Firebase 雲端與本機儲存引擎
+// 2.2 IndexedDB + 儲存引擎
 class ChemStorage {
   static dbPromise = null;
   static getDB() {
     if (!this.dbPromise) {
       this.dbPromise = new Promise((resolve, reject) => {
-        const req = indexedDB.open('HKDSE_CHEM_QB_V38', 1);
+        const req = indexedDB.open('HKDSE_CHEM_QB_V39', 1);
         req.onupgradeneeded = (e) => {
           const db = e.target.result;
           if (!db.objectStoreNames.contains('chapters')) db.createObjectStore('chapters');
@@ -265,20 +265,20 @@ class ChemStorage {
 
   static loadMeta() {
     try {
-      const counts = localStorage.getItem('CHEM_COUNTS_V38');
+      const counts = localStorage.getItem('CHEM_COUNTS_V39');
       if (counts) window.chemApp.chapterCounts = JSON.parse(counts);
-      const ans = localStorage.getItem('CHEM_USER_ANS_V38');
+      const ans = localStorage.getItem('CHEM_USER_ANS_V39');
       if (ans) window.chemApp.userAnswers = JSON.parse(ans);
-      const savedLang = localStorage.getItem('CHEM_LANG_V38');
+      const savedLang = localStorage.getItem('CHEM_LANG_V39');
       if (savedLang === 'c' || savedLang === 'e') window.chemApp.currentLang = savedLang;
     } catch (e) {}
   }
 
   static saveMeta() {
     try {
-      localStorage.setItem('CHEM_COUNTS_V38', JSON.stringify(window.chemApp.chapterCounts));
-      localStorage.setItem('CHEM_USER_ANS_V38', JSON.stringify(window.chemApp.userAnswers));
-      localStorage.setItem('CHEM_LANG_V38', window.chemApp.currentLang);
+      localStorage.setItem('CHEM_COUNTS_V39', JSON.stringify(window.chemApp.chapterCounts));
+      localStorage.setItem('CHEM_USER_ANS_V39', JSON.stringify(window.chemApp.userAnswers));
+      localStorage.setItem('CHEM_LANG_V39', window.chemApp.currentLang);
     } catch (e) {}
 
     if (window.chemApp.currentUser && window.firebaseCloud) {
@@ -537,7 +537,7 @@ function updateTimerDisplay() {
   }
 }
 
-// 6. 視圖切換與全屏佈局控制
+// 6. 視圖切換與全屏佈局控制 (含結束當前 MC 按鈕與雙重確認機制)
 function switchRightPanelToChapterView() {
   let wrapper = document.getElementById('chemChapterViewWrapper');
   if (!wrapper) {
@@ -578,9 +578,29 @@ function switchRightPanelToChapterView() {
         </div>
       </div>
       <div id="questionList"></div>
+      
+      <!-- 右下角結束當前 MC 按鈕（雙重確認機制） -->
+      <button id="endChapterBtn" class="sound-trigger" style="position:fixed; bottom:80px; right:20px; z-index:9998; background:#ea4335; color:#fff; border:none; padding:10px 16px; border-radius:24px; font-weight:bold; font-size:13px; box-shadow:0 4px 14px rgba(0,0,0,0.25); cursor:pointer;">結束當前 MC</button>
     `;
 
     rightMain.insertBefore(wrapper, rightMain.firstChild);
+
+    // 結束當前 MC 按鈕邏輯：按兩次確認
+    let endClickCount = 0;
+    let endTimer = null;
+    wrapper.querySelector('#endChapterBtn').onclick = () => {
+      SoundFX.playClick();
+      endClickCount++;
+      if (endClickCount === 1) {
+        alert("確定要結束當前 MC 練習嗎？請再按一次確認（是 / 否）");
+        endTimer = setTimeout(() => { endClickCount = 0; }, 4000);
+      } else if (endClickCount >= 2) {
+        clearTimeout(endTimer);
+        endClickCount = 0;
+        pauseTimer();
+        wrapper.querySelector('#backToDashboardBtn').click();
+      }
+    };
 
     const tBtn = wrapper.querySelector('#timerToggleBtn');
     const rBtn = wrapper.querySelector('#timerResetBtn');
@@ -607,6 +627,9 @@ function switchRightPanelToChapterView() {
       SoundFX.playClick();
       pauseTimer();
       wrapper.style.display = 'none';
+      const endBtn = document.getElementById('endChapterBtn');
+      if (endBtn) endBtn.style.display = 'none';
+
       window.chemApp.dashboardNodes.forEach(node => {
         if (node !== wrapper) node.style.display = '';
       });
@@ -646,6 +669,8 @@ function switchRightPanelToChapterView() {
     if (node !== wrapper) node.style.display = 'none';
   });
   wrapper.style.display = 'block';
+  const endBtn = wrapper.querySelector('#endChapterBtn');
+  if (endBtn) endBtn.style.display = 'block';
 
   const sidebar = document.querySelector('aside') || document.querySelector('.sidebar') || document.querySelector('#sidebar') || document.querySelector('.left-panel');
   if (sidebar) sidebar.style.display = 'none';
@@ -919,11 +944,10 @@ function updateDashboardStats() {
   } catch (e) {}
 }
 
-// 10. 左側選單渲染（確保自動找尋或建立 #topicListContainer）
+// 10. 左側選單渲染
 function renderSidebar() {
   let container = document.getElementById('topicListContainer');
   if (!container) {
-    // 如果網頁原生的 topicListContainer 尚未加載，自動在側邊欄或左側面板建立一個
     const sidebarEl = document.querySelector('aside') || document.querySelector('.sidebar') || document.querySelector('#sidebar') || document.querySelector('.left-panel') || document.body;
     container = document.createElement('div');
     container.id = 'topicListContainer';
@@ -996,11 +1020,9 @@ function renderSidebar() {
   });
 }
 
-// 11. 初始化與 Firebase 雲端模組掛載
+// 11. 初始化與註冊系統 / 雙重驗證 / 首頁控制
 document.addEventListener('DOMContentLoaded', () => {
   ChemStorage.loadMeta();
-  renderSidebar();
-  updateCounts();
 
   document.addEventListener('click', (e) => {
     const target = e.target.closest('button, .sound-trigger, input[type="file"]');
@@ -1009,33 +1031,12 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-  if (!document.getElementById('mobileToggleSidebarBtn')) {
-    const floatBtn = document.createElement('button');
-    floatBtn.id = 'mobileToggleSidebarBtn';
-    floatBtn.innerHTML = '目錄選單';
-    floatBtn.style.cssText = 'position:fixed; bottom:24px; right:20px; z-index:9999; background:#1a73e8; color:#fff; border:none; padding:10px 16px; border-radius:24px; font-weight:bold; font-size:13px; box-shadow:0 4px 14px rgba(0,0,0,0.25); cursor:pointer; display:block;';
-
-    floatBtn.onclick = () => {
-      SoundFX.playClick();
-      const sidebar = document.querySelector('aside') || document.querySelector('.sidebar') || document.querySelector('#sidebar') || document.querySelector('.left-panel');
-      if (sidebar) {
-        const isHidden = (sidebar.style.display === 'none' || window.getComputedStyle(sidebar).display === 'none');
-        sidebar.style.display = isHidden ? 'block' : 'none';
-        if (isHidden) {
-          sidebar.style.position = 'fixed';
-          sidebar.style.zIndex = '9998';
-          sidebar.style.background = '#fff';
-          sidebar.style.width = '85%';
-          sidebar.style.height = '100vh';
-          sidebar.style.top = '0';
-          sidebar.style.left = '0';
-          sidebar.style.overflowY = 'auto';
-          sidebar.style.boxShadow = '4px 0 15px rgba(0,0,0,0.2)';
-        }
-      }
-    };
-    document.body.appendChild(floatBtn);
-  }
+  // 驗證用戶 ID 格式是否為 5a/b/c/d 加數字 1-35
+  const validateStudentId = (idStr) => {
+    const cleaned = idStr.trim().toLowerCase();
+    const regex = /^5([abcd])([1-9]|[1-2][0-9]|3[0-5])$/;
+    return regex.test(cleaned);
+  };
 
   const loadFirebaseSDK = async () => {
     try {
@@ -1069,86 +1070,180 @@ document.addEventListener('DOMContentLoaded', () => {
         }
       };
 
-      const navRight = document.querySelector('.nav-right');
-      if (navRight) {
-        const authContainer = document.createElement('div');
-        authContainer.id = 'authBarContainer';
-        authContainer.style.cssText = 'display:inline-flex; align-items:center; gap:6px; margin-left:8px; font-size:11px;';
+      // 建立全屏註冊/登入首頁閘道
+      let authOverlay = document.getElementById('chemAuthOverlay');
+      if (!authOverlay) {
+        authOverlay = document.createElement('div');
+        authOverlay.id = 'chemAuthOverlay';
+        authOverlay.style.cssText = 'position:fixed; top:0; left:0; width:100vw; height:100vh; background:#f4f6f9; z-index:99999; display:flex; justify-content:center; align-items:center; font-family:sans-serif;';
         
-        authContainer.innerHTML = `
-          <div id="authLoggedOut" style="display:flex; gap:4px; align-items:center;">
-            <input type="email" id="authEmail" placeholder="電子郵件" style="padding:3px 6px; font-size:11px; border:1px solid #ccc; border-radius:6px; width:90px;" />
-            <input type="password" id="authPass" placeholder="密碼" style="padding:3px 6px; font-size:11px; border:1px solid #ccc; border-radius:6px; width:70px;" />
-            <button id="btnLogin" class="sound-trigger" style="background:#1a73e8; color:#fff; border:none; padding:3px 8px; border-radius:6px; cursor:pointer; font-weight:bold;">登入</button>
-            <button id="btnRegister" class="sound-trigger" style="background:#34a853; color:#fff; border:none; padding:3px 8px; border-radius:6px; cursor:pointer; font-weight:bold;">註冊</button>
-          </div>
-          <div id="authLoggedIn" style="display:none; gap:6px; align-items:center;">
-            <span id="userEmailDisplay" style="color:#1a73e8; font-weight:bold; max-width:100px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;"></span>
-            <button id="btnLogout" class="sound-trigger" style="background:#ea4335; color:#fff; border:none; padding:3px 8px; border-radius:6px; cursor:pointer; font-weight:bold;">登出</button>
+        authOverlay.innerHTML = `
+          <div style="background:#fff; padding:32px 40px; border-radius:24px; box-shadow:0 8px 30px rgba(0,0,0,0.12); width:100%; max-width:400px; text-align:center; border:1px solid #e0e0e0;">
+            <h2 style="margin-bottom:8px; color:#1a73e8; font-size:22px;">DSE Chemistry 題庫系統</h2>
+            <p style="font-size:13px; color:#666; margin-bottom:24px;">請登入或註冊您的學生 ID (格式如: 5a1, 5b35)</p>
+            
+            <div style="display:flex; flex-direction:column; gap:14px; text-align:left;">
+              <div>
+                <label style="font-size:12px; font-weight:bold; color:#333; display:block; margin-bottom:4px;">用戶 ID (5a/b/c/d + 1~35)</label>
+                <input type="text" id="customUserIdInput" placeholder="例如: 5a12" style="width:100%; padding:10px 14px; border:1px solid #ccc; border-radius:10px; font-size:14px; box-sizing:border-box;" />
+              </div>
+              <div>
+                <label style="font-size:12px; font-weight:bold; color:#333; display:block; margin-bottom:4px;">密碼 (沒有限制)</label>
+                <input type="password" id="customUserPassInput" placeholder="輸入密碼" style="width:100%; padding:10px 14px; border:1px solid #ccc; border-radius:10px; font-size:14px; box-sizing:border-box;" />
+              </div>
+              <div id="confirmPassGroup" style="display:none;">
+                <label style="font-size:12px; font-weight:bold; color:#333; display:block; margin-bottom:4px;">確認密碼 (雙重驗證)</label>
+                <input type="password" id="customUserPassConfirmInput" placeholder="再次輸入密碼" style="width:100%; padding:10px 14px; border:1px solid #ccc; border-radius:10px; font-size:14px; box-sizing:border-box;" />
+              </div>
+
+              <div style="display:flex; gap:10px; margin-top:6px;">
+                <button id="mainLoginBtn" class="sound-trigger" style="flex:1; background:#1a73e8; color:#fff; border:none; padding:12px; border-radius:12px; font-weight:bold; font-size:14px; cursor:pointer;">登入</button>
+                <button id="mainToggleRegBtn" class="sound-trigger" style="flex:1; background:#f1f3f4; color:#1a73e8; border:1px solid #1a73e8; padding:12px; border-radius:12px; font-weight:bold; font-size:14px; cursor:pointer;">切換註冊</button>
+              </div>
+            </div>
+            <div id="authErrorMsg" style="color:#ea4335; font-size:12px; margin-top:14px; font-weight:bold; min-height:16px;"></div>
           </div>
         `;
-        navRight.appendChild(authContainer);
+        document.body.appendChild(authOverlay);
 
-        const emailInput = authContainer.querySelector('#authEmail');
-        const passInput = authContainer.querySelector('#authPass');
-        const loggedOutDiv = authContainer.querySelector('#authLoggedOut');
-        const loggedInDiv = authContainer.querySelector('#authLoggedIn');
-        const userEmailSpan = authContainer.querySelector('#userEmailDisplay');
+        let isRegisterMode = false;
+        const idInput = authOverlay.querySelector('#customUserIdInput');
+        const passInput = authOverlay.querySelector('#customUserPassInput');
+        const confirmPassInput = authOverlay.querySelector('#customUserPassConfirmInput');
+        const confirmGroup = authOverlay.querySelector('#confirmPassGroup');
+        const loginBtn = authOverlay.querySelector('#mainLoginBtn');
+        const toggleRegBtn = authOverlay.querySelector('#mainToggleRegBtn');
+        const errMsg = authOverlay.querySelector('#authErrorMsg');
 
-        authContainer.querySelector('#btnLogin').onclick = async () => {
+        toggleRegBtn.onclick = () => {
           SoundFX.playClick();
-          try {
-            await signInWithEmailAndPassword(auth, emailInput.value, passInput.value);
-            alert("登入成功！");
-          } catch (e) {
-            alert("登入失敗：" + e.message);
-          }
-        };
-
-        authContainer.querySelector('#btnRegister').onclick = async () => {
-          SoundFX.playClick();
-          try {
-            await createUserWithEmailAndPassword(auth, emailInput.value, passInput.value);
-            alert("註冊並登入成功！");
-          } catch (e) {
-            alert("註冊失敗：" + e.message);
-          }
-        };
-
-        authContainer.querySelector('#btnLogout').onclick = async () => {
-          SoundFX.playClick();
-          await signOut(auth);
-          alert("已登出");
-        };
-
-        onAuthStateChanged(auth, async (user) => {
-          if (user) {
-            window.chemApp.currentUser = user;
-            loggedOutDiv.style.display = 'none';
-            loggedInDiv.style.display = 'flex';
-            userEmailSpan.textContent = user.email;
-
-            try {
-              const docSnap = await getDoc(doc(db, "users_progress", user.uid));
-              if (docSnap.exists()) {
-                const data = docSnap.data();
-                if (data.answers) window.chemApp.userAnswers = data.answers;
-                if (data.counts) window.chemApp.chapterCounts = data.counts;
-                ChemStorage.saveMeta();
-                updateCounts();
-              }
-            } catch (e) {}
+          isRegisterMode = !isRegisterMode;
+          if (isRegisterMode) {
+            confirmGroup.style.display = 'block';
+            loginBtn.textContent = '確認註冊';
+            loginBtn.style.background = '#34a853';
+            toggleRegBtn.textContent = '返回登入';
           } else {
-            window.chemApp.currentUser = null;
-            loggedOutDiv.style.display = 'flex';
-            loggedInDiv.style.display = 'none';
+            confirmGroup.style.display = 'none';
+            loginBtn.textContent = '登入';
+            loginBtn.style.background = '#1a73e8';
+            toggleRegBtn.textContent = '切換註冊';
           }
-        });
+          errMsg.textContent = '';
+        };
+
+        loginBtn.onclick = async () => {
+          SoundFX.playClick();
+          const rawId = idInput.value.trim().toLowerCase();
+          const pass = passInput.value;
+
+          if (!validateStudentId(rawId)) {
+            errMsg.textContent = '格式錯誤！用戶 ID 必須是 5a、5b、5c 或 5d 開頭，後面接 1 到 35 的數字（例如 5a12）。';
+            return;
+          }
+
+          // 利用 Firebase 支援的 Email 格式模擬學生 ID 登入
+          const syntheticEmail = `${rawId}@dsechem.edu`;
+
+          if (isRegisterMode) {
+            const confirmPass = confirmPassInput.value;
+            if (pass !== confirmPass) {
+              errMsg.textContent = '兩次輸入的密碼不一致，雙重驗證失敗！';
+              return;
+            }
+            try {
+              await createUserWithEmailAndPassword(auth, syntheticEmail, pass);
+              alert('註冊成功！');
+            } catch (e) {
+              errMsg.textContent = '註冊失敗：' + e.message;
+            }
+          } else {
+            try {
+              await signInWithEmailAndPassword(auth, syntheticEmail, pass);
+            } catch (e) {
+              errMsg.textContent = '登入失敗：ID 或密碼不正確。';
+            }
+          }
+        };
       }
+
+      onAuthStateChanged(auth, async (user) => {
+        if (user) {
+          window.chemApp.currentUser = user;
+          authOverlay.style.display = 'none'; // 通過驗證，進入主頁
+          renderSidebar();
+          updateCounts();
+
+          // 在右上角顯示用戶名與返回首頁功能
+          const navRight = document.querySelector('.nav-right');
+          if (navRight && !document.getElementById('topUserDisplayBar')) {
+            const userBar = document.createElement('div');
+            userBar.id = 'topUserDisplayBar';
+            userBar.style.cssText = 'display:inline-flex; align-items:center; gap:8px; margin-left:8px; font-size:12px;';
+            const displayId = user.email.split('@')[0].toUpperCase();
+            userBar.innerHTML = `
+              <span style="font-weight:bold; color:#1a73e8; background:#e8f0fe; padding:4px 10px; border-radius:12px; border:1px solid #aecbfa;">用戶: ${displayId}</span>
+              <button id="returnHomeBtn" class="sound-trigger" style="background:#5f6368; color:#fff; border:none; padding:4px 10px; border-radius:12px; cursor:pointer; font-weight:bold;">返回首頁</button>
+            `;
+            navRight.appendChild(userBar);
+
+            userBar.querySelector('#returnHomeBtn').onclick = () => {
+              SoundFX.playClick();
+              // 返回首頁（登出並重新顯示登入閘道）
+              signOut(auth);
+            };
+          }
+
+          // 從雲端下載作答記錄
+          try {
+            const docSnap = await getDoc(doc(db, "users_progress", user.uid));
+            if (docSnap.exists()) {
+              const data = docSnap.data();
+              if (data.answers) window.chemApp.userAnswers = data.answers;
+              if (data.counts) window.chemApp.chapterCounts = data.counts;
+              ChemStorage.saveMeta();
+              updateCounts();
+            }
+          } catch (e) {}
+        } else {
+          window.chemApp.currentUser = null;
+          authOverlay.style.display = 'flex'; // 未登入或點擊返回首頁時強制回到閘道
+          const userBar = document.getElementById('topUserDisplayBar');
+          if (userBar) userBar.remove();
+        }
+      });
     } catch (e) {}
   };
 
   loadFirebaseSDK();
+
+  if (!document.getElementById('mobileToggleSidebarBtn')) {
+    const floatBtn = document.createElement('button');
+    floatBtn.id = 'mobileToggleSidebarBtn';
+    floatBtn.innerHTML = '目錄選單';
+    floatBtn.style.cssText = 'position:fixed; bottom:24px; right:20px; z-index:9999; background:#1a73e8; color:#fff; border:none; padding:10px 16px; border-radius:24px; font-weight:bold; font-size:13px; box-shadow:0 4px 14px rgba(0,0,0,0.25); cursor:pointer; display:block;';
+
+    floatBtn.onclick = () => {
+      SoundFX.playClick();
+      const sidebar = document.querySelector('aside') || document.querySelector('.sidebar') || document.querySelector('#sidebar') || document.querySelector('.left-panel');
+      if (sidebar) {
+        const isHidden = (sidebar.style.display === 'none' || window.getComputedStyle(sidebar).display === 'none');
+        sidebar.style.display = isHidden ? 'block' : 'none';
+        if (isHidden) {
+          sidebar.style.position = 'fixed';
+          sidebar.style.zIndex = '9998';
+          sidebar.style.background = '#fff';
+          sidebar.style.width = '85%';
+          sidebar.style.height = '100vh';
+          sidebar.style.top = '0';
+          sidebar.style.left = '0';
+          sidebar.style.overflowY = 'auto';
+          sidebar.style.boxShadow = '4px 0 15px rgba(0,0,0,0.2)';
+        }
+      }
+    };
+    document.body.appendChild(floatBtn);
+  }
 
   const navRight = document.querySelector('.nav-right');
   if (navRight && !document.getElementById('langSwitchBar')) {
