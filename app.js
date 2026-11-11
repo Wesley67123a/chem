@@ -28,7 +28,7 @@ const SYLLABUS_CONFIG = [
 
 // 2. 全局狀態 (v0.0.30)
 window.chemApp = {
-  version: '0.0.30',
+  version: '0.0.33',
   currentLang: 'e', // 預設英文卷 (可於右上角切換)
   activeChapterId: null,
   questionsDB: {},
