@@ -157,9 +157,9 @@ const SYLLABUS_CONFIG = [
   }
 ];
 
-// 2. 全局狀態 (v0.0.39)
+// 2. 全局狀態 (v0.0.40)
 window.chemApp = {
-  version: '0.0.39',
+  version: '0.0.40',
   currentLang: 'e',
   activeChapterId: null,
   questionsDB: {},
@@ -221,13 +221,13 @@ class SoundFX {
   }
 }
 
-// 2.2 IndexedDB + 儲存引擎
+// 2.2 IndexedDB + 儲存引擎 (修復答題紀錄與雲端同步)
 class ChemStorage {
   static dbPromise = null;
   static getDB() {
     if (!this.dbPromise) {
       this.dbPromise = new Promise((resolve, reject) => {
-        const req = indexedDB.open('HKDSE_CHEM_QB_V39', 1);
+        const req = indexedDB.open('HKDSE_CHEM_QB_V40', 1);
         req.onupgradeneeded = (e) => {
           const db = e.target.result;
           if (!db.objectStoreNames.contains('chapters')) db.createObjectStore('chapters');
@@ -265,22 +265,23 @@ class ChemStorage {
 
   static loadMeta() {
     try {
-      const counts = localStorage.getItem('CHEM_COUNTS_V39');
+      const counts = localStorage.getItem('CHEM_COUNTS_V40');
       if (counts) window.chemApp.chapterCounts = JSON.parse(counts);
-      const ans = localStorage.getItem('CHEM_USER_ANS_V39');
+      const ans = localStorage.getItem('CHEM_USER_ANS_V40');
       if (ans) window.chemApp.userAnswers = JSON.parse(ans);
-      const savedLang = localStorage.getItem('CHEM_LANG_V39');
+      const savedLang = localStorage.getItem('CHEM_LANG_V40');
       if (savedLang === 'c' || savedLang === 'e') window.chemApp.currentLang = savedLang;
     } catch (e) {}
   }
 
   static saveMeta() {
     try {
-      localStorage.setItem('CHEM_COUNTS_V39', JSON.stringify(window.chemApp.chapterCounts));
-      localStorage.setItem('CHEM_USER_ANS_V39', JSON.stringify(window.chemApp.userAnswers));
-      localStorage.setItem('CHEM_LANG_V39', window.chemApp.currentLang);
+      localStorage.setItem('CHEM_COUNTS_V40', JSON.stringify(window.chemApp.chapterCounts));
+      localStorage.setItem('CHEM_USER_ANS_V40', JSON.stringify(window.chemApp.userAnswers));
+      localStorage.setItem('CHEM_LANG_V40', window.chemApp.currentLang);
     } catch (e) {}
 
+    // 自動同步到 Firebase 雲端
     if (window.chemApp.currentUser && window.firebaseCloud) {
       window.firebaseCloud.syncToCloud(window.chemApp.currentUser.uid, window.chemApp.userAnswers, window.chemApp.chapterCounts);
     }
@@ -537,7 +538,7 @@ function updateTimerDisplay() {
   }
 }
 
-// 6. 視圖切換與全屏佈局控制 (含結束當前 MC 按鈕與雙重確認機制)
+// 6. 視圖切換與全屏佈局控制 (內嵌式「是 / 否」確認提示卡片)
 function switchRightPanelToChapterView() {
   let wrapper = document.getElementById('chemChapterViewWrapper');
   if (!wrapper) {
@@ -579,27 +580,61 @@ function switchRightPanelToChapterView() {
       </div>
       <div id="questionList"></div>
       
-      <!-- 右下角結束當前 MC 按鈕（雙重確認機制） -->
+      <!-- 右下角結束當前 MC 按鈕 -->
       <button id="endChapterBtn" class="sound-trigger" style="position:fixed; bottom:80px; right:20px; z-index:9998; background:#ea4335; color:#fff; border:none; padding:10px 16px; border-radius:24px; font-weight:bold; font-size:13px; box-shadow:0 4px 14px rgba(0,0,0,0.25); cursor:pointer;">結束當前 MC</button>
+
+      <!-- 網頁內嵌確認提示框（雙重確認：是 / 否） -->
+      <div id="inlineConfirmModal" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.4); z-index:99999; justify-content:center; align-items:center;">
+        <div style="background:#fff; padding:24px 28px; border-radius:20px; width:90%; max-width:320px; text-align:center; box-shadow:0 8px 30px rgba(0,0,0,0.2); border:1px solid #e0e0e0;">
+          <p id="confirmModalText" style="font-size:15px; font-weight:bold; color:#111; margin-bottom:20px; line-height:1.5;">確定要結束當前 MC 練習嗎？</p>
+          <div style="display:flex; gap:12px;">
+            <button id="confirmYesBtn" class="sound-trigger" style="flex:1; background:#ea4335; color:#fff; border:none; padding:10px; border-radius:10px; font-weight:bold; font-size:14px; cursor:pointer;">是</button>
+            <button id="confirmNoBtn" class="sound-trigger" style="flex:1; background:#f1f3f4; color:#333; border:1px solid #ccc; padding:10px; border-radius:10px; font-weight:bold; font-size:14px; cursor:pointer;">否</button>
+          </div>
+        </div>
+      </div>
     `;
 
     rightMain.insertBefore(wrapper, rightMain.firstChild);
 
-    // 結束當前 MC 按鈕邏輯：按兩次確認
+    // 結束當前 MC 按鈕邏輯：按兩次確認，透過網頁內嵌卡片顯示「是 / 否」
     let endClickCount = 0;
     let endTimer = null;
+    const modal = wrapper.querySelector('#inlineConfirmModal');
+    const modalText = wrapper.querySelector('#confirmModalText');
+    const yesBtn = wrapper.querySelector('#confirmYesBtn');
+    const noBtn = wrapper.querySelector('#confirmNoBtn');
+
     wrapper.querySelector('#endChapterBtn').onclick = () => {
       SoundFX.playClick();
       endClickCount++;
       if (endClickCount === 1) {
-        alert("確定要結束當前 MC 練習嗎？請再按一次確認（是 / 否）");
-        endTimer = setTimeout(() => { endClickCount = 0; }, 4000);
+        modalText.textContent = "確定要結束當前 MC 練習嗎？請再按一次確認（是 / 否）";
+        modal.style.display = 'flex';
+        endTimer = setTimeout(() => { endClickCount = 0; modal.style.display = 'none'; }, 6000);
       } else if (endClickCount >= 2) {
         clearTimeout(endTimer);
         endClickCount = 0;
+        modal.style.display = 'none';
         pauseTimer();
         wrapper.querySelector('#backToDashboardBtn').click();
       }
+    };
+
+    yesBtn.onclick = () => {
+      SoundFX.playClick();
+      clearTimeout(endTimer);
+      endClickCount = 0;
+      modal.style.display = 'none';
+      pauseTimer();
+      wrapper.querySelector('#backToDashboardBtn').click();
+    };
+
+    noBtn.onclick = () => {
+      SoundFX.playClick();
+      clearTimeout(endTimer);
+      endClickCount = 0;
+      modal.style.display = 'none';
     };
 
     const tBtn = wrapper.querySelector('#timerToggleBtn');
@@ -783,7 +818,7 @@ async function openChapter(chapId, bypassCache = false) {
   }
 }
 
-// 8. 渲染題目卡片
+// 8. 渲染題目卡片 (修復答題記錄寫入與雲端同步)
 function renderQuestions(qList, chapId) {
   const wrapper = switchRightPanelToChapterView();
   const container = wrapper.querySelector('#questionList');
@@ -1031,7 +1066,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-  // 驗證用戶 ID 格式是否為 5a/b/c/d 加數字 1-35
   const validateStudentId = (idStr) => {
     const cleaned = idStr.trim().toLowerCase();
     const regex = /^5([abcd])([1-9]|[1-2][0-9]|3[0-5])$/;
@@ -1070,7 +1104,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
       };
 
-      // 建立全屏註冊/登入首頁閘道
       let authOverlay = document.getElementById('chemAuthOverlay');
       if (!authOverlay) {
         authOverlay = document.createElement('div');
@@ -1142,7 +1175,6 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
           }
 
-          // 利用 Firebase 支援的 Email 格式模擬學生 ID 登入
           const syntheticEmail = `${rawId}@dsechem.edu`;
 
           if (isRegisterMode) {
@@ -1170,11 +1202,10 @@ document.addEventListener('DOMContentLoaded', () => {
       onAuthStateChanged(auth, async (user) => {
         if (user) {
           window.chemApp.currentUser = user;
-          authOverlay.style.display = 'none'; // 通過驗證，進入主頁
+          authOverlay.style.display = 'none';
           renderSidebar();
           updateCounts();
 
-          // 在右上角顯示用戶名與返回首頁功能
           const navRight = document.querySelector('.nav-right');
           if (navRight && !document.getElementById('topUserDisplayBar')) {
             const userBar = document.createElement('div');
@@ -1189,12 +1220,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
             userBar.querySelector('#returnHomeBtn').onclick = () => {
               SoundFX.playClick();
-              // 返回首頁（登出並重新顯示登入閘道）
               signOut(auth);
             };
           }
 
-          // 從雲端下載作答記錄
           try {
             const docSnap = await getDoc(doc(db, "users_progress", user.uid));
             if (docSnap.exists()) {
@@ -1207,7 +1236,7 @@ document.addEventListener('DOMContentLoaded', () => {
           } catch (e) {}
         } else {
           window.chemApp.currentUser = null;
-          authOverlay.style.display = 'flex'; // 未登入或點擊返回首頁時強制回到閘道
+          authOverlay.style.display = 'flex';
           const userBar = document.getElementById('topUserDisplayBar');
           if (userBar) userBar.remove();
         }
