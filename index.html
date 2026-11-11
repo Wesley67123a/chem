@@ -35,7 +35,13 @@
       <span class="nav-badge">按課題 · 按章編排</span>
     </div>
     <div class="nav-right">
-      <span class="question-count" id="totalQuestionsCount">共 0 題 (中文卷)</span>
+      <!-- 語言切換按鈕 -->
+      <div class="lang-switch-wrap">
+        <button id="langBtnC" class="lang-btn active" data-lang="c">中文卷 (C)</button>
+        <button id="langBtnE" class="lang-btn" data-lang="e">英文卷 (E)</button>
+      </div>
+      <span class="question-count" id="totalQuestionsCount">共 0 題</span>
+      
       <div class="action-buttons">
         <label for="pdfUploadInput" class="btn btn-primary" title="上傳包含題目的 PDF">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
@@ -175,17 +181,9 @@
   <!-- 自定義浮動 Tooltip (給熱力圖使用) -->
   <div id="customTooltip" class="custom-tooltip"></div>
 
+  <!-- 外部套件與腳本載入區 -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
   <script src="app.js"></script>
 </body>
 </html>
-    <div class="nav-right">
-      <div class="lang-switch-wrap">
-        <button id="langBtnC" class="lang-btn active" data-lang="c">中文卷 (C)</button>
-        <button id="langBtnE" class="lang-btn" data-lang="e">英文卷 (E)</button>
-      </div>
-      <span class="question-count" id="totalQuestionsCount">共 0 題</span>
-    </div>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-
