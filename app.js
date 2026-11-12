@@ -2457,3 +2457,237 @@ if (document.readyState === 'loading') {
 
   detectAndLoadCurrentChapter();
 })();
+/**
+ * ============================================================================
+ * UI Interaction Lock: Disable Page Zoom & Lock Background Scroll on Menu Open
+ * Append this snippet to the very bottom of app.js
+ * ============================================================================
+ */
+(function () {
+  'use strict';
+
+  // --------------------------------------------------------------------------
+  // 1. 徹底關閉網頁內放大功能（針對 iPad Safari / Chrome 雙指縮放與雙擊放大）
+  // --------------------------------------------------------------------------
+  function disablePageZoom() {
+    // 強制更新 viewport meta
+    let viewport = document.querySelector('meta[name="viewport"]');
+    if (!viewport) {
+      viewport = document.createElement('meta');
+      viewport.name = 'viewport';
+      document.head.appendChild(viewport);
+    }
+    viewport.setAttribute(
+      'content',
+      'width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no, viewport-fit=cover'
+    );
+
+    // 注入禁止雙擊放大與滾動鏈傳遞的基礎樣式
+    if (!document.getElementById('chemNoZoomAndScrollLockStyle')) {
+      const style = document.createElement('style');
+      style.id = 'chemNoZoomAndScrollLockStyle';
+      style.textContent = `
+        html, body {
+          touch-action: pan-x pan-y !important;
+          -ms-touch-action: pan-x pan-y !important;
+          overscroll-behavior-y: none !important;
+        }
+        * {
+          touch-action: manipulation;
+        }
+        body.chem-bg-scroll-locked {
+          overflow: hidden !important;
+          position: fixed !important;
+          left: 0 !important;
+          right: 0 !important;
+          width: 100% !important;
+          overscroll-behavior: none !important;
+        }
+      `;
+      document.head.appendChild(style);
+    }
+
+    // 攔截 iOS / iPadOS Safari 原生雙指縮放手勢 (gesturestart / gesturechange)
+    ['gesturestart', 'gesturechange', 'gestureend'].forEach(evtName => {
+      document.addEventListener(
+        evtName,
+        function (e) {
+          e.preventDefault();
+        },
+        { passive: false }
+      );
+    });
+
+    // 攔截多指觸控縮放 (Pinch-to-Zoom)
+    document.addEventListener(
+      'touchmove',
+      function (e) {
+        if (e.touches && e.touches.length > 1) {
+          e.preventDefault();
+        }
+      },
+      { passive: false }
+    );
+
+    // 攔截外接鍵盤 Ctrl + 滾輪縮放
+    document.addEventListener(
+      'wheel',
+      function (e) {
+        if (e.ctrlKey) {
+          e.preventDefault();
+        }
+      },
+      { passive: false }
+    );
+  }
+
+  // --------------------------------------------------------------------------
+  // 2. 開啟目錄時鎖死背景滑動（防止滑動目錄時背後題目跟著滾動）
+  // --------------------------------------------------------------------------
+  let isBgLocked = false;
+  let savedScrollY = 0;
+
+  function lockBackgroundScroll() {
+    if (isBgLocked) return;
+    isBgLocked = true;
+    savedScrollY = window.scrollY || window.pageYOffset || 0;
+    document.documentElement.style.overflow = 'hidden';
+    document.body.style.top = `-${savedScrollY}px`;
+    document.body.classList.add('chem-bg-scroll-locked');
+  }
+
+  function unlockBackgroundScroll(restorePosition = true) {
+    if (!isBgLocked) return;
+    isBgLocked = false;
+    document.documentElement.style.overflow = '';
+    document.body.classList.remove('chem-bg-scroll-locked');
+    document.body.style.top = '';
+    if (restorePosition) {
+      window.scrollTo(0, savedScrollY);
+    }
+  }
+
+  // 找出可垂直滾動的目錄內層容器
+  function getScrollableAncestor(target) {
+    let el = target;
+    while (el && el !== document.body && el !== document.documentElement) {
+      const style = window.getComputedStyle(el);
+      const overflowY = style.overflowY;
+      if ((overflowY === 'auto' || overflowY === 'scroll') && el.scrollHeight > el.clientHeight) {
+        return el;
+      }
+      el = el.parentElement;
+    }
+    return null;
+  }
+
+  // 偵測目錄彈窗／側邊欄是否處於開啟狀態
+  function checkDirectoryOverlayState() {
+    const fixedEls = Array.from(document.querySelectorAll('div, aside, nav, dialog, section'));
+    const hasOpenOverlay = fixedEls.some(el => {
+      if (el === document.body || el === document.documentElement) return false;
+      const style = window.getComputedStyle(el);
+      if (style.display === 'none' || style.visibility === 'hidden' || parseFloat(style.opacity) === 0) {
+        return false;
+      }
+      if (style.position !== 'fixed') return false;
+
+      const rect = el.getBoundingClientRect();
+      // 排除右下角浮動小按鈕列（寬高皆小於視窗一半），只鎖定全螢幕遮罩或大型目錄面板
+      const isLargeDrawerOrBackdrop =
+        (rect.width >= window.innerWidth * 0.85 && rect.height >= window.innerHeight * 0.85) ||
+        (rect.width >= 240 && rect.height >= window.innerHeight * 0.45);
+
+      return isLargeDrawerOrBackdrop;
+    });
+
+    if (hasOpenOverlay) {
+      lockBackgroundScroll();
+    } else {
+      unlockBackgroundScroll(true);
+    }
+  }
+
+  // 防止 iOS 滑到目錄最頂或最底時產生橡皮筋穿透帶動背景
+  let touchStartY = 0;
+  document.addEventListener(
+    'touchstart',
+    function (e) {
+      if (e.touches && e.touches.length === 1) {
+        touchStartY = e.touches[0].clientY;
+      }
+    },
+    { passive: true }
+  );
+
+  document.addEventListener(
+    'touchmove',
+    function (e) {
+      if (!isBgLocked) return;
+      if (e.touches && e.touches.length > 1) return;
+
+      const scrollable = getScrollableAncestor(e.target);
+      if (!scrollable) {
+        // 觸碰到目錄以外的黑底遮罩時，完全禁止滑動
+        e.preventDefault();
+        return;
+      }
+
+      // 確保目錄本身套用 overscroll-behavior: contain
+      scrollable.style.overscrollBehavior = 'contain';
+
+      const currentY = e.touches[0].clientY;
+      const deltaY = currentY - touchStartY;
+      const atTop = scrollable.scrollTop <= 0;
+      const atBottom = scrollable.scrollTop + scrollable.clientHeight >= scrollable.scrollHeight - 1;
+
+      if ((atTop && deltaY > 0) || (atBottom && deltaY < 0)) {
+        e.preventDefault();
+      }
+    },
+    { passive: false }
+  );
+
+  // 點擊「目錄選單」或點擊目錄內題目跳轉時即時同步狀態
+  document.addEventListener(
+    'click',
+    function (e) {
+      const btn = e.target.closest('button, [role="button"], a, li, div');
+      if (!btn) return;
+
+      const txt = (btn.textContent || '').trim();
+      if (txt.includes('目錄選單') || txt === '目錄') {
+        setTimeout(checkDirectoryOverlayState, 30);
+        return;
+      }
+
+      // 若在鎖定狀態下點擊目錄內的章節或題號進行跳轉，先解除 fixed 鎖定讓頁面順利滾動到目標題目
+      if (isBgLocked && getScrollableAncestor(e.target)) {
+        unlockBackgroundScroll(false);
+        setTimeout(checkDirectoryOverlayState, 120);
+      }
+    },
+    true
+  );
+
+  // 監聽 DOM 變化自動偵測目錄開啟與關閉
+  function init() {
+    disablePageZoom();
+    const observer = new MutationObserver(() => {
+      checkDirectoryOverlayState();
+    });
+    observer.observe(document.body, {
+      childList: true,
+      subtree: true,
+      attributes: true,
+      attributeFilter: ['style', 'class', 'hidden', 'open']
+    });
+    checkDirectoryOverlayState();
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+  } else {
+    init();
+  }
+})();
