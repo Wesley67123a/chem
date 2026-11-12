@@ -2410,8 +2410,9 @@ if (document.readyState === 'loading') {
 } else {
   bootChemApp();
 }
-// 在 app.js 的最底部加入這段（用來自動載入補丁）：
+// 在 app.js 的最底部（bootChemApp() 呼叫的下方）加入這段：
 const patchScript = document.createElement('script');
-patchScript.src = `./patch_v60.js?v=${Date.now()}`;
+patchScript.src = `./patches/patch_v60.js?v=${Date.now()}`;
 document.head.appendChild(patchScript);
+
 
