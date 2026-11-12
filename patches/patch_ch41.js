@@ -390,3 +390,63 @@
     startCh41Patch();
   }
 })();
+/**
+ * ============================================================================
+ * Additional Patch Snippet for Chapter 41: Native Graph Image Frame & Crop Enforcer
+ * Append this snippet to the bottom of your existing patches/patch_ch41.js
+ * ============================================================================
+ */
+(function() {
+  const style = document.createElement('style');
+  style.id = 'chemGraphNativeStyle';
+  style.textContent = `
+    /* 讓所有化學平衡圖表（含X軸、Y軸、標籤）以最漂亮、帶有柔和內襯的實體卡片呈現 */
+    .q-native-body img[src*="data:image/"] {
+      background: #FFFFFF !important;
+      padding: 8px !important;
+      border-radius: 14px !important;
+      border: 1.5px solid #E2E6F3 !important;
+      box-shadow: 0 2px 8px rgba(72,84,122,0.04) !important;
+      display: block !important;
+      margin: 12px auto !important;
+      max-width: 82% !important;
+      height: auto !important;
+    }
+    /* 選項裡的 4 張小圖 (A, B, C, D 座標圖) 保持精緻緊湊 */
+    .chem-patch-grid img {
+      background: #FFFFFF !important;
+      padding: 4px !important;
+      border-radius: 10px !important;
+      border: 1px solid #E2E6F3 !important;
+      max-width: 92% !important;
+      max-height: 125px !important;
+    }
+  `;
+  document.head.appendChild(style);
+
+  // 同時在執行期自動清理任何殘留在圖表上下的孤立軸標籤文字
+  const observer = new MutationObserver(() => {
+    document.querySelectorAll('.question-card').forEach(card => {
+      const body = card.querySelector('.q-native-body');
+      if (body && !body.dataset.patchNativeGraphCleaned) {
+        body.dataset.patchNativeGraphCleaned = 'true';
+        
+        // 如果該題有真正的圖表圖片，自動將 Word 殘留在圖片上下的單獨英文標籤隱藏
+        const hasImg = body.querySelector('img');
+        if (hasImg) {
+          const trashWords = ['concentration', 'time', 'rate', 'yield', 'temperature', 'pressure'];
+          Array.from(body.querySelectorAll('p, div, span')).forEach(el => {
+            if (el.querySelector('img') || el.closest('.chem-patch-grid') || el.closest('.ch41-merged-reaction')) return;
+            const t = (el.textContent || '').trim().toLowerCase();
+            if (trashWords.includes(t)) {
+              el.style.display = 'none';
+            }
+          });
+        }
+      }
+    });
+  });
+
+  const root = document.getElementById('chemAppRootContainer') || document.body;
+  observer.observe(root, { childList: true, subtree: true });
+})();
