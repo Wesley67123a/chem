@@ -425,3 +425,52 @@
     init();
   }
 })();
+/**
+ * ============================================================================
+ * Additional Patch Snippet for Chapter 41: MCQ41018 Graph Legend Cleanup
+ * Append this snippet to the bottom of your existing patches/patch_ch41.js
+ * ============================================================================
+ */
+(function() {
+  const observer = new MutationObserver(() => {
+    document.querySelectorAll('.question-card').forEach(card => {
+      const qNum = card.querySelector('.q-number');
+      if (qNum && qNum.textContent.trim() === 'ChemMCQ41018') {
+        const body = card.querySelector('.q-native-body');
+        if (body && !body.dataset.patch41018Cleaned) {
+          body.dataset.patch41018Cleaned = 'true';
+          
+          const graphImg = body.querySelector('img');
+          if (graphImg) {
+            const trashWords = ['time', 'concentration', 'a(g)', 'b(g)', 'c(g)', 't'];
+            const collected = [];
+            
+            Array.from(body.querySelectorAll('p, div, span')).forEach(el => {
+              if (el.querySelector('img')) return;
+              const txt = (el.textContent || '').trim();
+              const lower = txt.toLowerCase();
+              if (trashWords.includes(lower) && txt.length < 25) {
+                collected.push(txt);
+                el.style.display = 'none'; // 隱藏原本亂飛的散落文字
+              }
+            });
+            
+            if (collected.length > 0) {
+              const legendBox = document.createElement('div');
+              legendBox.style.cssText = 'background:#EEF0F8; color:#48547A; font-size:13px; padding:10px 16px; border-radius:14px; text-align:center; margin:12px auto; max-width:88%; border:1px solid #DFE3F8; font-family:"Times New Roman", serif; line-height:1.6;';
+              
+              legendBox.innerHTML = '<b>Graph Labels:</b> ' + collected.map(item => `<span>${item}</span>`).join(' &nbsp;·&nbsp; ');
+              
+              const anchor = graphImg.closest('p, div') || graphImg;
+              anchor.parentNode.insertBefore(legendBox, anchor.nextSibling);
+            }
+          }
+        }
+      }
+    });
+  });
+
+  const root = document.getElementById('chemAppRootContainer') || document.body;
+  observer.observe(root, { childList: true, subtree: true });
+})();
+
