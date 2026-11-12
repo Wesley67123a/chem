@@ -1,8 +1,8 @@
 /**
  * ============================================================================
  * HKDSE Chemistry Question Bank - Chapter 40 Dedicated Layout & Math Patch
- * File: patches/patch_ch40.js (v2.0 - Comprehensive Ch40 Option Tables, 2x2 Graphs,
- *                                    ICE Tables & Eaten OMML Fraction Restorer)
+ * File: patches/patch_ch40.js (v3.0 - Bordered ICE Tables, Existing HTML Table
+ *                                    Expression Restorer & Double-Equals Fix)
  * Target: Chapter 40 (Equilibrium Constant / 平衡常數)
  * ============================================================================
  */
@@ -10,17 +10,16 @@
 (function () {
   'use strict';
 
-  console.log('[Patch Ch40 v2.0] Comprehensive Ch40 Table, Graph & ICE Engine Loaded.');
+  console.log('[Patch Ch40 v3.0] Bordered ICE Table & OMML Fraction Engine Loaded.');
 
   // ===========================================================================
-  // 1. 注入第 40 課專屬教科書級排版 CSS
+  // 1. 注入第 40 課專屬 CSS（包含 ICE Table 行列黑框與數學上下分式）
   // ===========================================================================
   function injectStyles() {
-    if (document.getElementById('ch40PatchV2Styles')) return;
+    if (document.getElementById('ch40PatchV3Styles')) return;
     const style = document.createElement('style');
-    style.id = 'ch40PatchV2Styles';
+    style.id = 'ch40PatchV3Styles';
     style.textContent = `
-      /* 清除圖片多餘邊框與背景 */
       .q-native-body img,
       .exp-body img {
         background: transparent !important;
@@ -57,7 +56,7 @@
         margin: 10px 0 !important;
       }
 
-      /* 數學上下分式 (Kc 表示式、單位推導與 ICE 計算) */
+      /* 數學上下分式 (Kc 濃度表示式、ICE 計算、單位推導) */
       .ch40-frac {
         display: inline-flex !important;
         flex-direction: column !important;
@@ -81,8 +80,38 @@
         text-align: center !important;
       }
 
-      /* 標準 3 欄對齊選項表格 (解決 ChemMCQ40006, 40047 等所有雙欄選項歪斜與漏公式) */
-      .ch40-option-table {
+      /* 帶完整行列黑框的 ICE Table 與數據表 (復刻 Goodnotes 原稿黑框格線) */
+      table.ch40-bordered-table {
+        width: 100% !important;
+        max-width: 620px !important;
+        border-collapse: collapse !important;
+        margin: 12px 0 16px 0 !important;
+        font-family: "Times New Roman", Times, serif !important;
+        font-size: 14.5px !important;
+        color: #111111 !important;
+        background: #FFFFFF !important;
+        border: 1.2px solid #222222 !important;
+      }
+      table.ch40-bordered-table th,
+      table.ch40-bordered-table td {
+        border: 1px solid #222222 !important;
+        padding: 7px 9px !important;
+        text-align: center !important;
+        vertical-align: middle !important;
+        line-height: 1.4 !important;
+        background: #FFFFFF !important;
+        color: #111111 !important;
+      }
+      table.ch40-bordered-table tr:first-child td:first-child,
+      table.ch40-bordered-table tr:first-child th:first-child,
+      table.ch40-bordered-table td:first-child {
+        text-align: left !important;
+        padding-left: 10px !important;
+        white-space: nowrap !important;
+      }
+
+      /* 無外框的雙欄選擇題表格 (如 ChemMCQ40006, ChemMCQ40047) */
+      table.ch40-option-table {
         width: 100% !important;
         max-width: 600px !important;
         border-collapse: collapse !important;
@@ -90,24 +119,27 @@
         font-family: "Times New Roman", "Noto Serif TC", serif !important;
         font-size: 15.5px !important;
         color: #111111 !important;
+        border: none !important;
       }
-      .ch40-option-table th {
+      table.ch40-option-table th,
+      table.ch40-option-table tr:first-child td {
         padding: 6px 12px 8px 12px !important;
         text-align: center !important;
         vertical-align: bottom !important;
         font-weight: normal !important;
         text-decoration: underline !important;
+        border: none !important;
         color: #111111 !important;
       }
-      .ch40-option-table td {
+      table.ch40-option-table td {
         padding: 9px 12px !important;
         text-align: center !important;
         vertical-align: middle !important;
         border: none !important;
         line-height: 1.45 !important;
       }
-      .ch40-option-table th.opt-col-letter,
-      .ch40-option-table td.opt-col-letter {
+      table.ch40-option-table th:first-child,
+      table.ch40-option-table td:first-child {
         width: 34px !important;
         padding-left: 2px !important;
         padding-right: 6px !important;
@@ -116,37 +148,7 @@
         white-space: nowrap !important;
       }
 
-      /* 解析區 ICE Table (Initial / Change / Equilibrium 格線計算表) */
-      .ch40-ice-table {
-        width: 100% !important;
-        max-width: 620px !important;
-        border-collapse: collapse !important;
-        margin: 12px 0 14px 0 !important;
-        font-family: "Times New Roman", Times, serif !important;
-        font-size: 14.5px !important;
-        color: #111111 !important;
-        background: #FFFFFF !important;
-      }
-      .ch40-ice-table th,
-      .ch40-ice-table td {
-        border: 1px solid #333333 !important;
-        padding: 7px 8px !important;
-        text-align: center !important;
-        vertical-align: middle !important;
-      }
-      .ch40-ice-table th.ice-corner,
-      .ch40-ice-table td.ice-row-label {
-        text-align: left !important;
-        padding-left: 10px !important;
-        white-space: nowrap !important;
-      }
-      .ch40-ice-table th.ice-eq-banner {
-        font-weight: normal !important;
-        font-size: 15px !important;
-        padding: 8px 10px !important;
-      }
-
-      /* 2x2 四格座標圖選項 (解決圖四 Kc vs [CH4(g)] 散落標籤問題) */
+      /* 2x2 四格座標圖選項 */
       .ch40-2x2-option-grid {
         display: grid !important;
         grid-template-columns: repeat(2, minmax(220px, 1fr)) !important;
@@ -209,12 +211,10 @@
     document.head.appendChild(style);
   }
 
-  // 輔助：產生標準上下分式 HTML
   function buildFrac(num, den) {
     return `<span class="ch40-frac"><span class="num">${num}</span><span class="den">${den}</span></span>`;
   }
 
-  // 輔助：格式化化學文字（上下標與斜體 Kc, Qc, V, x）
   function formatChemRichHtml(raw) {
     if (!raw) return '';
     const t = raw.trim();
@@ -261,7 +261,7 @@
   }
 
   // ===========================================================================
-  // STEP 1: 解救並合併斷行的 ⇌ 平衡方程式（同時支援題幹與解析區）
+  // STEP 1: 解救並合併斷行的 ⇌ 平衡方程式
   // ===========================================================================
   function rescueEquilibriumEquations(container) {
     if (!container) return;
@@ -301,7 +301,7 @@
       }
     });
 
-    Array.from(container.querySelectorAll('p, div, span')).forEach(el => {
+    Array.from(container.querySelectorAll('p, div, span, td, th')).forEach(el => {
       const imgs = Array.from(el.querySelectorAll('img'));
       if (imgs.length === 1) {
         const img = imgs[0];
@@ -348,18 +348,19 @@
   }
 
   // ===========================================================================
-  // STEP 2: 根據題幹方程式推導 Kc 分子分母結構（用於補全被 Word OMML 吃掉的空白公式）
+  // STEP 2: 根據題幹方程式推導 Kc 濃度表示式分子與分母
   // ===========================================================================
-  function parseReactionKcParts(body) {
+  function parseReactionKcParts(container) {
+    if (!container) return null;
     const eqEl =
-      body.querySelector('.ch40-reaction-line') ||
-      Array.from(body.querySelectorAll('p, div')).find(p => /[⇌⇋]/.test(p.textContent || ''));
+      container.querySelector('.ch40-reaction-line') ||
+      Array.from(container.querySelectorAll('p, div, td, th')).find(el => /[⇌⇋]/.test(el.textContent || ''));
 
     if (!eqEl) return null;
     const sides = (eqEl.textContent || '').split(/[⇌⇋]/);
     if (sides.length !== 2) return null;
 
-    const parseSide = (sideStr, withPowers = true) =>
+    const parseSide = (sideStr, withPowers = true, withEqmSub = false) =>
       sideStr
         .split('+')
         .map(term => {
@@ -370,26 +371,157 @@
           if (!m) return '';
           const coeff = withPowers && m[1] ? `<sup>${m[1]}</sup>` : '';
           const species = m[2].replace(/([A-Za-z\])])(\d+)/g, '$1<sub>$2</sub>');
-          return `[${species}]${coeff}`;
+          const eqm = withEqmSub ? '<sub>eqm</sub>' : '';
+          return `[${species}]${eqm}${coeff}`;
         })
         .filter(Boolean)
         .join('');
 
-    const prodWithPow = parseSide(sides[1], true);
-    const reacWithPow = parseSide(sides[0], true);
-    const prodNoPow = parseSide(sides[1], false);
-    const reacNoPow = parseSide(sides[0], false);
+    const prodWithPow = parseSide(sides[1], true, false);
+    const reacWithPow = parseSide(sides[0], true, false);
+    const prodNoPow = parseSide(sides[1], false, false);
+    const reacNoPow = parseSide(sides[0], false, false);
+    const prodEqm = parseSide(sides[1], true, true);
+    const reacEqm = parseSide(sides[0], true, true);
 
     if (!prodWithPow || !reacWithPow) return null;
-    return { prodWithPow, reacWithPow, prodNoPow, reacNoPow };
+    return { prodWithPow, reacWithPow, prodNoPow, reacNoPow, prodEqm, reacEqm };
+  }
+
+  // 輔助：根據單位推導對應的 Kc 濃度分式 (用於修復 ChemMCQ40006 左欄空白)
+  function buildKcExprForUnit(unitTxt, kcParts) {
+    if (!kcParts) return '';
+    const molPowMatch = unitTxt.match(/mol\s*(?:\^)?\s*([\-−]?\d+)?/i);
+    const molPow = molPowMatch ? (molPowMatch[1] ? parseInt(molPowMatch[1].replace('−', '-'), 10) : 1) : 0;
+
+    if (molPow === 1) return buildFrac(kcParts.prodNoPow, kcParts.reacNoPow);
+    if (molPow === -1) return buildFrac(kcParts.reacNoPow, kcParts.prodNoPow);
+    if (molPow > 1) return buildFrac(kcParts.prodWithPow, kcParts.reacWithPow);
+    if (molPow < -1) return buildFrac(kcParts.reacWithPow, kcParts.prodWithPow);
+    return buildFrac(kcParts.prodWithPow, kcParts.reacWithPow);
   }
 
   // ===========================================================================
-  // STEP 3: 雙欄選項表自動轉標準 3 欄 HTML Table（包含補回被吃掉的左欄 Kc 分式！）
-  //         徹底解決 ChemMCQ40006 (Equilibrium constant expression | Unit) 與 40047
+  // STEP 3: 修復所有「已存在的 HTML <table>」（核心解決圖五 ChemMCQ40006 與圖一 ICE 黑框！）
   // ===========================================================================
-  function convertTwoColumnOptionsToTable(body) {
-    if (body.querySelector('.ch40-option-table')) return;
+  function patchExistingHtmlTables(container, stemBody) {
+    if (!container) return;
+    const tables = Array.from(container.querySelectorAll('table'));
+    if (tables.length === 0) return;
+
+    const kcParts = parseReactionKcParts(stemBody || container) || parseReactionKcParts(container);
+
+    tables.forEach(tbl => {
+      const rows = Array.from(tbl.querySelectorAll('tr'));
+      if (rows.length === 0) return;
+
+      const tblText = (tbl.textContent || '').replace(/\s+/g, ' ').trim();
+      const isOptionTbl = rows.some(tr => {
+        const firstCell = tr.querySelector('td, th');
+        return firstCell && /^[A-D]\.$/.test((firstCell.textContent || '').trim());
+      });
+
+      // -----------------------------------------------------------------------
+      // 分支 A：這是「選項表格」(如圖五 ChemMCQ40006 或圖四 ChemMCQ40047)
+      // -----------------------------------------------------------------------
+      if (isOptionTbl) {
+        tbl.classList.add('ch40-option-table');
+
+        // 修復表頭合併黏在一起的情況 (如 "Equilibrium constant expression Unit")
+        const headerCells = Array.from(rows[0].querySelectorAll('th, td'));
+        if (headerCells.length === 2) {
+          const h1 = (headerCells[1].textContent || '').trim();
+          const m = h1.match(/^(Equilibrium\s+constant\s+expression|Expression\s+of\s+Kc|Kc)\s+(Unit.*)$/i);
+          if (m) {
+            headerCells[1].innerHTML = formatChemRichHtml(m[1]);
+            const newTh = document.createElement(headerCells[1].tagName);
+            newTh.innerHTML = formatChemRichHtml(m[2]);
+            rows[0].appendChild(newTh);
+          }
+        }
+
+        // 修復每一列 A / B / C / D 中間被 Word OMML 吃掉的空白濃度分式儲存格！
+        rows.slice(1).forEach(tr => {
+          const cells = Array.from(tr.querySelectorAll('td, th'));
+          // 情況 1：3 欄結構 [ "A.", "", "mol dm-3" ] -> 中間欄位被 OMML 吃掉變成空字串
+          if (cells.length >= 3) {
+            const exprCell = cells[1];
+            const unitCell = cells[2];
+            const exprTxt = (exprCell.textContent || '').trim();
+            const unitTxt = (unitCell.textContent || '').trim();
+            if (exprTxt === '' && /^(?:mol|no unit|dimensionless)/i.test(unitTxt) && kcParts) {
+              exprCell.innerHTML = buildKcExprForUnit(unitTxt, kcParts);
+            }
+          }
+          // 情況 2：2 欄結構 [ "A.", "mol dm-3" ] -> 整欄消失只剩單位
+          else if (cells.length === 2) {
+            const unitCell = cells[1];
+            const unitTxt = (unitCell.textContent || '').trim();
+            if (/^(?:mol|no unit|dimensionless)/i.test(unitTxt) && kcParts) {
+              const exprTd = document.createElement('td');
+              exprTd.innerHTML = buildKcExprForUnit(unitTxt, kcParts);
+              tr.insertBefore(exprTd, unitCell);
+            }
+          }
+        });
+      }
+      // -----------------------------------------------------------------------
+      // 分支 B：這是「ICE Table 計算表或數據比較表」(如圖一 ChemMCQ40030、圖三 40054、圖四 40046)
+      // -----------------------------------------------------------------------
+      else {
+        // 強制套用完整行列黑框 CSS！
+        tbl.classList.add('ch40-bordered-table');
+
+        // 修復 ICE Table 內部儲存格被吃掉的數學分式
+        rows.forEach(tr => {
+          const cells = Array.from(tr.querySelectorAll('td, th'));
+          const rowLabel = cells[0] ? (cells[0].textContent || '').trim() : '';
+
+          cells.forEach((cell, cIdx) => {
+            if (cIdx === 0) return;
+            const rawTxt = (cell.textContent || '').replace(/\s+/g, ' ').trim();
+
+            // 1. 修復 Change 列中被吃掉化學計量係數比的分式 (如 "-0.020 × = -0.010" -> "-0.020 × 1/2 = -0.010")
+            if (/Change/i.test(rowLabel) && /[×x*]\s*=/.test(rawTxt)) {
+              const numMatch = rawTxt.match(/^([+\-−]?\d*\.?\d+)\s*[×x*]\s*=\s*([+\-−]?\d*\.?\d+)$/);
+              if (numMatch) {
+                const startVal = parseFloat(numMatch[1].replace('−', '-'));
+                const endVal = parseFloat(numMatch[2].replace('−', '-'));
+                if (startVal !== 0) {
+                  const ratio = Math.abs(endVal / startVal);
+                  let fracNode = buildFrac('1', '2');
+                  if (Math.abs(ratio - 0.5) < 0.01) fracNode = buildFrac('1', '2');
+                  else if (Math.abs(ratio - 2) < 0.01) fracNode = '2';
+                  else if (Math.abs(ratio - 1 / 3) < 0.01) fracNode = buildFrac('1', '3');
+                  else if (Math.abs(ratio - 2 / 3) < 0.01) fracNode = buildFrac('2', '3');
+                  else if (Math.abs(ratio - 1.5) < 0.01) fracNode = buildFrac('3', '2');
+
+                  cell.innerHTML = `${numMatch[1]} &times; ${fracNode} = ${numMatch[2]}`;
+                }
+              }
+            }
+
+            // 2. 修復 ChemMCQ40054 (酯化反應 ICE 表) 中被吃掉的 1/V, -x/V, +x/V, (1-x)/V, x/V
+            if (tblText.includes('C2H5COOH') && rawTxt === '') {
+              if (/Initial/i.test(rowLabel) && (cIdx === 1 || cIdx === 2)) {
+                cell.innerHTML = buildFrac('1', '<i>V</i>');
+              } else if (/Change/i.test(rowLabel)) {
+                cell.innerHTML = cIdx <= 2 ? `&minus;${buildFrac('<i>x</i>', '<i>V</i>')}` : `+${buildFrac('<i>x</i>', '<i>V</i>')}`;
+              } else if (/Equilibrium/i.test(rowLabel)) {
+                cell.innerHTML = cIdx <= 2 ? buildFrac('1 &minus; <i>x</i>', '<i>V</i>') : buildFrac('<i>x</i>', '<i>V</i>');
+              }
+            }
+          });
+        });
+      }
+    });
+  }
+
+  // ===========================================================================
+  // STEP 4: 若沒有現成 HTML <table>，將純文字雙欄選項轉為標準 3 欄 Table
+  // ===========================================================================
+  function convertTextTwoColumnOptionsToTable(body) {
+    if (body.querySelector('table')) return;
 
     const leafBlocks = Array.from(body.querySelectorAll('p, div')).filter(
       el =>
@@ -401,9 +533,7 @@
     leafBlocks.forEach(el => {
       const txt = (el.textContent || '').replace(/\u00A0/g, ' ').replace(/\s+/g, ' ').trim();
       const m = txt.match(/^([A-D])\.\s*(.*)$/);
-      if (m) {
-        optNodes[m[1]] = { el, cleanText: m[2].trim(), rawHtml: el.innerHTML.trim() };
-      }
+      if (m) optNodes[m[1]] = { el, cleanText: m[2].trim(), rawHtml: el.innerHTML.trim() };
     });
 
     if (!optNodes.A || !optNodes.B || !optNodes.C || !optNodes.D) return;
@@ -422,91 +552,25 @@
       return;
     }
 
-    // 切割雙欄表頭
-    function splitHeader(plain, rawHtml) {
-      const rules = [
-        /^(Equilibrium\s+constant\s+expression)\s+(Unit.*)$/i,
-        /^(Expression\s+of\s+K\s*c)\s+(Unit.*)$/i,
-        /^(K\s*c)\s+(Unit(?:\s+of\s+K\s*c)?)$/i,
-        /^(K\s*c)\s+(Equilibrium\s+position.*)$/i,
-        /^(Equilibrium\s+position)\s+(K\s*c.*)$/i,
-        /^(Value\s+of\s+K\s*c)\s+(Unit.*)$/i,
-        /^(Value\s+of\s+K\s*c)\s+(Extent\s+of\s+reaction.*)$/i
-      ];
-      for (const r of rules) {
-        const m = plain.match(r);
-        if (m) return [formatChemRichHtml(m[1]), formatChemRichHtml(m[2])];
-      }
-
-      const rawParts = rawHtml.split(/(?:&nbsp;|\u00A0|\t|\s){3,}/);
-      if (rawParts.length >= 2 && rawParts[0].trim() && rawParts[1].trim()) {
-        return [rawParts[0].trim(), rawParts.slice(1).join(' ').trim()];
-      }
-      return null;
-    }
-
-    const headerCols = splitHeader(headerClean, headerEl.innerHTML.trim());
-    if (!headerCols) return;
+    const headerMatch = headerClean.match(
+      /^(Equilibrium\s+constant\s+expression|Expression\s+of\s+K\s*c|K\s*c|Value\s+of\s+K\s*c)\s+(Unit.*|Equilibrium\s+position.*|Extent.*)$/i
+    );
+    if (!headerMatch) return;
 
     const kcParts = parseReactionKcParts(body);
-
-    // 切割每一列 A / B / C / D；若左欄分式被 OMML 吃掉只剩右欄單位，則根據單位自動重建左欄分式！
-    function splitOptionRow(letter, plain, rawHtml) {
-      const cleanHtml = rawHtml.replace(/^[A-D]\.\s*/, '').trim();
-
-      // 情況 1：左欄 OMML 分式被吃掉，整行只剩下單位（例如 ChemMCQ40006: "mol dm-3", "mol-1 dm3", "mol7 dm-21", "mol-7 dm21"）
-      if (/^(?:mol|no unit|dimensionless)/i.test(plain) && kcParts) {
-        const unitHtml = formatChemRichHtml(plain);
-        let exprHtml = buildFrac(kcParts.prodWithPow, kcParts.reacWithPow);
-
-        // 根據單位指數的符號與大小，精準配對正反應 / 逆反應 / 一次方干擾項
-        const molPowMatch = plain.match(/mol\s*(?:\^)?\s*([\-−]?\d+)?/i);
-        const molPow = molPowMatch ? (molPowMatch[1] ? parseInt(molPowMatch[1].replace('−', '-'), 10) : 1) : 0;
-
-        if (molPow === 1) {
-          exprHtml = buildFrac(kcParts.prodNoPow, kcParts.reacNoPow);
-        } else if (molPow === -1) {
-          exprHtml = buildFrac(kcParts.reacNoPow, kcParts.prodNoPow);
-        } else if (molPow > 1) {
-          exprHtml = buildFrac(kcParts.prodWithPow, kcParts.reacWithPow);
-        } else if (molPow < -1) {
-          exprHtml = buildFrac(kcParts.reacWithPow, kcParts.prodWithPow);
-        } else if (letter === 'B' || letter === 'D') {
-          exprHtml = buildFrac(kcParts.reacWithPow, kcParts.prodWithPow);
-        }
-
-        return [exprHtml, unitHtml];
-      }
-
-      // 情況 2：左欄有數值、右欄有單位 (如 "0.25   mol dm-3" 或 "4.0   no unit")
-      const valUnit = cleanHtml.match(/^([0-9\.×x10\^\-\+<sup><\/sup>\s]+?)\s+((?:mol|no unit|dimensionless).*)$/i);
-      if (valUnit && valUnit[1].trim()) {
-        return [valUnit[1].trim(), valUnit[2].trim()];
-      }
-
-      // 情況 3：Increases / Decreases + Shifts to the left / right
-      const incDec = plain.match(
-        /^(Increases|Decreases|Remains\s+unchanged|No\s+change)\s+(Shifts\s+to\s+the\s+(?:left|right)|Increases|Decreases|Remains\s+unchanged|No\s+change.*)$/i
-      );
-      if (incDec) {
-        return [incDec[1].trim(), incDec[2].trim()];
-      }
-
-      // 情況 4：連續空白 / &nbsp; / Tab 分隔
-      const rawParts = cleanHtml.split(/(?:&nbsp;|\u00A0|\t|\s){3,}/);
-      if (rawParts.length >= 2 && rawParts[0].trim() && rawParts[1].trim()) {
-        return [rawParts[0].trim(), rawParts.slice(1).join(' ').trim()];
-      }
-
-      return null;
-    }
-
     const rows = [];
     for (const letter of ['A', 'B', 'C', 'D']) {
       const item = optNodes[letter];
-      const cols = splitOptionRow(letter, item.cleanText, item.rawHtml);
-      if (!cols) return;
-      rows.push({ letter: `${letter}.`, col1: cols[0], col2: cols[1], el: item.el });
+      if (/^(?:mol|no unit|dimensionless)/i.test(item.cleanText) && kcParts) {
+        rows.push({
+          letter: `${letter}.`,
+          col1: buildKcExprForUnit(item.cleanText, kcParts),
+          col2: formatChemRichHtml(item.cleanText),
+          el: item.el
+        });
+      } else {
+        return;
+      }
     }
 
     const table = document.createElement('table');
@@ -514,9 +578,9 @@
     table.innerHTML = `
       <thead>
         <tr>
-          <th class="opt-col-letter"></th>
-          <th>${headerCols[0]}</th>
-          <th>${headerCols[1]}</th>
+          <th></th>
+          <th>${formatChemRichHtml(headerMatch[1])}</th>
+          <th>${formatChemRichHtml(headerMatch[2])}</th>
         </tr>
       </thead>
       <tbody>
@@ -524,7 +588,7 @@
           .map(
             r => `
           <tr>
-            <td class="opt-col-letter">${r.letter}</td>
+            <td>${r.letter}</td>
             <td>${r.col1}</td>
             <td>${r.col2}</td>
           </tr>
@@ -540,114 +604,121 @@
   }
 
   // ===========================================================================
-  // STEP 4: 四格座標圖選項題 (如圖四 CH4(g) + H2O(g) ⇌ CO(g) + 3H2(g) 的 Kc vs [CH4(g)])
+  // STEP 5: 修復空白選項方程式 (如圖二 ChemMCQ40019 的 K1 = ) & 四格圖表選項
   // ===========================================================================
-  function reconstruct2x2OptionGraphs(body) {
-    if (body.querySelector('.ch40-2x2-option-grid')) return;
-
-    const allGraphImgs = Array.from(body.querySelectorAll('img')).filter(img => !isSmallArrowImage(img));
-    if (allGraphImgs.length < 4) return;
-
-    const optionImgs = allGraphImgs.slice(allGraphImgs.length - 4);
-
-    let sharedYLabel = '';
-    let sharedXLabel = '';
-
-    Array.from(body.querySelectorAll('p, div, span')).forEach(el => {
-      if (el.querySelector('img')) return;
-      const raw = (el.textContent || '').replace(/\s+/g, ' ').trim();
-      const low = raw.toLowerCase();
-
-      if (low === 'kc' || low === 'qc' || low === 'rate' || low === 'concentration') {
-        sharedYLabel = raw;
-        el.remove();
-      } else if (/^\[[a-z0-9\(\)\+\-]+\]$/i.test(raw) || low === 'time' || low === 'temperature' || low === 'pressure') {
-        sharedXLabel = raw;
-        el.remove();
-      } else if (/^[A-D]\.?$/.test(raw)) {
-        el.remove();
-      }
-    });
-
-    const fullText = body.textContent || '';
-    if (!sharedYLabel && /\bKc\b/i.test(fullText)) sharedYLabel = 'Kc';
-    if (!sharedXLabel) {
-      const concMatch = fullText.match(/concentration of\s+([A-Za-z0-9\(\)]+)/i);
-      if (concMatch) sharedXLabel = `[${concMatch[1]}]`;
-    }
-
-    const grid = document.createElement('div');
-    grid.className = 'ch40-2x2-option-grid';
-
-    const firstAnchor = optionImgs[0].closest('p, div') || optionImgs[0];
-    firstAnchor.parentNode.insertBefore(grid, firstAnchor);
-
-    const letters = ['A.', 'B.', 'C.', 'D.'];
-    optionImgs.forEach((img, idx) => {
-      const oldWrapper = img.closest('p, div');
-
-      const cell = document.createElement('div');
-      cell.className = 'ch40-2x2-cell';
-
-      const optLetter = document.createElement('div');
-      optLetter.className = 'ch40-2x2-optletter';
-      optLetter.textContent = letters[idx];
-
-      const miniStage = document.createElement('div');
-      miniStage.className = 'ch40-2x2-miniStage';
-      miniStage.appendChild(img);
-
-      if (sharedYLabel) {
-        const yLbl = document.createElement('div');
-        yLbl.style.cssText =
-          'position:absolute; left:7px; top:45%; transform:translate(-50%, -50%) rotate(-90deg); white-space:nowrap; font-family:"Times New Roman", serif; font-size:13.5px; color:#111;';
-        yLbl.innerHTML = formatChemRichHtml(sharedYLabel);
-        miniStage.appendChild(yLbl);
-      }
-
-      if (sharedXLabel) {
-        const xLbl = document.createElement('div');
-        xLbl.style.cssText =
-          'position:absolute; left:55%; bottom:2px; transform:translateX(-50%); white-space:nowrap; font-family:"Times New Roman", serif; font-size:13.5px; color:#111;';
-        xLbl.innerHTML = formatChemRichHtml(sharedXLabel);
-        miniStage.appendChild(xLbl);
-      }
-
-      cell.appendChild(optLetter);
-      cell.appendChild(miniStage);
-      grid.appendChild(cell);
-
-      if (oldWrapper && oldWrapper !== body && !oldWrapper.contains(grid) && oldWrapper.querySelectorAll('img').length === 0) {
-        oldWrapper.remove();
-      }
-    });
-  }
-
-  // ===========================================================================
-  // STEP 5: 修復空白 "A. Kc =" 選項 & 放大單張圖表
-  // ===========================================================================
-  function restoreCh40KcAndImages(body) {
+  function restoreEmptyEquationsAndGraphs(body, qCode) {
+    // 5A. 放大單張圖表
     const graphImgs = Array.from(body.querySelectorAll('img')).filter(img => !isSmallArrowImage(img));
     if (graphImgs.length === 1) {
       graphImgs[0].classList.add('ch40-enlarged-img');
     }
 
+    // 5B. 修復四格座標圖選項 (Kc vs [CH4(g)])
+    if (graphImgs.length >= 4 && !body.querySelector('.ch40-2x2-option-grid')) {
+      const optionImgs = graphImgs.slice(graphImgs.length - 4);
+      let sharedYLabel = '';
+      let sharedXLabel = '';
+
+      Array.from(body.querySelectorAll('p, div, span')).forEach(el => {
+        if (el.querySelector('img')) return;
+        const raw = (el.textContent || '').replace(/\s+/g, ' ').trim();
+        const low = raw.toLowerCase();
+        if (low === 'kc' || low === 'qc' || low === 'rate' || low === 'concentration') {
+          sharedYLabel = raw;
+          el.remove();
+        } else if (/^\[[a-z0-9\(\)\+\-]+\]$/i.test(raw) || low === 'time' || low === 'temperature') {
+          sharedXLabel = raw;
+          el.remove();
+        } else if (/^[A-D]\.?$/.test(raw)) {
+          el.remove();
+        }
+      });
+
+      const fullText = body.textContent || '';
+      if (!sharedYLabel && /\bKc\b/i.test(fullText)) sharedYLabel = 'Kc';
+      if (!sharedXLabel) {
+        const concMatch = fullText.match(/concentration of\s+([A-Za-z0-9\(\)]+)/i);
+        if (concMatch) sharedXLabel = `[${concMatch[1]}]`;
+      }
+
+      const grid = document.createElement('div');
+      grid.className = 'ch40-2x2-option-grid';
+      const firstAnchor = optionImgs[0].closest('p, div') || optionImgs[0];
+      firstAnchor.parentNode.insertBefore(grid, firstAnchor);
+
+      const letters = ['A.', 'B.', 'C.', 'D.'];
+      optionImgs.forEach((img, idx) => {
+        const oldWrapper = img.closest('p, div');
+        const cell = document.createElement('div');
+        cell.className = 'ch40-2x2-cell';
+
+        const optLetter = document.createElement('div');
+        optLetter.className = 'ch40-2x2-optletter';
+        optLetter.textContent = letters[idx];
+
+        const miniStage = document.createElement('div');
+        miniStage.className = 'ch40-2x2-miniStage';
+        miniStage.appendChild(img);
+
+        if (sharedYLabel) {
+          const yLbl = document.createElement('div');
+          yLbl.style.cssText =
+            'position:absolute; left:7px; top:45%; transform:translate(-50%, -50%) rotate(-90deg); white-space:nowrap; font-family:"Times New Roman", serif; font-size:13.5px; color:#111;';
+          yLbl.innerHTML = formatChemRichHtml(sharedYLabel);
+          miniStage.appendChild(yLbl);
+        }
+        if (sharedXLabel) {
+          const xLbl = document.createElement('div');
+          xLbl.style.cssText =
+            'position:absolute; left:55%; bottom:2px; transform:translateX(-50%); white-space:nowrap; font-family:"Times New Roman", serif; font-size:13.5px; color:#111;';
+          xLbl.innerHTML = formatChemRichHtml(sharedXLabel);
+          miniStage.appendChild(xLbl);
+        }
+
+        cell.appendChild(optLetter);
+        cell.appendChild(miniStage);
+        grid.appendChild(cell);
+
+        if (oldWrapper && oldWrapper !== body && !oldWrapper.contains(grid) && oldWrapper.querySelectorAll('img').length === 0) {
+          oldWrapper.remove();
+        }
+      });
+    }
+
+    // 5C. 修復圖二 (ChemMCQ40019) 中被 OMML 吃掉的 "A. K1 =", "B. K1 =", "C. K1 =" 分式
+    const fullText = body.textContent || '';
+    if (qCode === 'ChemMCQ40019' || (fullText.includes('K1') && fullText.includes('K2') && fullText.includes('relationship between'))) {
+      const k1Map = {
+        A: `A. &nbsp; <i>K</i><sub>1</sub> = ${buildFrac('1', '<i>K</i><sub>2</sub>')}`,
+        B: `B. &nbsp; <i>K</i><sub>1</sub> = ${buildFrac('1', '2<i>K</i><sub>2</sub>')}`,
+        C: `C. &nbsp; <i>K</i><sub>1</sub> = ${buildFrac('1', '<i>K</i><sub>2</sub><sup>2</sup>')}`
+      };
+      Array.from(body.querySelectorAll('p, div')).forEach(p => {
+        const t = (p.textContent || '').replace(/\s+/g, ' ').trim();
+        const m = t.match(/^([A-C])\.\s*K\s*1\s*=\s*$/i);
+        if (m && k1Map[m[1].toUpperCase()]) {
+          p.innerHTML = k1Map[m[1].toUpperCase()];
+          p.style.margin = '10px 0';
+          p.style.fontFamily = '"Times New Roman", serif';
+        }
+      });
+      return;
+    }
+
+    // 5D. 通用修復：其他題目出現空白的 "A. Kc =" 選項時自動補全分子分母
     const emptyKcOpts = Array.from(body.querySelectorAll('p, div')).filter(p =>
       /^[A-D]\.\s*(?:Kc|K\s*c)\s*=\s*$/i.test((p.textContent || '').replace(/\s+/g, ' ').trim())
     );
-
     if (emptyKcOpts.length > 0) {
       const kcParts = parseReactionKcParts(body);
       const numStr = kcParts ? kcParts.prodWithPow : '[Products]';
       const denStr = kcParts ? kcParts.reacWithPow : '[Reactants]';
-
       const fallbackMap = {
         A: `A. &nbsp; <i>K</i><sub>c</sub> = ${buildFrac(denStr, numStr)}`,
         B: `B. &nbsp; <i>K</i><sub>c</sub> = ${buildFrac(numStr, denStr)}`,
         C: `C. &nbsp; <i>K</i><sub>c</sub> = ${buildFrac(`2${numStr}`, denStr)}`,
         D: `D. &nbsp; <i>K</i><sub>c</sub> = ${buildFrac(denStr, `2${numStr}`)}`
       };
-
       emptyKcOpts.forEach(p => {
         const letter = (p.textContent || '').trim()[0].toUpperCase();
         if (fallbackMap[letter]) {
@@ -660,20 +731,67 @@
   }
 
   // ===========================================================================
-  // STEP 6: 修復解析區 (.exp-body) 的 ICE Table 與被吃掉的數學分式
-  //         解決圖三 (ChemMCQ40054 酯化 ICE 表) 與圖五 (ChemMCQ40007 單位推導 = =)
+  // STEP 6: 修復解析區 (.exp-body) 的雙等號 "= =" / "= = =" 遺失分式 (解決圖一與圖五)
   // ===========================================================================
-  function patchExplanationSection(expBody, qCode) {
-    if (!expBody || expBody.dataset.ch40ExpDone) return;
-    expBody.dataset.ch40ExpDone = '1';
+  function patchExplanationSection(expBody, stemBody, qCode) {
+    if (!expBody || expBody.dataset.ch40ExpV3Done) return;
+    expBody.dataset.ch40ExpV3Done = '1';
 
     rescueEquilibriumEquations(expBody);
+    patchExistingHtmlTables(expBody, stemBody);
 
-    const expText = (expBody.textContent || '').replace(/\s+/g, ' ').trim();
+    const stemText = stemBody ? stemBody.textContent || '' : '';
+    const kcParts = parseReactionKcParts(stemBody || expBody) || parseReactionKcParts(expBody);
 
-    // 6A. 修復圖五 (ChemMCQ40007) 等題目中因為 OMML 分式被吃掉而出現的 "The unit of Kc = = mol-1 dm3"
+    // 讀取題幹中的容器體積 (例如 "5 dm^3" 或 "5.0 dm^3")，以便自動反推 Initial/Equilibrium 濃度分子
+    const volMatch = stemText.match(/(\d+(?:\.\d+)?)\s*dm\s*(?:-3|−3|3|\u00B3)/i);
+    const volumeVal = volMatch ? parseFloat(volMatch[1]) : null;
+
+    // 讀取解析區 ICE Table 的 Equilibrium 最後一列數值 (用於重建 Kc = [表達成] = [代入數值] = 答案)
+    let eqmValues = [];
+    const iceTbl = expBody.querySelector('table.ch40-bordered-table');
+    if (iceTbl) {
+      const eqmRow = Array.from(iceTbl.querySelectorAll('tr')).find(tr =>
+        /^Equilibrium/i.test((tr.textContent || '').trim())
+      );
+      if (eqmRow) {
+        eqmValues = Array.from(eqmRow.querySelectorAll('td, th'))
+          .slice(1)
+          .map(td => (td.textContent || '').trim())
+          .filter(Boolean);
+      }
+    }
+
     Array.from(expBody.querySelectorAll('p, div')).forEach(p => {
-      const html = p.innerHTML;
+      if (p.closest('table')) return;
+      const rawTxt = (p.textContent || '').replace(/\s+/g, ' ').trim();
+      let html = p.innerHTML;
+
+      // 1. 修復 "Initial/Equilibrium concentration of X = = 0.033 mol dm^-3" (圖一 ChemMCQ40030)
+      const concDoubleEq = rawTxt.match(/^(.*concentration of\s+.+?)\s*=\s*=\s*(\d+\.\d+)\s*mol\s*dm/i);
+      if (concDoubleEq && volumeVal) {
+        const concNum = parseFloat(concDoubleEq[2]);
+        const molesNum = Number((concNum * volumeVal).toFixed(4));
+        const volStr = Number.isInteger(volumeVal) && !stemText.includes(`${volumeVal}.0`) ? String(volumeVal) : volumeVal.toFixed(1);
+        const fracHtml = buildFrac(`${molesNum} mol`, `${volStr} dm<sup>3</sup>`);
+        p.innerHTML = html.replace(/=\s*=/, `= ${fracHtml} =`);
+        return;
+      }
+
+      // 2. 修復 "Kc = = = 139 mol^-1 dm^3" (圖一 ChemMCQ40030 三連等號)
+      if (/^Kc\s*=\s*=\s*=/i.test(rawTxt) && kcParts) {
+        const symFrac = buildFrac(kcParts.prodEqm, kcParts.reacEqm);
+        let numFrac = '';
+        if (eqmValues.length === 3 && /2SO2.*O2.*2SO3/i.test((iceTbl ? iceTbl.textContent : '') || '')) {
+          numFrac = buildFrac(`(${eqmValues[2]})<sup>2</sup>`, `(${eqmValues[0]})<sup>2</sup>(${eqmValues[1]})`);
+        }
+        const replacement = numFrac ? `= ${symFrac} = ${numFrac} =` : `= ${symFrac} =`;
+        p.innerHTML = html.replace(/=\s*=\s*=/, replacement);
+        p.style.margin = '10px 0';
+        return;
+      }
+
+      // 3. 修復 "The unit of Kc = = mol^-1 dm^3" (ChemMCQ40007)
       if (/unit of\s*(?:<i>)?K(?:<\/i>)?(?:<sub>)?c(?:<\/sub>)?\s*=\s*=/i.test(html)) {
         const unitTerm = '(mol dm<sup>&minus;3</sup>)';
         if (/\(A\)/.test(html)) {
@@ -687,140 +805,28 @@
         } else {
           p.innerHTML = html.replace(/=\s*=/, `= ${buildFrac('[Products]', '[Reactants]')} =`);
         }
+        return;
       }
-    });
 
-    // 6B. 修復圖三 (ChemMCQ40054) 的 ICE Table 計算表與被吃掉的 1/V, -x/V, +x/V, (1-x)/V, x/V 分式
-    if (
-      qCode === 'ChemMCQ40054' ||
-      (expText.includes('C2H5COOH') && expText.includes('Initial') && expText.includes('Equilibrium'))
-    ) {
-      const blocks = Array.from(expBody.children);
-      let iceStartIdx = -1;
-      let iceEndIdx = -1;
-
-      blocks.forEach((el, idx) => {
-        const t = (el.textContent || '').trim();
-        if (t.startsWith('Let the volume of the mixture')) {
-          el.innerHTML = `Let the volume of the mixture be <i>V</i> cm<sup>3</sup> and the change in concentration of C<sub>2</sub>H<sub>5</sub>COOH(l) be ${buildFrac('<i>x</i>', '<i>V</i>')} mol dm<sup>&minus;3</sup>.`;
-        } else if (t.startsWith('Concentration / mol')) {
-          iceStartIdx = idx;
-        } else if (t.startsWith('Equilibrium')) {
-          iceEndIdx = idx;
-        } else if (/^Kc\s*=$/i.test(t)) {
-          el.innerHTML = `<i>K</i><sub>c</sub> = ${buildFrac(
+      // 4. 修復 ChemMCQ40054 的獨立 "Kc =" 與 "4 =" 公式行
+      if (qCode === 'ChemMCQ40054' || (expBody.textContent || '').includes('C2H5COOH')) {
+        if (rawTxt.startsWith('Let the volume of the mixture')) {
+          p.innerHTML = `Let the volume of the mixture be <i>V</i> cm<sup>3</sup> and the change in concentration of C<sub>2</sub>H<sub>5</sub>COOH(l) be ${buildFrac('<i>x</i>', '<i>V</i>')} mol dm<sup>&minus;3</sup>.`;
+        } else if (/^Kc\s*=$/i.test(rawTxt)) {
+          p.innerHTML = `<i>K</i><sub>c</sub> = ${buildFrac(
             '[C<sub>2</sub>H<sub>5</sub>COOC<sub>2</sub>H<sub>5</sub>(l)]<sub>eqm</sub>[H<sub>2</sub>O(l)]<sub>eqm</sub>',
             '[C<sub>2</sub>H<sub>5</sub>OH(l)]<sub>eqm</sub>[C<sub>2</sub>H<sub>5</sub>COOH(l)]<sub>eqm</sub>'
           )}`;
-          el.style.margin = '10px 0';
-        } else if (/^4\s*=$/.test(t)) {
-          el.innerHTML = `4 = ${buildFrac(
+          p.style.margin = '10px 0';
+        } else if (/^4\s*=$/.test(rawTxt)) {
+          p.innerHTML = `4 = ${buildFrac(
             `(${buildFrac('<i>x</i>', '<i>V</i>')})<sup>2</sup>`,
             `(${buildFrac('1 &minus; <i>x</i>', '<i>V</i>')})<sup>2</sup>`
           )}`;
-          el.style.margin = '10px 0';
-        }
-      });
-
-      if (iceStartIdx !== -1 && iceEndIdx !== -1 && iceEndIdx >= iceStartIdx) {
-        const iceTable = document.createElement('table');
-        iceTable.className = 'ch40-ice-table';
-        iceTable.innerHTML = `
-          <thead>
-            <tr>
-              <th class="ice-corner">Concentration<br>/ mol dm<sup>&minus;3</sup></th>
-              <th colspan="4" class="ice-eq-banner">
-                C<sub>2</sub>H<sub>5</sub>COOH(l) + C<sub>2</sub>H<sub>5</sub>OH(l) <span class="ch40-eq-arrow">&#8652;</span> C<sub>2</sub>H<sub>5</sub>COOC<sub>2</sub>H<sub>5</sub>(l) + H<sub>2</sub>O(l)
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td class="ice-row-label">Initial</td>
-              <td>${buildFrac('1', '<i>V</i>')}</td>
-              <td>${buildFrac('1', '<i>V</i>')}</td>
-              <td>0</td>
-              <td>0</td>
-            </tr>
-            <tr>
-              <td class="ice-row-label">Change</td>
-              <td>&minus;${buildFrac('<i>x</i>', '<i>V</i>')}</td>
-              <td>&minus;${buildFrac('<i>x</i>', '<i>V</i>')}</td>
-              <td>+${buildFrac('<i>x</i>', '<i>V</i>')}</td>
-              <td>+${buildFrac('<i>x</i>', '<i>V</i>')}</td>
-            </tr>
-            <tr>
-              <td class="ice-row-label">Equilibrium</td>
-              <td>${buildFrac('1 &minus; <i>x</i>', '<i>V</i>')}</td>
-              <td>${buildFrac('1 &minus; <i>x</i>', '<i>V</i>')}</td>
-              <td>${buildFrac('<i>x</i>', '<i>V</i>')}</td>
-              <td>${buildFrac('<i>x</i>', '<i>V</i>')}</td>
-            </tr>
-          </tbody>
-        `;
-
-        blocks[iceStartIdx].parentNode.insertBefore(iceTable, blocks[iceStartIdx]);
-        for (let k = iceStartIdx; k <= iceEndIdx; k++) {
-          blocks[k].remove();
+          p.style.margin = '10px 0';
         }
       }
-      return;
-    }
-
-    // 6C. 通用 ICE Table 重組：若其他解析題出現 Initial / Change / Equilibrium 塌陷段落，自動還原成對齊格線表
-    if (expText.includes('Initial') && expText.includes('Change') && expText.includes('Equilibrium') && !expBody.querySelector('table')) {
-      const blocks = Array.from(expBody.children);
-      const iInit = blocks.findIndex(el => /^Initial\b/i.test((el.textContent || '').trim()));
-      const iChg = blocks.findIndex(el => /^Change\b/i.test((el.textContent || '').trim()));
-      const iEqm = blocks.findIndex(el => /^Equilibrium\b/i.test((el.textContent || '').trim()));
-
-      if (iInit !== -1 && iChg > iInit && iEqm > iChg) {
-        const startIdx = Math.max(0, iInit - 2);
-        const eqBlock = blocks.slice(startIdx, iInit).find(el => /[⇌⇋]/.test(el.textContent || ''));
-        const eqHtml = eqBlock ? eqBlock.innerHTML : 'Reactants <span class="ch40-eq-arrow">&#8652;</span> Products';
-
-        const parseRowCells = rawTxt =>
-          rawTxt
-            .replace(/^(?:Initial|Change|Equilibrium)\s*/i, '')
-            .split(/\s{2,}|\t/)
-            .map(s => s.trim())
-            .filter(Boolean);
-
-        const initVals = parseRowCells(blocks[iInit].textContent || '');
-        const chgVals = parseRowCells(blocks[iChg].textContent || '');
-        const eqmVals = parseRowCells(blocks[iEqm].textContent || '');
-        const colCount = Math.max(initVals.length, chgVals.length, eqmVals.length, 3);
-
-        const padCells = arr => {
-          const out = [];
-          for (let c = 0; c < colCount; c++) {
-            out.push(`<td>${arr[c] ? formatChemRichHtml(arr[c]) : '&mdash;'}</td>`);
-          }
-          return out.join('');
-        };
-
-        const genericIce = document.createElement('table');
-        genericIce.className = 'ch40-ice-table';
-        genericIce.innerHTML = `
-          <thead>
-            <tr>
-              <th class="ice-corner">Concentration<br>/ mol dm<sup>&minus;3</sup></th>
-              <th colspan="${colCount}" class="ice-eq-banner">${eqHtml}</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr><td class="ice-row-label">Initial</td>${padCells(initVals)}</tr>
-            <tr><td class="ice-row-label">Change</td>${padCells(chgVals)}</tr>
-            <tr><td class="ice-row-label">Equilibrium</td>${padCells(eqmVals)}</tr>
-          </tbody>
-        `;
-
-        blocks[startIdx].parentNode.insertBefore(genericIce, blocks[startIdx]);
-        for (let k = startIdx; k <= iEqm; k++) {
-          blocks[k].remove();
-        }
-      }
-    }
+    });
   }
 
   // ===========================================================================
@@ -835,7 +841,7 @@
     const body = card.querySelector('.q-native-body');
     const expBody = card.querySelector('.exp-body');
 
-    if (body && !body.dataset.ch40V2Done) {
+    if (body && !body.dataset.ch40V3Done) {
       const unloaded = Array.from(body.querySelectorAll('img')).filter(img => !img.complete);
       if (unloaded.length > 0 && !body.dataset.ch40ImgLoaded) {
         body.dataset.ch40ImgLoaded = '1';
@@ -849,21 +855,21 @@
               })
           )
         ).then(() => {
-          body.dataset.ch40V2Done = '';
+          body.dataset.ch40V3Done = '';
           processQuestionCard(card);
         });
         return;
       }
 
-      body.dataset.ch40V2Done = '1';
+      body.dataset.ch40V3Done = '1';
       rescueEquilibriumEquations(body);
-      reconstruct2x2OptionGraphs(body);
-      convertTwoColumnOptionsToTable(body);
-      restoreCh40KcAndImages(body);
+      patchExistingHtmlTables(body, body);
+      convertTextTwoColumnOptionsToTable(body);
+      restoreEmptyEquationsAndGraphs(body, qCode);
     }
 
-    if (expBody && !expBody.dataset.ch40ExpDone) {
-      patchExplanationSection(expBody, qCode);
+    if (expBody && !expBody.dataset.ch40ExpV3Done) {
+      patchExplanationSection(expBody, body, qCode);
     }
   }
 
