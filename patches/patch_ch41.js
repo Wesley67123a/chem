@@ -1,7 +1,7 @@
 /**
  * ============================================================================
  * HKDSE Chemistry Question Bank - Chapter 41 Dedicated Patch Module
- * File: patches/patch_ch41.js (v60.3 - Include MCQ41053 Table & Graph Fix)
+ * File: patches/patch_ch41.js (v60.4 - Perfect Graph & 2x2 Option Grid Match)
  * Target: Chapter 41 (濃度和溫度的變化對化學平衡的影響)
  * ============================================================================
  */
@@ -9,9 +9,8 @@
 (function () {
   'use strict';
 
-  console.log('[Patch Ch41] Chapter 41 dedicated fix module active (v60.3).');
+  console.log('[Patch Ch41] Chapter 41 dedicated fix module active (v60.4).');
 
-  // 注入 Ch41 專屬樣式
   function injectCh41Styles() {
     if (document.getElementById('chemPatchCh41Style')) return;
     const style = document.createElement('style');
@@ -156,24 +155,6 @@
         expBody.innerHTML = `<p><i>Q</i><sub>c</sub> = ${fracHtml('[CoCl<sub>4</sub><sup>2&minus;</sup>(aq)]', '[Co<sup>2+</sup>(aq)][Cl<sup>&minus;</sup>(aq)]<sup>4</sup>')} = ${fracHtml('<i>z</i>', '<i>x</i> <i>y</i><sup>4</sup>')} mol<sup>&minus;4</sup> dm<sup>12</sup></p>`;
       }
     }
-
-    const emptyKcLines = Array.from(body.querySelectorAll('p, div')).filter(p =>
-      /^[A-D]\.\s*(?:Kc|Qc|K\s*c|Q\s*c)\s*=\s*$/i.test((p.textContent || '').replace(/\s+/g, ' ').trim())
-    );
-    if (emptyKcLines.length > 0) {
-      emptyKcLines.forEach(p => {
-        const t = (p.textContent || '').replace(/\s+/g, ' ').trim();
-        const letter = t[0].toUpperCase();
-        const sym = /Q/i.test(t) ? '<i>Q</i><sub>c</sub>' : '<i>K</i><sub>c</sub>';
-        const genericMap = {
-          A: `${letter}. ${sym} = ${fracHtml('[Products]', '[Reactants]')}`,
-          B: `${letter}. ${sym} = ${fracHtml('<i>z</i>', '<i>x</i> <i>y</i><sup>4</sup>')}`,
-          C: `${letter}. ${sym} = ${fracHtml('<i>x</i> <i>y</i>', '<i>z</i>')}`,
-          D: `${letter}. ${sym} = ${fracHtml('<i>x</i> <i>y</i><sup>4</sup>', '<i>z</i>')}`
-        };
-        p.innerHTML = genericMap[letter] || p.innerHTML;
-      });
-    }
   }
 
   function patchQuestionCard(card) {
@@ -197,6 +178,7 @@
     const qHeaderEl = card.querySelector('.q-number');
     const qCode = qHeaderEl ? qHeaderEl.textContent.trim() : '';
 
+    // 1. 拆除誤包的外框 div
     Array.from(body.querySelectorAll('div')).forEach(div => {
       if (div.classList.contains('ch41-merged-reaction') || div.classList.contains('chem-patch-grid')) return;
       const imgs = div.querySelectorAll('img');
@@ -207,6 +189,7 @@
       }
     });
 
+    // 2. 行內 ⇌ 圖片對齊
     Array.from(body.querySelectorAll('p, div, span')).forEach(el => {
       const imgs = Array.from(el.querySelectorAll('img'));
       if (imgs.length === 1) {
@@ -221,6 +204,7 @@
       }
     });
 
+    // 3. 合併斷行的平衡方程式
     const children = Array.from(body.children);
     for (let i = 0; i < children.length; i++) {
       const curr = children[i];
@@ -248,33 +232,53 @@
       }
     }
 
-    Array.from(body.querySelectorAll('p')).forEach(p => {
-      const txt = (p.textContent || '').replace(/\s+/g, ' ').trim();
-      if (/^Flask\s+\[/i.test(txt)) {
-        const nextEl = p.nextElementSibling;
-        if (nextEl && nextEl.tagName === 'TABLE') {
-          const matches = txt.match(/Flask|\[[^\]]+\]\s*\/\s*mol\s*dm\s*(?:-3|−3|\u207B\u00B3)?/gi);
-          if (matches && matches.length >= 2) {
-            const thead = document.createElement('thead');
-            const tr = document.createElement('tr');
-            matches.forEach(hText => {
-              const th = document.createElement('th');
-              th.innerHTML = hText.replace(/(-3|−3)$/, '<sup>&minus;3</sup>');
-              tr.appendChild(th);
-            });
-            thead.appendChild(tr);
-            nextEl.insertBefore(thead, nextEl.firstChild);
-            nextEl.classList.add('ch41-clean-table');
-            p.remove();
-          }
-        }
-      }
-    });
-
     restoreMissingMathExpressions(card, body);
 
     // =========================================================================
-    // MCQ41053 專屬修復：清理散落標籤，重構 A/B/C/D 為完美對齊表格
+    // 4. MCQ41019 專屬修復：精準抓取 Word 裡附帶 A. B. C. D. 的 4張選項圖，排成完美 2x2 柵格
+    // =========================================================================
+    if (qCode === 'ChemMCQ41019') {
+      const pNodes = Array.from(body.querySelectorAll('p, div'));
+      const foundOptions = [];
+
+      // 尋找包含 A. / B. / C. / D. 且帶有圖片的區塊
+      pNodes.forEach(p => {
+        const txt = (p.textContent || '').trim();
+        const img = p.querySelector('img');
+        if (img && /^[A-D]\./.test(txt)) {
+          foundOptions.push({ pNode: p, letter: txt.substring(0, 2), img: img });
+        }
+      });
+
+      if (foundOptions.length === 4 && !body.querySelector('.chem-patch-grid')) {
+        const grid = document.createElement('div');
+        grid.className = 'chem-patch-grid';
+        grid.style.cssText = 'display:grid; grid-template-columns:repeat(2, minmax(0, 1fr)); gap:14px; margin:16px 0; width:100%; box-sizing:border-box;';
+
+        const anchor = foundOptions[0].pNode;
+        anchor.parentNode.insertBefore(grid, anchor);
+
+        foundOptions.forEach(opt => {
+          const cell = document.createElement('div');
+          cell.style.cssText = 'background:#FFFFFF; border:1.5px solid #E2E6F3; border-radius:18px; padding:12px 10px; display:flex; flex-direction:column; align-items:center; justify-content:space-between; gap:8px;';
+
+          const lbl = document.createElement('div');
+          lbl.textContent = opt.letter;
+          lbl.style.cssText = 'font-family:sans-serif; font-size:13px; color:#48547A; background:#EEF0F8; padding:2px 12px; border-radius:10px;';
+
+          opt.img.style.cssText = 'max-width:88% !important; max-height:115px !important; width:auto !important; height:auto !important; object-fit:contain !important; display:block !important; margin:0 auto !important;';
+
+          cell.appendChild(opt.img);
+          cell.appendChild(lbl);
+          grid.appendChild(cell);
+
+          opt.pNode.remove(); // 移除原本散落的舊段落
+        });
+      }
+    }
+
+    // =========================================================================
+    // 5. MCQ41053 專屬修復
     // =========================================================================
     if (qCode === 'ChemMCQ41053') {
       const pNodes = Array.from(body.querySelectorAll('p, div'));
@@ -284,14 +288,13 @@
       pNodes.forEach(p => {
          const txt = (p.textContent || '').trim().toLowerCase();
          if (labelsToHide.includes(txt) && !p.querySelector('img')) {
-             p.style.display = 'none'; // 隱藏散落文字
+             p.style.display = 'none';
          }
          if (p.querySelector('img')) {
              imgNode = p;
          }
       });
 
-      // 在圖片下加入精美圖例
       if (imgNode && !body.querySelector('.legend-41053')) {
           const legend = document.createElement('div');
           legend.className = 'legend-41053';
@@ -300,7 +303,6 @@
           imgNode.parentNode.insertBefore(legend, imgNode.nextSibling);
       }
 
-      // 重構選項為 3 欄 HTML 表格
       let headerNode = null;
       const optionNodes = [];
       pNodes.forEach(p => {
@@ -330,7 +332,6 @@
 
           optionNodes.forEach(opt => {
               const html = opt.innerHTML;
-              // 精準切割反應式與 enthalpy 區塊
               const splitMatch = html.match(/(ΔH|&#916;H|&Delta;H)/i);
               if (splitMatch) {
                   const leftPart = html.substring(0, splitMatch.index).trim();
@@ -351,71 +352,12 @@
                       <td style="padding:14px 12px; text-align:center; vertical-align:middle; font-style:italic;">${rightPart}</td>
                   `;
                   tbody.appendChild(tr);
-                  opt.style.display = 'none'; // 隱藏亂掉的文字
+                  opt.style.display = 'none';
               }
           });
 
-          headerNode.style.display = 'none'; // 隱藏原本擠扁的表頭
+          headerNode.style.display = 'none';
           headerNode.parentNode.insertBefore(table, headerNode);
-      }
-    }
-
-    const axisTrash = ['time', 't', 'concentration', '[ch3oh(g)]', 'a(g)', 'b(g)', 'c(g)', 'rate'];
-    Array.from(body.querySelectorAll('p, div')).forEach(el => {
-      if (
-        el.classList.contains('ch41-merged-reaction') ||
-        el.classList.contains('chem-patch-grid') ||
-        el.querySelector('img, svg, table')
-      ) {
-        return;
-      }
-      const lower = (el.textContent || '').trim().toLowerCase();
-      if (axisTrash.includes(lower)) el.style.display = 'none';
-    });
-
-    const largeGraphImgs = Array.from(body.querySelectorAll('img')).filter(img => {
-      if (img.closest('.ch41-merged-reaction') || img.classList.contains('ch41-inline-arrow-img')) return false;
-      return !isSmallEquilibriumArrowImg(img, '', '');
-    });
-
-    if (largeGraphImgs.length >= 3 && !body.querySelector('.chem-patch-grid')) {
-      const optionImgs = largeGraphImgs.length > 4 ? largeGraphImgs.slice(largeGraphImgs.length - 4) : largeGraphImgs.slice(0, 4);
-
-      if (optionImgs.length === 4 || optionImgs.length === 3) {
-        const grid = document.createElement('div');
-        grid.className = 'chem-patch-grid';
-        grid.style.cssText = 'display:grid; grid-template-columns:repeat(2, minmax(0, 1fr)); gap:14px; margin:16px 0; width:100%; box-sizing:border-box;';
-
-        const anchor = optionImgs[0].closest('p, div') || optionImgs[0];
-        anchor.parentNode.insertBefore(grid, anchor);
-
-        Array.from(body.querySelectorAll('p, div, span')).forEach(el => {
-          if (el.querySelector('img')) return;
-          if (/^[A-D]\.?$/.test((el.textContent || '').trim())) {
-            el.style.display = 'none';
-          }
-        });
-
-        const labels = ['A.', 'B.', 'C.', 'D.'];
-        optionImgs.forEach((img, idx) => {
-          const oldParent = img.parentNode;
-          const cell = document.createElement('div');
-          cell.style.cssText = 'background:#FFFFFF; border:1.5px solid #E2E6F3; border-radius:18px; padding:12px 10px; display:flex; flex-direction:column; align-items:center; justify-content:space-between; gap:8px;';
-
-          const lbl = document.createElement('div');
-          lbl.textContent = labels[idx] || '';
-          lbl.style.cssText = 'font-family:sans-serif; font-size:13px; color:#48547A; background:#EEF0F8; padding:2px 12px; border-radius:10px;';
-
-          img.style.cssText = 'max-width:88% !important; max-height:115px !important; width:auto !important; height:auto !important; object-fit:contain !important; display:block !important; margin:0 auto !important;';
-
-          cell.appendChild(img);
-          cell.appendChild(lbl);
-          grid.appendChild(cell);
-
-          if (oldParent && oldParent !== body && (oldParent.textContent || '').trim() === '' && oldParent.querySelectorAll('img').length === 0) {
-            oldParent.remove();
-          }
-        });
       }
     }
   }
@@ -448,108 +390,3 @@
     startCh41Patch();
   }
 })();
-/**
- * ============================================================================
- * Additional Patch Snippet for Chapter 41: Gas Syringe Label Cleanup (MCQ41020)
- * Append this snippet to the bottom of your existing patches/patch_ch41.js
- * ============================================================================
- */
-(function() {
-  const observer = new MutationObserver(() => {
-    document.querySelectorAll('.question-card').forEach(card => {
-      const qNum = card.querySelector('.q-number');
-      if (qNum && qNum.textContent.trim() === 'ChemMCQ41020') {
-        const body = card.querySelector('.q-native-body');
-        if (body && !body.dataset.patch41020Cleaned) {
-          body.dataset.patch41020Cleaned = 'true';
-          
-          // 找出氣筒圖片
-          const syringeImg = body.querySelector('img');
-          if (syringeImg) {
-            // 收集氣筒周圍散落的說明文字
-            const trashKeywords = ['a gaseous mixture', 'plunger', 'rubber cap', 'gas syringe'];
-            const collectedLabels = [];
-            
-            Array.from(body.querySelectorAll('p, div')).forEach(el => {
-              const txt = (el.textContent || '').trim();
-              const lower = txt.toLowerCase();
-              if (trashKeywords.some(k => lower.includes(k)) && txt.length < 50 && !el.querySelector('img')) {
-                collectedLabels.push(txt);
-                el.style.display = 'none'; // 隱藏散落的漂浮文字
-              }
-            });
-            
-            if (collectedLabels.length > 0) {
-              // 在氣筒圖片下方建立一個簡潔漂亮的圖例說明框
-              const captionBox = document.createElement('div');
-              captionBox.style.cssText = 'background:#EEF0F8; color:#48547A; font-size:12px; padding:8px 14px; border-radius:12px; text-align:center; margin:10px auto; max-width:85%; border:1px solid #DFE3F8; font-family:sans-serif; line-height:1.5;';
-              captionBox.innerHTML = '<b>Gas Syringe Labels:</b> ' + collectedLabels.join(' &nbsp;·&nbsp; ');
-              
-              const anchor = syringeImg.closest('p, div') || syringeImg;
-              anchor.parentNode.insertBefore(captionBox, anchor.nextSibling);
-            }
-          }
-        }
-      }
-    });
-  });
-
-  const root = document.getElementById('chemAppRootContainer') || document.body;
-  observer.observe(root, { childList: true, subtree: true });
-})();
-/**
- * ============================================================================
- * Additional Patch Snippet for Chapter 41: Graph Axes Label Integration
- * Append this snippet to the bottom of your existing patches/patch_ch41.js
- * ============================================================================
- */
-(function() {
-  const observer = new MutationObserver(() => {
-    document.querySelectorAll('.question-card').forEach(card => {
-      const body = card.querySelector('.q-native-body');
-      if (body && !body.dataset.patchAxesCleaned) {
-        
-        // 檢查是否有圖表與散落的軸標籤 (例如 Concentration, Time, t, t' 等)
-        const hasGraphImg = body.querySelector('img');
-        if (hasGraphImg) {
-          const axisKeywords = ['concentration', 'time', 'rate', 'yield', 'temperature', 'pressure', "t'", 't', 'c(g)', 'a(g)', 'b(g)'];
-          const collectedAxisLabels = [];
-          
-          Array.from(body.querySelectorAll('p, div, span')).forEach(el => {
-            if (el.querySelector('img')) return;
-            const txt = (el.textContent || '').trim();
-            const lower = txt.toLowerCase();
-            
-            // 挑選出屬於 X 軸、Y 軸或時間點的散落文字
-            if (axisKeywords.includes(lower) && txt.length < 35) {
-              collectedAxisLabels.push(txt);
-              el.style.display = 'none'; // 隱藏原本亂飛的散落文字
-            }
-          });
-          
-          if (collectedAxisLabels.length > 0) {
-            body.dataset.patchAxesCleaned = 'true';
-            
-            // 將 X / Y 軸變數整理成一個漂亮的圖表座標說明框
-            const axisBox = document.createElement('div');
-            axisBox.style.cssText = 'background:#EEF0F8; color:#48547A; font-size:12px; padding:8px 14px; border-radius:12px; text-align:center; margin:10px auto; max-width:85%; border:1px solid #DFE3F8; font-family:sans-serif; line-height:1.5;';
-            
-            // 簡單分類 X 軸與 Y 軸變數
-            const yAxis = collectedAxisLabels.find(l => /concentration|rate|yield|temperature|pressure/i.test(l)) || 'Concentration';
-            const xAxis = collectedAxisLabels.find(l => /time/i.test(l)) || 'Time';
-            const timePoints = collectedAxisLabels.filter(l => l === 't' || l === "t'" || l === "t\u2032");
-            
-            axisBox.innerHTML = `<b>Graph Axes:</b> Y-axis: ${yAxis} &nbsp;|&nbsp; X-axis: ${xAxis} ${timePoints.length ? `(Time points: ${timePoints.join(', ' )})` : ''}`;
-            
-            const anchor = hasGraphImg.closest('p, div') || hasGraphImg;
-            anchor.parentNode.insertBefore(axisBox, anchor.nextSibling);
-          }
-        }
-      }
-    });
-  });
-
-  const root = document.getElementById('chemAppRootContainer') || document.body;
-  observer.observe(root, { childList: true, subtree: true });
-})();
-
