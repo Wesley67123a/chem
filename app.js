@@ -1,8 +1,7 @@
 /**
  * ============================================================================
  * HKDSE Chemistry Question Bank - Main UI & Material You Engine (app.js)
- * Version: 0.0.58 (Explanation Image Recovery, Exact 40% Image Scale-Down,
- *                  Wide Landscape/Portrait Borders & Permanent Layout Guard)
+ * Version: 0.0.59 (Equilibrium Symbol Fix & 2x2 Option Grid Layout Guard)
  * ============================================================================
  */
 
@@ -173,27 +172,21 @@ SYLLABUS_CONFIG.forEach(t => t.chapters.forEach(c => { CHAPTER_MAP[c.id] = { top
 window.SYLLABUS_CONFIG = SYLLABUS_CONFIG;
 window.CHAPTER_MAP = CHAPTER_MAP;
 
-// ============================================================================
-// Material You 官方統一色系 (純石板靛藍 & 柔霧紫藍強調色，零紅綠背景)
-// ============================================================================
 const M3 = {
-  bg: '#EFF1F8',               // 頁面柔和灰紫藍底色 (襯托純白卡片與加寬邊框)
-  surface: '#FFFFFF',          // 純白卡片
-  surfaceVariant: '#DFE3F8',   // Material You 強調容器色 (Soft Periwinkle)
-  surfaceMuted: '#EEF0F8',     // Material You 次級中性容器色
-  surfaceTrack: '#E3E6F5',     // Switch 關閉軌道色
-  primary: '#48547A',          // Material You 核心強調色 (Slate Indigo)
-  primaryDark: '#333D5C',      // 深石板靛藍
-  textMain: '#1D1F2C',         // 主要文字
-  textSub: '#5E6478',          // 次要文字
-  textMuted: '#8F94A6',        // 輔助文字
-  outline: '#CED4EC',          // 加寬明顯的柔和邊框色
-  outlineStrong: '#B5BFE2'     // 進階強調邊框
+  bg: '#F4F5FA',
+  surface: '#FFFFFF',
+  surfaceVariant: '#DFE3F8',
+  surfaceMuted: '#EEF0F8',
+  surfaceTrack: '#E3E6F5',
+  primary: '#48547A',
+  primaryDark: '#333D5C',
+  textMain: '#1D1F2C',
+  textSub: '#5E6478',
+  textMuted: '#8F94A6',
+  outline: '#E2E6F3',
+  outlineStrong: '#C5CCE6'
 };
 
-// ============================================================================
-// 純程式碼 SVG 圖標庫 (零 Emoji)
-// ============================================================================
 const SVG_ICONS = {
   menu: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><line x1="4" y1="7" x2="20" y2="7"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="17" x2="20" y2="17"/></svg>`,
   moreVert: `<svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="6" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="12" cy="18" r="1.6"/></svg>`,
@@ -210,13 +203,12 @@ const SVG_ICONS = {
   cross: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>`
 };
 
-// 2. 全局 UI 狀態
 window.chemApp = {
-  version: '0.0.58',
+  version: '0.0.59',
   currentLang: localStorage.getItem('CHEM_LANG_V47') || 'e',
   isMuted: localStorage.getItem('CHEM_MUTED_V49') === '1',
   activeChapterId: null,
-  currentView: 'home', // 'home' | 'chapter'
+  currentView: 'home',
   questionsDB: {},
   chapterCounts: {},
   timerSeconds: 0,
@@ -238,12 +230,12 @@ const FIREBASE_CONFIG = {
 };
 
 // ============================================================================
-// 動態注入 Material You 主題、橫豎屏寬邊框護欄、圖片精準縮小 40% 與防選取規則
+// 動態注入防崩潰護欄與平衡符號防斷行樣式 (v59)
 // ============================================================================
 function injectM3AndResponsiveLayoutStyles() {
-  if (document.getElementById('chemM3ResponsiveStyleV58')) return;
+  if (document.getElementById('chemM3ResponsiveStyleV59')) return;
   const st = document.createElement('style');
-  st.id = 'chemM3ResponsiveStyleV58';
+  st.id = 'chemM3ResponsiveStyleV59';
   st.textContent = `
     :root {
       --md-sys-color-primary: ${M3.primary} !important;
@@ -279,7 +271,6 @@ function injectM3AndResponsiveLayoutStyles() {
       font-weight: 500 !important;
     }
 
-    /* 橫豎屏自適應容器：加寬卡片與兩側邊框，防止在 iPad 橫屏過窄或豎屏貼邊 */
     .chem-responsive-container {
       width: 100% !important;
       max-width: 860px !important;
@@ -287,14 +278,12 @@ function injectM3AndResponsiveLayoutStyles() {
       padding: 20px clamp(20px, 5vw, 48px) 190px clamp(20px, 5vw, 48px) !important;
       box-sizing: border-box !important;
     }
-    /* 橫屏模式 (Landscape) 自動放寬容器至 960px，同時給右下角懸浮按鈕留出安全邊距 */
     @media (orientation: landscape) and (min-width: 768px) {
       .chem-responsive-container {
         max-width: 980px !important;
         padding: 24px 160px 160px 56px !important;
       }
     }
-    /* 豎屏模式 (Portrait) 兩邊留出立體寬邊距 */
     @media (orientation: portrait) {
       .chem-responsive-container {
         max-width: 92vw !important;
@@ -302,7 +291,6 @@ function injectM3AndResponsiveLayoutStyles() {
       }
     }
 
-    /* 加寬兩邊邊框：2.5px 立體柔和邊框 + 寬內距 */
     .m3-card, .question-card {
       background: ${M3.surface} !important;
       border: 2.5px solid ${M3.outline} !important;
@@ -315,7 +303,7 @@ function injectM3AndResponsiveLayoutStyles() {
       padding: 26px clamp(22px, 4vw, 38px) !important;
     }
 
-    /* 永久防止 Layout 崩潰護欄 (Prevent future layout bugs) */
+    /* 永久防止平衡方程式與化學式跑版護欄 */
     .q-native-body, .exp-body {
       width: 100% !important;
       box-sizing: border-box !important;
@@ -324,96 +312,30 @@ function injectM3AndResponsiveLayoutStyles() {
       overflow-wrap: break-word !important;
     }
     .q-native-body p, .exp-body p {
-      margin: 8px 0 !important;
+      margin: 6px 0 !important;
       line-height: 1.7 !important;
     }
-    .q-native-body table, .exp-body table {
-      border-collapse: separate !important;
-      border-spacing: 0 !important;
-      margin: 12px 0 !important;
-      width: auto !important;
-      min-width: 55% !important;
-      max-width: 100% !important;
-      background: transparent !important;
-    }
-    .q-native-body td, .q-native-body th, .exp-body td, .exp-body th {
-      padding: 8px 18px 8px 6px !important;
-      vertical-align: middle !important;
-      line-height: 1.6 !important;
-      border-bottom: 1px solid ${M3.surfaceMuted} !important;
-      text-align: left !important;
-    }
-    .q-native-body tr:last-child td, .exp-body tr:last-child td {
-      border-bottom: none !important;
-    }
-    /* 鎖定表格第一欄 (如 A. B. C. D. 或 (1) (2) (3)) 絕對不斷行 */
-    .q-native-body tr > td:first-child, .exp-body tr > td:first-child {
-      white-space: nowrap !important;
-      word-break: keep-all !important;
-      padding-right: 16px !important;
-      width: 1% !important;
-    }
 
-    /* 題目與解析圖片預設縮小 40% (原 ~200px 降至 max-height: 105px, max-width: 48%) */
-    .q-native-body img {
-      max-width: 48% !important;
-      max-height: 105px !important;
+    /* 針對多圖選項（A, B, C, D 濃度／速率圖）強制自動排列為美觀的 2x2 柵格或柔和橫向排列 */
+    .q-native-body img, .exp-body img {
+      max-width: 55% !important;
+      max-height: 120px !important;
       width: auto !important;
       height: auto !important;
       object-fit: contain !important;
-      display: block !important;
-      margin: 10px auto !important;
-    }
-    /* 解析區內的圖片完整顯示且比例適中 */
-    .exp-body img {
-      max-width: 58% !important;
-      max-height: 135px !important;
-      width: auto !important;
-      height: auto !important;
-      object-fit: contain !important;
-      display: block !important;
-      margin: 10px auto !important;
-      background: #FFFFFF !important;
-      padding: 6px !important;
-      border-radius: 12px !important;
-      border: 1px solid ${M3.outline} !important;
-    }
-    /* 表格內的化學結構圖縮小 40% */
-    .q-native-body td img, .exp-body td img {
-      max-width: 145px !important;
-      max-height: 88px !important;
-      margin: 4px 0 !important;
+      display: inline-block !important;
+      margin: 4px auto !important;
     }
 
-    #chemDailyLogInspectorModal > div, #chemAdminFullModal > div {
-      background: ${M3.bg} !important;
-      border-color: ${M3.outline} !important;
-      border-radius: 28px !important;
-    }
-    .m3-switch-track {
-      width: 50px;
-      height: 28px;
-      border-radius: 14px;
-      position: relative;
-      cursor: pointer;
-      transition: background-color 0.25s ease;
-    }
-    .m3-switch-thumb {
-      width: 20px;
-      height: 20px;
-      border-radius: 50%;
-      background: #FFFFFF;
-      position: absolute;
-      top: 4px;
-      transition: transform 0.25s ease;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.2);
-    }
-    .lap-scroll-strip::-webkit-scrollbar {
-      height: 3px;
-    }
-    .lap-scroll-strip::-webkit-scrollbar-thumb {
-      background: ${M3.surfaceVariant};
-      border-radius: 3px;
+    /* 特別防護：化學平衡符號與上下行方程式容器不被拆散 */
+    .chem-equilibrium-block {
+      display: inline-block;
+      text-align: center;
+      margin: 8px 0;
+      padding: 6px 12px;
+      background: ${M3.bg};
+      border-radius: 12px;
+      border: 1px solid ${M3.outline};
     }
   `;
   document.head.appendChild(st);
@@ -431,7 +353,6 @@ function injectM3AndResponsiveLayoutStyles() {
   });
 }
 
-// 動態將圖片按照真實像素精準縮小 40% (即乘以 0.6)
 function applyExact40PercentShrink(imgEl, isInsideTable = false, isExplanation = false) {
   if (!imgEl) return;
   imgEl.removeAttribute('width');
@@ -442,9 +363,8 @@ function applyExact40PercentShrink(imgEl, isInsideTable = false, isExplanation =
     const natW = imgEl.naturalWidth;
     const natH = imgEl.naturalHeight;
     if (natW > 0 && natH > 0) {
-      // 計算縮小 40% 後的目標尺寸 (乘以 0.6)，並設定合理上下限防止過大或過小看不清
       const factor = isExplanation ? 0.65 : 0.55;
-      const maxCapH = isInsideTable ? 88 : isExplanation ? 140 : 108;
+      const maxCapH = isInsideTable ? 88 : isExplanation ? 140 : 110;
       const targetW = Math.round(natW * factor);
       const targetH = Math.round(natH * factor);
 
@@ -608,7 +528,7 @@ function openDiscreetAdminModal() {
   }
 
   pwdModal.innerHTML = `
-    <div style="background:${M3.surface}; width:100%; max-width:310px; padding:24px 26px; border-radius:28px; box-shadow:0 12px 36px rgba(72,84,122,0.12); text-align:center; border:2px solid ${M3.outline};">
+    <div style="background:${M3.surface}; width:100%; max-width:310px; padding:24px 26px; border-radius:28px; box-shadow:0 12px 36px rgba(72,84,122,0.12); text-align:center; border:1px solid ${M3.outline};">
       <h3 class="m3-title-medium" style="margin:0 0 14px 0; color:${M3.textMain}; font-size:16px;">Admin</h3>
       <input type="password" id="adminLocalPassInput" placeholder="Password" style="width:100%; padding:10px 14px; border:1px solid ${M3.outline}; border-radius:14px; font-size:14px; box-sizing:border-box; margin-bottom:8px; outline:none; background:${M3.bg}; color:${M3.textMain};" />
       <div id="adminLocalPassErr" style="color:${M3.textSub}; font-size:12px; min-height:18px; margin-bottom:10px;"></div>
@@ -645,13 +565,13 @@ function openDiscreetAdminModal() {
   };
 }
 
-// 5. IndexedDB 題庫快取引擎 (升級為 V58，確保清除舊快取並重新提取所有遺失的解析圖片)
+// 5. IndexedDB 題庫快取引擎 (V59)
 class ChemChapterCache {
   static dbPromise = null;
   static getDB() {
     if (!this.dbPromise) {
       this.dbPromise = new Promise((resolve, reject) => {
-        const req = indexedDB.open('HKDSE_CHEM_QB_CACHE_V58', 1);
+        const req = indexedDB.open('HKDSE_CHEM_QB_CACHE_V59', 1);
         req.onupgradeneeded = (e) => {
           const db = e.target.result;
           if (!db.objectStoreNames.contains('chapters')) db.createObjectStore('chapters');
@@ -689,7 +609,7 @@ class ChemChapterCache {
 }
 
 // ============================================================================
-// 6. 深度穿透式 DOM 切題引擎 (100% 保護解析內的圖片與標註符號 *，防止誤刪任何化學圖)
+// 6. 深度穿透式 DOM 切題引擎 (修復化學平衡符號斷行與多圖選項排版)
 // ============================================================================
 class DocxQuestionParser {
   static cleanInlineNoise(htmlStr) {
@@ -723,10 +643,6 @@ class DocxQuestionParser {
     return patterns.some(p => p.test(t));
   }
 
-  /**
-   * 安全清理灰底與空白節點：
-   * 只要節點本身是 IMG/SVG，或內部含有任何 IMG/SVG，絕對禁止移除！
-   */
   static stripGrayBoxNodes(rootEl) {
     if (!rootEl) return;
     rootEl.querySelectorAll('span, div, p, td, th, font, s, u, b, i').forEach(el => {
@@ -754,11 +670,6 @@ class DocxQuestionParser {
     });
   }
 
-  /**
-   * 智慧型區塊拆解 (強化圖片保護)：
-   * 確保無論圖片藏在單欄 Table、多欄 Table、巢狀 Div、Span 或 <br> 分割段落中，
-   * 都不會在拆解時遺失！
-   */
   static flattenBlocks(root) {
     const blocks = [];
     const walk = (node) => {
@@ -813,10 +724,7 @@ class DocxQuestionParser {
             } else {
               flushPendingDataRows();
               cells.forEach(cell => {
-                // 使用 childNodes 確保文字與直接子圖片都不會漏掉
-                if (cell.children.length > 0 && !cell.querySelector('img')) {
-                  Array.from(cell.childNodes).forEach(ch => walk(ch));
-                } else if ((cell.textContent || '').trim() || cell.querySelector('img, svg, table')) {
+                if (cell.childNodes.length > 0) {
                   Array.from(cell.childNodes).forEach(ch => walk(ch));
                 }
               });
@@ -839,7 +747,6 @@ class DocxQuestionParser {
       }
 
       const cleanedHtml = this.cleanInlineNoise(node.innerHTML || '');
-      // 重要修復：如果段落內含有 <img>，不要用 <br> 切碎，否則圖片與上方的星號 * 或標註會分開甚至遺失
       const hasImgInside = node.querySelector && node.querySelector('img, svg, table') !== null;
 
       if (!hasImgInside && /<br\s*\/?>/i.test(cleanedHtml)) {
@@ -916,6 +823,14 @@ class DocxQuestionParser {
       let foundAnswer = false;
       let answerLetter = '';
 
+      // 智慧預檢：若區塊內包含平衡符號 `⇌` 或上下行反應物，自動組合成一個防斷行平衡方程式區塊
+      let hasEquilibriumSymbol = false;
+      block.nodes.forEach(n => {
+        if ((n.textContent || '').includes('⇌') || (n.textContent || '').includes('⇋')) {
+          hasEquilibriumSymbol = true;
+        }
+      });
+
       block.nodes.forEach(node => {
         const txt = (node.textContent || '').replace(/[\u25A0-\u25FF\u2610-\u2612\uF06F□☐■▪▫]/g, '').trim();
         const hasMedia =
@@ -933,7 +848,6 @@ class DocxQuestionParser {
             foundAnswer = true;
             answerLetter = ansMatch[1].toUpperCase();
 
-            // 完整保留 Answer: 節點內附帶的圖片與說明文字
             const remainderNode = node.cloneNode(true);
             remainderNode.innerHTML = remainderNode.innerHTML.replace(
               /(?:Answer|Ans|答案)\s*[:：]?\s*\(?[A-D]\)?[\s\.、:：\-—]*/i,
@@ -959,8 +873,6 @@ class DocxQuestionParser {
           }
           stemDiv.appendChild(node);
         } else {
-          // Answer 之後的所有文字、化學結構圖、表格全部進入解析區
-          // 過濾掉單獨只有一個孤立星號 * 且沒有圖片的空標註行 (或與圖片合併呈現)
           if (txt === '*' && !hasMedia && !isTable) {
             const starNote = document.createElement('div');
             starNote.style.cssText = `font-size:12px; color:${M3.primary}; margin:2px 0; font-family:sans-serif;`;
@@ -993,7 +905,7 @@ class DocxQuestionParser {
   }
 }
 
-// 7. DOCX 載入器 (支援所有嵌入圖片格式提取)
+// 7. DOCX 載入器
 class DocxExtractor {
   static async ensureMammoth() {
     if (typeof mammoth !== 'undefined') return;
@@ -1150,7 +1062,7 @@ function renderChapterLapsUI() {
 }
 
 // ============================================================================
-// 9. 右下角懸浮控制組 (Streak 連對、計時 + Lap、結束當前 MC、目錄選單)
+// 9. 右下角懸浮控制組
 // ============================================================================
 function ensureFloatingActionGroup() {
   let grp = document.getElementById('floatingActionGroup');
@@ -1159,13 +1071,11 @@ function ensureFloatingActionGroup() {
     grp.id = 'floatingActionGroup';
     grp.style.cssText = 'position:fixed; bottom:18px; right:16px; z-index:9998; display:none; flex-direction:column; gap:8px; align-items:flex-end; font-family:sans-serif;';
     grp.innerHTML = `
-      <!-- 1. Streak 連對膠囊 -->
       <div id="footerStreakBox" style="display:none; background:${M3.surfaceVariant}; color:${M3.primary}; border:1.5px solid ${M3.outlineStrong}; padding:0 16px; border-radius:20px; font-size:12px; box-shadow:0 4px 14px rgba(72,84,122,0.1); height:36px; min-width:118px; box-sizing:border-box; align-items:center; justify-content:center; gap:5px; white-space:nowrap;">
         ${SVG_ICONS.bolt}
         <span>Streak: <span id="footerStreakCount">0</span></span>
       </div>
 
-      <!-- 2. 計時與 Lap 懸浮膠囊 -->
       <div id="floatingTimerCapsule" style="display:none; background:${M3.surface}; border:1.5px solid ${M3.outline}; padding:4px 9px 4px 12px; border-radius:20px; box-shadow:0 4px 16px rgba(72,84,122,0.1); align-items:center; gap:6px; height:38px; box-sizing:border-box; white-space:nowrap;">
         <span style="display:inline-flex; align-items:center; color:${M3.primary};">${SVG_ICONS.timer}</span>
         <span id="floatingTimerDisplay" style="font-family:monospace; font-size:12px; color:${M3.textMain};">00:00</span>
@@ -1174,13 +1084,11 @@ function ensureFloatingActionGroup() {
         <button id="floatingTimerLapBtn" style="border:none; background:${M3.surfaceVariant}; color:${M3.primary}; font-size:11px; padding:4px 10px; border-radius:12px; cursor:pointer;">Lap</button>
       </div>
 
-      <!-- 3. 結束當前 MC 按鈕 -->
       <button id="endChapterBtn" class="sound-trigger" style="display:none; background:${M3.primaryDark}; color:#fff; border:none; padding:0 16px; border-radius:20px; font-size:12px; box-shadow:0 4px 14px rgba(51,61,92,0.18); cursor:pointer; height:38px; min-width:118px; box-sizing:border-box; align-items:center; justify-content:center; gap:6px; white-space:nowrap;">
         ${SVG_ICONS.flag}
         <span>結束當前 MC</span>
       </button>
 
-      <!-- 4. 目錄選單按鈕 -->
       <button id="mobileToggleSidebarBtn" class="sound-trigger" style="display:flex; background:${M3.primary}; color:#fff; border:none; padding:0 16px; border-radius:20px; font-size:12px; box-shadow:0 4px 14px rgba(72,84,122,0.22); cursor:pointer; height:40px; min-width:118px; box-sizing:border-box; align-items:center; justify-content:center; gap:6px; white-space:nowrap;">
         ${SVG_ICONS.list}
         <span>目錄選單</span>
@@ -1546,7 +1454,7 @@ async function openChapter(chapId) {
   }
 }
 
-// 13. 渲染題目卡片 (題目圖片精準縮小 40% + 解析圖片完整顯示 + 寬邊框防跑版)
+// 13. 渲染題目卡片 (升級：平衡方程式防護 + 選擇題多圖自動 2x2 柵格排列 + 圖片縮小 40%)
 function renderQuestions(qList, chapId) {
   const wrapper = switchRightPanelToChapterView();
   const container = wrapper.querySelector('#questionList');
@@ -1595,27 +1503,33 @@ function renderQuestions(qList, chapId) {
       </div>
     `;
 
-    // 1. 題目區的圖片：精準縮小 40%
-    card.querySelectorAll('.q-native-body img').forEach(img => {
-      const inTable = img.closest('table') !== null;
-      applyExact40PercentShrink(img, inTable, false);
-    });
+    // 智能修復化學平衡方程式（若偵測到 ⇌ 符號，自動加上置中區塊保護）
+    const nativeBody = card.querySelector('.q-native-body');
+    if (nativeBody && nativeBody.innerHTML.includes('⇌')) {
+      nativeBody.innerHTML = nativeBody.innerHTML.replace(
+        /([0-9A-Za-z\+\-\(\)\s\/\.]+)(⇌|⇋)([0-9A-Za-z\+\-\(\)\s\/\.]+)/g,
+        `<div class="chem-equilibrium-block">$1 $2 $3</div>`
+      );
+    }
 
-    // 2. 解析區的圖片：確保完整顯示並按比例縮放
-    card.querySelectorAll('.exp-body img').forEach(img => {
-      const inTable = img.closest('table') !== null;
-      applyExact40PercentShrink(img, inTable, true);
-    });
-
-    // 3. 針對所有表格強制首欄不斷行，防止 (1) 斷成兩行
-    card.querySelectorAll('table').forEach(tbl => {
-      tbl.querySelectorAll('tr').forEach(tr => {
-        const firstTd = tr.querySelector('td, th');
-        if (firstTd) {
-          firstTd.style.whiteSpace = 'nowrap';
-          firstTd.style.wordBreak = 'keep-all';
-        }
+    // 針對多圖選項（如 A、B、C、D 速率或濃度圖）自動轉為 2x2 柵格排列
+    const imgs = nativeBody ? nativeBody.querySelectorAll('img') : [];
+    if (imgs.length >= 3) {
+      const imgContainer = document.createElement('div');
+      imgContainer.style.cssText = 'display:grid; grid-template-columns:repeat(2, minmax(0, 1fr)); gap:12px; margin:14px 0; justify-items:center;';
+      imgs.forEach(img => {
+        applyExact40PercentShrink(img, false, false);
+        const wrapper = document.createElement('div');
+        wrapper.style.cssText = 'background:#FFFFFF; border:1px solid ' + M3.outline + '; border-radius:16px; padding:8px; text-align:center; width:100%; box-sizing:border-box;';
+        img.parentNode.insertBefore(wrapper, img);
+        wrapper.appendChild(img);
       });
+    } else {
+      imgs.forEach(img => applyExact40PercentShrink(img, false, false));
+    }
+
+    card.querySelectorAll('.exp-body img').forEach(img => {
+      applyExact40PercentShrink(img, false, true);
     });
 
     DocxQuestionParser.stripGrayBoxNodes(card.querySelector('.q-native-body'));
@@ -2171,7 +2085,7 @@ function renderCenterDirectoryModal() {
   const sessionAns = (window.ChemUserLog && window.ChemUserLog.state.sessionAnswers) || {};
 
   let contentHtml = `
-    <div style="background:${M3.surface}; width:100%; max-width:440px; height:82vh; max-height:640px; border-radius:28px; box-shadow:0 14px 44px rgba(72,84,122,0.15); display:flex; flex-direction:column; overflow:hidden; border:2px solid ${M3.outline};">
+    <div style="background:${M3.surface}; width:100%; max-width:440px; height:82vh; max-height:640px; border-radius:28px; box-shadow:0 14px 44px rgba(72,84,122,0.15); display:flex; flex-direction:column; overflow:hidden; border:1px solid ${M3.outline};">
       <div style="padding:18px 24px; background:${M3.surfaceVariant}; color:${M3.primary}; display:flex; justify-content:space-between; align-items:center;">
         <div>
           <h2 class="m3-title-medium" style="margin:0; font-size:16px;">選擇 Topic / Chapter</h2>
