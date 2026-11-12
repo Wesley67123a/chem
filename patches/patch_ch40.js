@@ -1,8 +1,8 @@
 /**
  * ============================================================================
  * HKDSE Chemistry Question Bank - Chapter 40 Dedicated Layout & Math Patch
- * File: patches/patch_ch40.js (v3.0 - Bordered ICE Tables, Existing HTML Table
- *                                    Expression Restorer & Double-Equals Fix)
+ * File: patches/patch_ch40.js (v4.0 - Universal OMML Fraction, Stem/Option/ICE
+ *                                    Blank Restorer & Bordered Table Engine)
  * Target: Chapter 40 (Equilibrium Constant / 平衡常數)
  * ============================================================================
  */
@@ -10,15 +10,15 @@
 (function () {
   'use strict';
 
-  console.log('[Patch Ch40 v3.0] Bordered ICE Table & OMML Fraction Engine Loaded.');
+  console.log('[Patch Ch40 v4.0] Universal OMML Blank Restorer & Bordered ICE Engine Loaded.');
 
   // ===========================================================================
-  // 1. 注入第 40 課專屬 CSS（包含 ICE Table 行列黑框與數學上下分式）
+  // 1. 注入第 40 課專屬 CSS（ICE Table 行列黑框、上下分式、雙欄選項表）
   // ===========================================================================
   function injectStyles() {
-    if (document.getElementById('ch40PatchV3Styles')) return;
+    if (document.getElementById('ch40PatchV4Styles')) return;
     const style = document.createElement('style');
-    style.id = 'ch40PatchV3Styles';
+    style.id = 'ch40PatchV4Styles';
     style.textContent = `
       .q-native-body img,
       .exp-body img {
@@ -56,7 +56,7 @@
         margin: 10px 0 !important;
       }
 
-      /* 數學上下分式 (Kc 濃度表示式、ICE 計算、單位推導) */
+      /* 數學上下分式 (Kc 表示式、倒數關係、ICE 分數、單位推導) */
       .ch40-frac {
         display: inline-flex !important;
         flex-direction: column !important;
@@ -80,7 +80,7 @@
         text-align: center !important;
       }
 
-      /* 帶完整行列黑框的 ICE Table 與數據表 (復刻 Goodnotes 原稿黑框格線) */
+      /* 帶完整行列黑框的 ICE Table 與數據表 */
       table.ch40-bordered-table {
         width: 100% !important;
         max-width: 620px !important;
@@ -365,7 +365,6 @@
         .split('+')
         .map(term => {
           const t = term.trim();
-          // 異相平衡排除純固體 (s) 與純液體 (l)（除非全方程式都是液體如酯化反應）
           if (/\([sl]\)/i.test(t) && /\([gaq]{1,2}\)/i.test(sideStr)) return '';
           const m = t.match(/^(\d+)?\s*(.+)$/);
           if (!m) return '';
@@ -388,7 +387,6 @@
     return { prodWithPow, reacWithPow, prodNoPow, reacNoPow, prodEqm, reacEqm };
   }
 
-  // 輔助：根據單位推導對應的 Kc 濃度分式 (用於修復 ChemMCQ40006 左欄空白)
   function buildKcExprForUnit(unitTxt, kcParts) {
     if (!kcParts) return '';
     const molPowMatch = unitTxt.match(/mol\s*(?:\^)?\s*([\-−]?\d+)?/i);
@@ -401,8 +399,21 @@
     return buildFrac(kcParts.prodWithPow, kcParts.reacWithPow);
   }
 
+  // 從題幹文字中提取各物種的初始摩爾數 (用於自動填充 ICE Table)
+  function extractInitialMolesFromStem(stemBody) {
+    if (!stemBody) return [];
+    const txt = (stemBody.textContent || '').replace(/\s+/g, ' ');
+    const matches = [];
+    const regex = /(\d+(?:\.\d+)?)\s*mol\s+(?:of\s+)?([A-Za-z0-9\(\)]+)/gi;
+    let m;
+    while ((m = regex.exec(txt)) !== null) {
+      matches.push({ mol: m[1], species: m[2] });
+    }
+    return matches;
+  }
+
   // ===========================================================================
-  // STEP 3: 修復所有「已存在的 HTML <table>」（核心解決圖五 ChemMCQ40006 與圖一 ICE 黑框！）
+  // STEP 3: 修復所有「已存在的 HTML <table>」（選項表 & 帶黑框 ICE Table）
   // ===========================================================================
   function patchExistingHtmlTables(container, stemBody) {
     if (!container) return;
@@ -410,6 +421,7 @@
     if (tables.length === 0) return;
 
     const kcParts = parseReactionKcParts(stemBody || container) || parseReactionKcParts(container);
+    const stemMoles = extractInitialMolesFromStem(stemBody);
 
     tables.forEach(tbl => {
       const rows = Array.from(tbl.querySelectorAll('tr'));
@@ -421,13 +433,10 @@
         return firstCell && /^[A-D]\.$/.test((firstCell.textContent || '').trim());
       });
 
-      // -----------------------------------------------------------------------
-      // 分支 A：這是「選項表格」(如圖五 ChemMCQ40006 或圖四 ChemMCQ40047)
-      // -----------------------------------------------------------------------
+      // 分支 A：選項表格 (如 ChemMCQ40006, ChemMCQ40047)
       if (isOptionTbl) {
         tbl.classList.add('ch40-option-table');
 
-        // 修復表頭合併黏在一起的情況 (如 "Equilibrium constant expression Unit")
         const headerCells = Array.from(rows[0].querySelectorAll('th, td'));
         if (headerCells.length === 2) {
           const h1 = (headerCells[1].textContent || '').trim();
@@ -440,10 +449,8 @@
           }
         }
 
-        // 修復每一列 A / B / C / D 中間被 Word OMML 吃掉的空白濃度分式儲存格！
         rows.slice(1).forEach(tr => {
           const cells = Array.from(tr.querySelectorAll('td, th'));
-          // 情況 1：3 欄結構 [ "A.", "", "mol dm-3" ] -> 中間欄位被 OMML 吃掉變成空字串
           if (cells.length >= 3) {
             const exprCell = cells[1];
             const unitCell = cells[2];
@@ -452,9 +459,7 @@
             if (exprTxt === '' && /^(?:mol|no unit|dimensionless)/i.test(unitTxt) && kcParts) {
               exprCell.innerHTML = buildKcExprForUnit(unitTxt, kcParts);
             }
-          }
-          // 情況 2：2 欄結構 [ "A.", "mol dm-3" ] -> 整欄消失只剩單位
-          else if (cells.length === 2) {
+          } else if (cells.length === 2) {
             const unitCell = cells[1];
             const unitTxt = (unitCell.textContent || '').trim();
             if (/^(?:mol|no unit|dimensionless)/i.test(unitTxt) && kcParts) {
@@ -465,14 +470,13 @@
           }
         });
       }
-      // -----------------------------------------------------------------------
-      // 分支 B：這是「ICE Table 計算表或數據比較表」(如圖一 ChemMCQ40030、圖三 40054、圖四 40046)
-      // -----------------------------------------------------------------------
+      // 分支 B：ICE Table 計算表或數據比較表（加上完整行列黑框並填回被吃掉的空格！）
       else {
-        // 強制套用完整行列黑框 CSS！
         tbl.classList.add('ch40-bordered-table');
 
-        // 修復 ICE Table 內部儲存格被吃掉的數學分式
+        const isEsterificationIce = /(?:C2H5COOH|CH3COOH)/i.test(tblText) && /Initial/i.test(tblText);
+        const hasVolumeV = /\bV\b/.test((container.textContent || '') + ' ' + tblText);
+
         rows.forEach(tr => {
           const cells = Array.from(tr.querySelectorAll('td, th'));
           const rowLabel = cells[0] ? (cells[0].textContent || '').trim() : '';
@@ -481,7 +485,7 @@
             if (cIdx === 0) return;
             const rawTxt = (cell.textContent || '').replace(/\s+/g, ' ').trim();
 
-            // 1. 修復 Change 列中被吃掉化學計量係數比的分式 (如 "-0.020 × = -0.010" -> "-0.020 × 1/2 = -0.010")
+            // 1. 修復 Change 列中被吃掉係數比的分式 (如 "-0.020 × = -0.010")
             if (/Change/i.test(rowLabel) && /[×x*]\s*=/.test(rawTxt)) {
               const numMatch = rawTxt.match(/^([+\-−]?\d*\.?\d+)\s*[×x*]\s*=\s*([+\-−]?\d*\.?\d+)$/);
               if (numMatch) {
@@ -497,18 +501,41 @@
                   else if (Math.abs(ratio - 1.5) < 0.01) fracNode = buildFrac('3', '2');
 
                   cell.innerHTML = `${numMatch[1]} &times; ${fracNode} = ${numMatch[2]}`;
+                  return;
                 }
               }
             }
 
-            // 2. 修復 ChemMCQ40054 (酯化反應 ICE 表) 中被吃掉的 1/V, -x/V, +x/V, (1-x)/V, x/V
-            if (tblText.includes('C2H5COOH') && rawTxt === '') {
+            // 2. 修復酯化反應 ICE 表 (同時支援 C2H5COOH 與 CH3COOH / CH3CH2OH，解決圖三 ChemMCQ40038！)
+            if (isEsterificationIce && rawTxt === '') {
               if (/Initial/i.test(rowLabel) && (cIdx === 1 || cIdx === 2)) {
-                cell.innerHTML = buildFrac('1', '<i>V</i>');
+                const molNum = stemMoles[cIdx - 1] ? stemMoles[cIdx - 1].mol : '1';
+                cell.innerHTML = buildFrac(molNum, '<i>V</i>');
               } else if (/Change/i.test(rowLabel)) {
                 cell.innerHTML = cIdx <= 2 ? `&minus;${buildFrac('<i>x</i>', '<i>V</i>')}` : `+${buildFrac('<i>x</i>', '<i>V</i>')}`;
               } else if (/Equilibrium/i.test(rowLabel)) {
-                cell.innerHTML = cIdx <= 2 ? buildFrac('1 &minus; <i>x</i>', '<i>V</i>') : buildFrac('<i>x</i>', '<i>V</i>');
+                const molNum = stemMoles[cIdx - 1] ? stemMoles[cIdx - 1].mol : '1';
+                cell.innerHTML = cIdx <= 2 ? buildFrac(`${molNum} &minus; <i>x</i>`, '<i>V</i>') : buildFrac('<i>x</i>', '<i>V</i>');
+              }
+              return;
+            }
+
+            // 3. 修復含體積 V 的通用 ICE Table (解決圖五 ChemMCQ40041：Change 只剩 "−", "−", "+", "+" 的情況！)
+            if (hasVolumeV && cells.length >= 4) {
+              const halfCol = Math.ceil((cells.length - 1) / 2);
+              if (/Initial/i.test(rowLabel) && rawTxt === '' && cIdx <= halfCol) {
+                const molNum = stemMoles[cIdx - 1] ? stemMoles[cIdx - 1].mol : '1';
+                cell.innerHTML = buildFrac(molNum, '<i>V</i>');
+              } else if (/Change/i.test(rowLabel) && (rawTxt === '' || /^[+\-−]$/.test(rawTxt))) {
+                const isMinus = rawTxt === '-' || rawTxt === '−' || (rawTxt === '' && cIdx <= halfCol);
+                cell.innerHTML = `${isMinus ? '&minus;' : '+'}${buildFrac('<i>x</i>', '<i>V</i>')}`;
+              } else if (/Equilibrium/i.test(rowLabel) && rawTxt === '') {
+                if (cIdx <= halfCol) {
+                  const molNum = stemMoles[cIdx - 1] ? stemMoles[cIdx - 1].mol : '1';
+                  cell.innerHTML = buildFrac(`${molNum} &minus; <i>x</i>`, '<i>V</i>');
+                } else {
+                  cell.innerHTML = buildFrac('<i>x</i>', '<i>V</i>');
+                }
               }
             }
           });
@@ -518,7 +545,7 @@
   }
 
   // ===========================================================================
-  // STEP 4: 若沒有現成 HTML <table>，將純文字雙欄選項轉為標準 3 欄 Table
+  // STEP 4: 純文字雙欄選項轉標準 3 欄 Table
   // ===========================================================================
   function convertTextTwoColumnOptionsToTable(body) {
     if (body.querySelector('table')) return;
@@ -604,7 +631,7 @@
   }
 
   // ===========================================================================
-  // STEP 5: 修復空白選項方程式 (如圖二 ChemMCQ40019 的 K1 = ) & 四格圖表選項
+  // STEP 5: 全面修復題幹與選項中的所有「空白 OMML 分式」與「四格圖表」
   // ===========================================================================
   function restoreEmptyEquationsAndGraphs(body, qCode) {
     // 5A. 放大單張圖表
@@ -613,7 +640,7 @@
       graphImgs[0].classList.add('ch40-enlarged-img');
     }
 
-    // 5B. 修復四格座標圖選項 (Kc vs [CH4(g)])
+    // 5B. 四格座標圖選項 (Kc vs [CH4(g)])
     if (graphImgs.length >= 4 && !body.querySelector('.ch40-2x2-option-grid')) {
       const optionImgs = graphImgs.slice(graphImgs.length - 4);
       let sharedYLabel = '';
@@ -685,57 +712,120 @@
       });
     }
 
-    // 5C. 修復圖二 (ChemMCQ40019) 中被 OMML 吃掉的 "A. K1 =", "B. K1 =", "C. K1 =" 分式
     const fullText = body.textContent || '';
-    if (qCode === 'ChemMCQ40019' || (fullText.includes('K1') && fullText.includes('K2') && fullText.includes('relationship between'))) {
-      const k1Map = {
-        A: `A. &nbsp; <i>K</i><sub>1</sub> = ${buildFrac('1', '<i>K</i><sub>2</sub>')}`,
-        B: `B. &nbsp; <i>K</i><sub>1</sub> = ${buildFrac('1', '2<i>K</i><sub>2</sub>')}`,
-        C: `C. &nbsp; <i>K</i><sub>1</sub> = ${buildFrac('1', '<i>K</i><sub>2</sub><sup>2</sup>')}`
-      };
-      Array.from(body.querySelectorAll('p, div')).forEach(p => {
-        const t = (p.textContent || '').replace(/\s+/g, ' ').trim();
-        const m = t.match(/^([A-C])\.\s*K\s*1\s*=\s*$/i);
-        if (m && k1Map[m[1].toUpperCase()]) {
-          p.innerHTML = k1Map[m[1].toUpperCase()];
-          p.style.margin = '10px 0';
-          p.style.fontFamily = '"Times New Roman", serif';
-        }
-      });
-      return;
-    }
 
-    // 5D. 通用修復：其他題目出現空白的 "A. Kc =" 選項時自動補全分子分母
-    const emptyKcOpts = Array.from(body.querySelectorAll('p, div')).filter(p =>
-      /^[A-D]\.\s*(?:Kc|K\s*c)\s*=\s*$/i.test((p.textContent || '').replace(/\s+/g, ' ').trim())
+    // 5C. 修復題幹中的獨立空白 "Kc =" (解決圖二 ChemMCQ40013！)
+    Array.from(body.querySelectorAll('p, div')).forEach(p => {
+      if (p.querySelector('img, table')) return;
+      const t = (p.textContent || '').replace(/\s+/g, ' ').trim();
+      if (/^K\s*c\s*=$/i.test(t)) {
+        const kcParts = parseReactionKcParts(body);
+        if (kcParts) {
+          p.innerHTML = `<i>K</i><sub>c</sub> = ${buildFrac(kcParts.prodWithPow, kcParts.reacWithPow)}`;
+        } else {
+          // 若題幹無方程式 (如 ChemMCQ40013)，根據題幹提及的物種 A 建構標準 Kc 分式
+          const spMatch = fullText.match(/concentration of\s+([A-Z])\b/);
+          const spA = spMatch ? spMatch[1] : 'A';
+          p.innerHTML = `<i>K</i><sub>c</sub> = ${buildFrac('[<i>C</i>]', `[<i>${spA}</i>][<i>B</i>]`)}`;
+        }
+        p.style.margin = '10px 0';
+        p.style.fontFamily = '"Times New Roman", serif';
+      }
+    });
+
+    // 5D. 修復倒數關係選項中的空白分式 (解決圖一 ChemMCQ40014 的 B. Kc' = 與 D. Kc' =，以及 ChemMCQ40019 的 K1 =)
+    Array.from(body.querySelectorAll('p, div')).forEach(p => {
+      if (p.querySelector('img, table')) return;
+      const t = (p.textContent || '').replace(/\s+/g, ' ').trim();
+
+      // 匹配 "B. Kc' =" 或 "D. Kc' =" (支援所有單引號與彎引號)
+      const primeMatch = t.match(/^([A-D])\.\s*K\s*c\s*['’‘′\u2019\u2032]\s*=\s*$/i);
+      if (primeMatch) {
+        const letter = primeMatch[1].toUpperCase();
+        const fracHtml =
+          letter === 'A' || letter === 'B'
+            ? buildFrac('1', '<i>K</i><sub>c</sub>')
+            : buildFrac('1', '<i>K</i><sub>c</sub><sup>2</sup>');
+        p.innerHTML = `${letter}. &nbsp; <i>K</i><sub>c</sub>&prime; = ${fracHtml}`;
+        p.style.margin = '10px 0';
+        p.style.fontFamily = '"Times New Roman", serif';
+        return;
+      }
+
+      // 匹配 "A. K1 =" / "B. K1 =" / "C. K1 ="
+      const k1Match = t.match(/^([A-D])\.\s*K\s*1\s*=\s*$/i);
+      if (k1Match) {
+        const letter = k1Match[1].toUpperCase();
+        const k1Map = {
+          A: buildFrac('1', '<i>K</i><sub>2</sub>'),
+          B: buildFrac('1', '2<i>K</i><sub>2</sub>'),
+          C: buildFrac('1', '<i>K</i><sub>2</sub><sup>2</sup>'),
+          D: buildFrac('2', '<i>K</i><sub>2</sub>')
+        };
+        p.innerHTML = `${letter}. &nbsp; <i>K</i><sub>1</sub> = ${k1Map[letter]}`;
+        p.style.margin = '10px 0';
+        p.style.fontFamily = '"Times New Roman", serif';
+        return;
+      }
+
+      // 匹配 "A. Kc =" / "B. Kc =" 等標準濃度表示式
+      const kcOptMatch = t.match(/^([A-D])\.\s*K\s*c\s*=\s*$/i);
+      if (kcOptMatch) {
+        const letter = kcOptMatch[1].toUpperCase();
+        const kcParts = parseReactionKcParts(body);
+        const numStr = kcParts ? kcParts.prodWithPow : '[Products]';
+        const denStr = kcParts ? kcParts.reacWithPow : '[Reactants]';
+        const fallbackMap = {
+          A: buildFrac(denStr, numStr),
+          B: buildFrac(numStr, denStr),
+          C: buildFrac(`2${numStr}`, denStr),
+          D: buildFrac(denStr, `2${numStr}`)
+        };
+        p.innerHTML = `${letter}. &nbsp; <i>K</i><sub>c</sub> = ${fallbackMap[letter]}`;
+        p.style.margin = '10px 0';
+        p.style.fontFamily = '"Times New Roman", serif';
+      }
+    });
+
+    // 5E. 修復純分數選項被吃掉的情況 (解決圖四 ChemMCQ40040：A. 完全空白、C. 只剩 mol dm^-3！)
+    const optPs = Array.from(body.querySelectorAll('p, div')).filter(
+      el => !el.querySelector('img, table') && /^[A-D]\./.test((el.textContent || '').trim())
     );
-    if (emptyKcOpts.length > 0) {
-      const kcParts = parseReactionKcParts(body);
-      const numStr = kcParts ? kcParts.prodWithPow : '[Products]';
-      const denStr = kcParts ? kcParts.reacWithPow : '[Reactants]';
-      const fallbackMap = {
-        A: `A. &nbsp; <i>K</i><sub>c</sub> = ${buildFrac(denStr, numStr)}`,
-        B: `B. &nbsp; <i>K</i><sub>c</sub> = ${buildFrac(numStr, denStr)}`,
-        C: `C. &nbsp; <i>K</i><sub>c</sub> = ${buildFrac(`2${numStr}`, denStr)}`,
-        D: `D. &nbsp; <i>K</i><sub>c</sub> = ${buildFrac(denStr, `2${numStr}`)}`
-      };
-      emptyKcOpts.forEach(p => {
-        const letter = (p.textContent || '').trim()[0].toUpperCase();
-        if (fallbackMap[letter]) {
-          p.innerHTML = fallbackMap[letter];
-          p.style.margin = '10px 0';
-          p.style.fontFamily = '"Times New Roman", serif';
+    if (optPs.length === 4) {
+      // 檢查是否有其他選項是整數 (如 "D. 2" 或 "B. 1 mol dm^-3")，用來推算對應的倒數分數 (如 1/2)
+      let refInt = '2';
+      optPs.forEach(el => {
+        const m = (el.textContent || '').trim().match(/^[A-D]\.\s*(\d+)$/);
+        if (m && parseInt(m[1], 10) > 1) refInt = m[1];
+      });
+
+      optPs.forEach(el => {
+        const txt = (el.textContent || '').replace(/\s+/g, ' ').trim();
+        // 1. 選項字母後方完全空白 (如 "A.")
+        const emptyOpt = txt.match(/^([A-D])\.\s*$/);
+        if (emptyOpt) {
+          el.innerHTML = `${emptyOpt[1]}. &nbsp; ${buildFrac('1', refInt)}`;
+          el.style.margin = '8px 0';
+          el.style.fontFamily = '"Times New Roman", serif';
+          return;
+        }
+        // 2. 選項字母後方直接接著單位，中間的數字/分數被吃掉 (如 "C. mol dm-3")
+        const unitOnlyOpt = txt.match(/^([A-D])\.\s*(mol\s*dm.*)$/i);
+        if (unitOnlyOpt) {
+          el.innerHTML = `${unitOnlyOpt[1]}. &nbsp; ${buildFrac('1', refInt)} ${formatChemRichHtml(unitOnlyOpt[2])}`;
+          el.style.margin = '8px 0';
+          el.style.fontFamily = '"Times New Roman", serif';
         }
       });
     }
   }
 
   // ===========================================================================
-  // STEP 6: 修復解析區 (.exp-body) 的雙等號 "= =" / "= = =" 遺失分式 (解決圖一與圖五)
+  // STEP 6: 修復解析區 (.exp-body) 的雙等號、末尾等號與缺漏公式
   // ===========================================================================
   function patchExplanationSection(expBody, stemBody, qCode) {
-    if (!expBody || expBody.dataset.ch40ExpV3Done) return;
-    expBody.dataset.ch40ExpV3Done = '1';
+    if (!expBody || expBody.dataset.ch40ExpV4Done) return;
+    expBody.dataset.ch40ExpV4Done = '1';
 
     rescueEquilibriumEquations(expBody);
     patchExistingHtmlTables(expBody, stemBody);
@@ -743,11 +833,9 @@
     const stemText = stemBody ? stemBody.textContent || '' : '';
     const kcParts = parseReactionKcParts(stemBody || expBody) || parseReactionKcParts(expBody);
 
-    // 讀取題幹中的容器體積 (例如 "5 dm^3" 或 "5.0 dm^3")，以便自動反推 Initial/Equilibrium 濃度分子
     const volMatch = stemText.match(/(\d+(?:\.\d+)?)\s*dm\s*(?:-3|−3|3|\u00B3)/i);
     const volumeVal = volMatch ? parseFloat(volMatch[1]) : null;
 
-    // 讀取解析區 ICE Table 的 Equilibrium 最後一列數值 (用於重建 Kc = [表達成] = [代入數值] = 答案)
     let eqmValues = [];
     const iceTbl = expBody.querySelector('table.ch40-bordered-table');
     if (iceTbl) {
@@ -762,12 +850,25 @@
       }
     }
 
+    // 讀取解析區的 Answer 字母 (例如 "Answer: A")，用於補全末尾缺漏的答案數值
+    const ansMatch = (expBody.textContent || '').match(/Answer:\s*([A-D])/i);
+    const ansLetter = ansMatch ? ansMatch[1].toUpperCase() : '';
+    let ansHtml = '';
+    if (stemBody && ansLetter) {
+      const targetOpt = Array.from(stemBody.querySelectorAll('p, div')).find(el =>
+        new RegExp(`^${ansLetter}\\.\\s*`).test((el.textContent || '').trim())
+      );
+      if (targetOpt) {
+        ansHtml = targetOpt.innerHTML.replace(new RegExp(`^${ansLetter}\\.\\s*(?:&nbsp;\\s*)*`), '').trim();
+      }
+    }
+
     Array.from(expBody.querySelectorAll('p, div')).forEach(p => {
       if (p.closest('table')) return;
       const rawTxt = (p.textContent || '').replace(/\s+/g, ' ').trim();
       let html = p.innerHTML;
 
-      // 1. 修復 "Initial/Equilibrium concentration of X = = 0.033 mol dm^-3" (圖一 ChemMCQ40030)
+      // 1. 修復 "Initial/Equilibrium concentration of X = = 0.033 mol dm^-3"
       const concDoubleEq = rawTxt.match(/^(.*concentration of\s+.+?)\s*=\s*=\s*(\d+\.\d+)\s*mol\s*dm/i);
       if (concDoubleEq && volumeVal) {
         const concNum = parseFloat(concDoubleEq[2]);
@@ -778,7 +879,7 @@
         return;
       }
 
-      // 2. 修復 "Kc = = = 139 mol^-1 dm^3" (圖一 ChemMCQ40030 三連等號)
+      // 2. 修復 "Kc = = = 139 mol^-1 dm^3"
       if (/^Kc\s*=\s*=\s*=/i.test(rawTxt) && kcParts) {
         const symFrac = buildFrac(kcParts.prodEqm, kcParts.reacEqm);
         let numFrac = '';
@@ -791,7 +892,14 @@
         return;
       }
 
-      // 3. 修復 "The unit of Kc = = mol^-1 dm^3" (ChemMCQ40007)
+      // 3. 修復解析行結尾懸空的 "=" (解決圖四 ChemMCQ40040：Kc = [C][D]/[A][B] = )
+      if (/=\s*$/.test(rawTxt) && rawTxt.length > 5 && ansHtml) {
+        p.innerHTML = `${html.replace(/=\s*$/, '=')} ${ansHtml}`;
+        p.style.margin = '10px 0';
+        return;
+      }
+
+      // 4. 修復 "The unit of Kc = = mol^-1 dm^3"
       if (/unit of\s*(?:<i>)?K(?:<\/i>)?(?:<sub>)?c(?:<\/sub>)?\s*=\s*=/i.test(html)) {
         const unitTerm = '(mol dm<sup>&minus;3</sup>)';
         if (/\(A\)/.test(html)) {
@@ -808,18 +916,17 @@
         return;
       }
 
-      // 4. 修復 ChemMCQ40054 的獨立 "Kc =" 與 "4 =" 公式行
-      if (qCode === 'ChemMCQ40054' || (expBody.textContent || '').includes('C2H5COOH')) {
+      // 5. 修復酯化反應解析中的獨立公式行 (同時支援 C2H5COOH 與 CH3COOH)
+      if (/(?:C2H5COOH|CH3COOH)/i.test(expBody.textContent || '')) {
         if (rawTxt.startsWith('Let the volume of the mixture')) {
-          p.innerHTML = `Let the volume of the mixture be <i>V</i> cm<sup>3</sup> and the change in concentration of C<sub>2</sub>H<sub>5</sub>COOH(l) be ${buildFrac('<i>x</i>', '<i>V</i>')} mol dm<sup>&minus;3</sup>.`;
-        } else if (/^Kc\s*=$/i.test(rawTxt)) {
-          p.innerHTML = `<i>K</i><sub>c</sub> = ${buildFrac(
-            '[C<sub>2</sub>H<sub>5</sub>COOC<sub>2</sub>H<sub>5</sub>(l)]<sub>eqm</sub>[H<sub>2</sub>O(l)]<sub>eqm</sub>',
-            '[C<sub>2</sub>H<sub>5</sub>OH(l)]<sub>eqm</sub>[C<sub>2</sub>H<sub>5</sub>COOH(l)]<sub>eqm</sub>'
-          )}`;
+          const acidName = /CH3COOH/i.test(rawTxt) ? 'CH<sub>3</sub>COOH(l)' : 'C<sub>2</sub>H<sub>5</sub>COOH(l)';
+          p.innerHTML = `Let the volume of the mixture be <i>V</i> cm<sup>3</sup> and the change in concentration of ${acidName} be ${buildFrac('<i>x</i>', '<i>V</i>')} mol dm<sup>&minus;3</sup>.`;
+        } else if (/^Kc\s*=$/i.test(rawTxt) && kcParts) {
+          p.innerHTML = `<i>K</i><sub>c</sub> = ${buildFrac(kcParts.prodEqm, kcParts.reacEqm)}`;
           p.style.margin = '10px 0';
-        } else if (/^4\s*=$/.test(rawTxt)) {
-          p.innerHTML = `4 = ${buildFrac(
+        } else if (/^\d+(?:\.\d+)?\s*=$/.test(rawTxt)) {
+          const kVal = rawTxt.replace('=', '').trim();
+          p.innerHTML = `${kVal} = ${buildFrac(
             `(${buildFrac('<i>x</i>', '<i>V</i>')})<sup>2</sup>`,
             `(${buildFrac('1 &minus; <i>x</i>', '<i>V</i>')})<sup>2</sup>`
           )}`;
@@ -841,7 +948,7 @@
     const body = card.querySelector('.q-native-body');
     const expBody = card.querySelector('.exp-body');
 
-    if (body && !body.dataset.ch40V3Done) {
+    if (body && !body.dataset.ch40V4Done) {
       const unloaded = Array.from(body.querySelectorAll('img')).filter(img => !img.complete);
       if (unloaded.length > 0 && !body.dataset.ch40ImgLoaded) {
         body.dataset.ch40ImgLoaded = '1';
@@ -855,20 +962,20 @@
               })
           )
         ).then(() => {
-          body.dataset.ch40V3Done = '';
+          body.dataset.ch40V4Done = '';
           processQuestionCard(card);
         });
         return;
       }
 
-      body.dataset.ch40V3Done = '1';
+      body.dataset.ch40V4Done = '1';
       rescueEquilibriumEquations(body);
       patchExistingHtmlTables(body, body);
       convertTextTwoColumnOptionsToTable(body);
       restoreEmptyEquationsAndGraphs(body, qCode);
     }
 
-    if (expBody && !expBody.dataset.ch40ExpV3Done) {
+    if (expBody && !expBody.dataset.ch40ExpV4Done) {
       patchExplanationSection(expBody, body, qCode);
     }
   }
