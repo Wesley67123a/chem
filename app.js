@@ -2411,8 +2411,27 @@ if (document.readyState === 'loading') {
   bootChemApp();
 }
 // 在 app.js 的最底部（bootChemApp() 呼叫的下方）加入這段：
-const patchScript = document.createElement('script');
-patchScript.src = `./patches/patch_v60.js?v=${Date.now()}`;
-document.head.appendChild(patchScript);
-
-
+// 放在 app.js 最底部：自動載入當前章節專屬的 patches/patch_chXX.js
+(function () {
+  const loadedPatches = {};
+  function loadChapterPatch(chapId) {
+    if (!chapId) return;
+    const pad = String(chapId).padStart(2, '0');
+    const files = [`./patches/patch_ch${chapId}.js`, `./patches/patch_ch${pad}.js`];
+    files.forEach(src => {
+      if (loadedPatches[src]) return;
+      loadedPatches[src] = true;
+      const s = document.createElement('script');
+      s.src = `${src}?v=${Date.now()}`;
+      s.onerror = () => {}; // 若該章節沒有 patch 則安靜略過
+      document.head.appendChild(s);
+    });
+  }
+  // 預設載入 Ch41 補丁，並在每次切換章節時自動載入對應章節補丁
+  loadChapterPatch(41);
+  setInterval(() => {
+    if (window.chemApp && window.chemApp.activeChapterId) {
+      loadChapterPatch(window.chemApp.activeChapterId);
+    }
+  }, 600);
+})();
