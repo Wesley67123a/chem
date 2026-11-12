@@ -1,7 +1,7 @@
 /**
  * ============================================================================
  * HKDSE Chemistry Question Bank - Main UI & Material You Engine (app.js)
- * Version: 0.0.51 (Hard Option Lock + Multi-Recent Topics with Question Numbers)
+ * Version: 0.0.52 (Inline Eq Arrows, Preserved Tables, Floating Timer, Zero Emoji, Arial Logo)
  * ============================================================================
  */
 
@@ -174,7 +174,7 @@ window.CHAPTER_MAP = CHAPTER_MAP;
 
 // 2. 全局 UI 狀態
 window.chemApp = {
-  version: '0.0.51',
+  version: '0.0.52',
   currentLang: localStorage.getItem('CHEM_LANG_V47') || 'e',
   isMuted: localStorage.getItem('CHEM_MUTED_V49') === '1',
   activeChapterId: null,
@@ -197,14 +197,11 @@ const FIREBASE_CONFIG = {
   measurementId: "G-9EB0718DGR"
 };
 
-// 輔助函式：從題目編號 (如 ChemMCQ44001 或 Q12) 精準提取「第幾題」數字
 function extractQuestionOrderNumber(qNumDisplay, qId, fallbackIdx = null) {
   const raw = String(qNumDisplay || qId || '').split('_ch')[0];
-  // 匹配 ChemMCQ + 章節 + 3位題號 (例如 ChemMCQ44001 -> 001 -> 第 1 題)
   const mcqMatch = raw.match(/ChemMCQ\d+?(\d{3})$/i);
   if (mcqMatch) return parseInt(mcqMatch[1], 10);
 
-  // 匹配末尾數字
   const numMatch = raw.match(/(\d+)$/);
   if (numMatch) {
     const n = parseInt(numMatch[1], 10);
@@ -214,7 +211,7 @@ function extractQuestionOrderNumber(qNumDisplay, qId, fallbackIdx = null) {
   return fallbackIdx || 1;
 }
 
-// 3. 網頁音效系統 (支援一鍵靜音切換)
+// 3. 網頁音效系統
 class SoundFX {
   static audioCtx = null;
   static getContext() {
@@ -335,13 +332,13 @@ function openDiscreetAdminModal() {
   };
 }
 
-// 5. IndexedDB 題庫快取引擎
+// 5. IndexedDB 題庫快取引擎 (升級至 V52，自動刷新舊有錯誤排版快取)
 class ChemChapterCache {
   static dbPromise = null;
   static getDB() {
     if (!this.dbPromise) {
       this.dbPromise = new Promise((resolve, reject) => {
-        const req = indexedDB.open('HKDSE_CHEM_QB_CACHE_V48', 1);
+        const req = indexedDB.open('HKDSE_CHEM_QB_CACHE_V52', 1);
         req.onupgradeneeded = (e) => {
           const db = e.target.result;
           if (!db.objectStoreNames.contains('chapters')) db.createObjectStore('chapters');
@@ -378,7 +375,7 @@ class ChemChapterCache {
   }
 }
 
-// 6. 深度穿透式 DOM 切題引擎
+// 6. 深度穿透式 DOM 切題引擎 (修復 Equilibrium 箭頭同行、保留內部表格與圖表佈局、補全 major/minor 結構式)
 class DocxQuestionParser {
   static cleanInlineNoise(htmlStr) {
     return htmlStr
@@ -414,7 +411,7 @@ class DocxQuestionParser {
   static stripGrayBoxNodes(rootEl) {
     if (!rootEl) return;
     rootEl.querySelectorAll('span, div, p, td, th, font, s, u, b, i').forEach(el => {
-      const hasImg = el.querySelector && el.querySelector('img') !== null;
+      const hasImg = el.querySelector && el.querySelector('img, svg') !== null;
       if (hasImg) return;
 
       if (el.style) {
@@ -437,12 +434,18 @@ class DocxQuestionParser {
     rootEl.querySelectorAll('img').forEach(img => {
       const w = parseInt(img.getAttribute('width') || '0', 10);
       const h = parseInt(img.getAttribute('height') || '0', 10);
-      if (w > 0 && w <= 18 && h > 0 && h <= 18) {
+      // 只移除正方形小核取方塊 (如 12x12)，保留長方形反應箭頭圖片 (如 28x12)
+      if (w > 0 && w <= 16 && h > 0 && h <= 16 && Math.abs(w - h) <= 3) {
         img.remove();
       }
     });
   }
 
+  /**
+   * 關鍵修復：
+   * 只有當 TABLE 裡面真正包含多個題號 (ChemMCQ) 時才拆開外層容器表格；
+   * 題目內部的數據表格 (如 ChemMCQ41027 的 Flask 濃度表) 與 2x2 座標圖表格 (如 ChemMCQ41019) 100% 完整保留！
+   */
   static flattenBlocks(root) {
     const blocks = [];
     const walk = (node) => {
@@ -451,9 +454,11 @@ class DocxQuestionParser {
 
       if (tag === 'TABLE') {
         const tableTxt = node.textContent || '';
-        if (/ChemMCQ\s*\d+/i.test(tableTxt) || /(?:Answer|Ans|答案)\s*[:：]/i.test(tableTxt)) {
-          node.querySelectorAll('tr').forEach(tr => {
-            tr.querySelectorAll('td, th').forEach(cell => {
+        const mcqMatches = tableTxt.match(/ChemMCQ\s*\d+/gi) || [];
+        // 只有當這個表格是包裹多道題目的外層大表格時才拆解，否則一律保留完整 TABLE！
+        if (mcqMatches.length > 1 || (mcqMatches.length === 1 && /(?:Answer|Ans|答案)\s*[:：]/i.test(tableTxt))) {
+          node.querySelectorAll(':scope > tbody > tr, :scope > tr').forEach(tr => {
+            tr.querySelectorAll(':scope > td, :scope > th').forEach(cell => {
               Array.from(cell.children).forEach(child => walk(child));
             });
           });
@@ -465,7 +470,7 @@ class DocxQuestionParser {
         return;
       }
 
-      if (['DIV', 'SECTION', 'ARTICLE', 'MAIN', 'TBODY', 'TR', 'TD', 'UL', 'OL'].includes(tag)) {
+      if (['DIV', 'SECTION', 'ARTICLE', 'MAIN', 'UL', 'OL'].includes(tag)) {
         if (node.children.length > 0) {
           Array.from(node.children).forEach(child => walk(child));
           return;
@@ -473,7 +478,10 @@ class DocxQuestionParser {
       }
 
       const cleanedHtml = this.cleanInlineNoise(node.innerHTML);
-      if (/<br\s*\/?>/i.test(cleanedHtml)) {
+      const hasImg = node.querySelector && node.querySelector('img') !== null;
+
+      // 若同一段落內有圖片（如化學方程式中間的可逆反應符號圖片），不要用 <br> 切碎，保持在同一段落內！
+      if (!hasImg && /<br\s*\/?>/i.test(cleanedHtml)) {
         cleanedHtml.split(/<br\s*\/?>/i).forEach(part => {
           const p = document.createElement('p');
           p.innerHTML = part.trim();
@@ -489,6 +497,151 @@ class DocxQuestionParser {
     };
     Array.from(root.children).forEach(child => walk(child));
     return blocks;
+  }
+
+  /**
+   * 修復因 Mammoth 將 Word 漂浮座標標籤 (time, [CH3OH(g)], t) 轉成散落小段落，
+   * 以及將「化學式 + 箭頭圖片 + 化學式」被分成三個節點時自動合併為同一行！
+   */
+  static normalizeStemAndEquations(stemDiv) {
+    if (!stemDiv) return;
+
+    // 1. 移除 Word 座標圖旁邊散落的孤立重複軸標籤 (當該題含有 4 張選項座標圖時，圖片本身或雙欄已清楚呈現)
+    const allImgs = stemDiv.querySelectorAll('img');
+    if (allImgs.length >= 2) {
+      Array.from(stemDiv.querySelectorAll('p')).forEach(p => {
+        if (p.querySelector('img')) return;
+        const txt = (p.textContent || '').trim();
+        if (/^(?:time|t|\[[A-Za-z0-9\(\)\+\-]+\])$/i.test(txt)) {
+          p.remove();
+        }
+      });
+    }
+
+    // 2. 將被拆成「左反應物段落」+「純箭頭圖片段落」+「右生成物段落」的三行自動合併為單行置中方程式！
+    const children = Array.from(stemDiv.children);
+    for (let i = 0; i < children.length; i++) {
+      const cur = children[i];
+      if (!cur || !cur.parentNode) continue;
+
+      const curImgs = cur.querySelectorAll ? cur.querySelectorAll('img') : [];
+      const curTxt = (cur.textContent || '').trim();
+
+      // 情況 A：當前節點只有一張小圖片（可逆箭頭 ⇌ 或反應箭頭 →），前後是化學式
+      if (curImgs.length === 1 && curTxt === '' && i > 0 && i + 1 < children.length) {
+        const prev = children[i - 1];
+        const next = children[i + 1];
+        const prevTxt = (prev.textContent || '').trim();
+        const nextTxt = (next.textContent || '').trim();
+
+        if (
+          prev &&
+          next &&
+          prev.tagName !== 'TABLE' &&
+          next.tagName !== 'TABLE' &&
+          prevTxt.length > 0 &&
+          prevTxt.length < 65 &&
+          nextTxt.length > 0 &&
+          nextTxt.length < 65 &&
+          !/^[A-D][\.\)]/.test(nextTxt)
+        ) {
+          const arrowImg = curImgs[0];
+          arrowImg.classList.add('chem-inline-arrow');
+          arrowImg.style.cssText = 'display:inline-block !important; vertical-align:middle !important; margin:0 8px !important; max-height:22px !important; width:auto !important;';
+
+          prev.style.textAlign = 'center';
+          prev.style.margin = '12px 0';
+          prev.style.fontWeight = '500';
+          prev.appendChild(arrowImg);
+
+          const rightSpan = document.createElement('span');
+          rightSpan.innerHTML = next.innerHTML;
+          prev.appendChild(rightSpan);
+
+          cur.remove();
+          next.remove();
+          i += 1;
+        }
+      }
+    }
+
+    // 3. 若四個圖表選項 A. B. C. D. 被散落在外層，自動整理成與圖 3 GoodNotes 一致的 2x2 雙欄網格！
+    const currentChildren = Array.from(stemDiv.children);
+    const graphItems = [];
+    for (let i = 0; i < currentChildren.length; i++) {
+      const el = currentChildren[i];
+      const txt = (el.textContent || '').trim();
+      const imgs = el.querySelectorAll ? el.querySelectorAll('img') : [];
+      if (/^[A-D]\.?$/.test(txt) && imgs.length === 1) {
+        graphItems.push(el);
+      }
+    }
+    if (graphItems.length === 4) {
+      const grid = document.createElement('div');
+      grid.className = 'chem-2x2-graph-grid';
+      grid.style.cssText = 'display:grid; grid-template-columns:repeat(2, 1fr); gap:16px 20px; margin:14px 0; align-items:start;';
+      graphItems[0].parentNode.insertBefore(grid, graphItems[0]);
+      graphItems.forEach(item => {
+        item.style.cssText = 'display:flex; align-items:flex-start; gap:8px; margin:0; font-weight:bold;';
+        const img = item.querySelector('img');
+        if (img) {
+          img.style.cssText = 'max-width:100%; max-height:175px; width:auto; height:auto; display:inline-block; margin:0;';
+        }
+        grid.appendChild(item);
+      });
+    }
+  }
+
+  /**
+   * 修復圖 4 (ChemMCQ44014 等)：當解析中只有 "(major product) (minor product)" 文字而 Word DrawingML 結構圖被 Mammoth 漏掉時，
+   * 自動補上清晰的有機化學結構式圖解！
+   */
+  static enhanceExplanationContent(expDiv, qCode, stemText) {
+    if (!expDiv) return;
+    const rawExpTxt = (expDiv.textContent || '').replace(/\s+/g, ' ').trim();
+    const hasImg = expDiv.querySelector('img, svg') !== null;
+
+    if (!hasImg && /\(major product\)/i.test(rawExpTxt) && /\(minor product\)/i.test(rawExpTxt)) {
+      if (/ChemMCQ44014/i.test(qCode) || (/methylpropene/i.test(stemText) && /hydrogen chloride/i.test(stemText))) {
+        expDiv.innerHTML = `
+          <div style="margin:8px 0 6px 0; font-size:14px; color:#222;">
+            According to Markovnikov's rule, in the electrophilic addition of $\\text{HCl}$ to methylpropene ($\\text{CH}_2=\\text{C(CH}_3)_2$), the hydrogen atom adds to the carbon atom with more hydrogen atoms:
+          </div>
+          <div style="display:flex; flex-wrap:wrap; gap:16px; justify-content:space-around; align-items:center; background:#fff; border:1px solid #d0d7de; border-radius:14px; padding:16px; margin-top:8px; text-align:center;">
+            <div style="flex:1; min-width:200px; padding:8px;">
+              <svg width="210" height="125" viewBox="0 0 210 125" style="margin:0 auto; display:block; font-family:'Times New Roman', serif; font-size:15px;">
+                <text x="105" y="20" text-anchor="middle" fill="#111">CH<tspan dy="4" font-size="11">3</tspan></text>
+                <line x1="105" y1="26" x2="105" y2="48" stroke="#111" stroke-width="1.6"/>
+                <text x="42" y="65" text-anchor="middle" fill="#111">CH<tspan dy="4" font-size="11">3</tspan></text>
+                <line x1="62" y1="60" x2="92" y2="60" stroke="#111" stroke-width="1.6"/>
+                <text x="105" y="65" text-anchor="middle" fill="#111">C</text>
+                <line x1="118" y1="60" x2="148" y2="60" stroke="#111" stroke-width="1.6"/>
+                <text x="168" y="65" text-anchor="middle" fill="#111">CH<tspan dy="4" font-size="11">3</tspan></text>
+                <line x1="105" y1="72" x2="105" y2="94" stroke="#111" stroke-width="1.6"/>
+                <text x="105" y="112" text-anchor="middle" fill="#137333" font-weight="bold">Cl</text>
+              </svg>
+              <div style="font-weight:bold; color:#137333; font-size:14px; margin-top:6px;">2-chloromethylpropane</div>
+              <div style="font-size:13px; color:#555;">(major product)</div>
+            </div>
+            <div style="flex:1; min-width:200px; padding:8px;">
+              <svg width="230" height="125" viewBox="0 0 230 125" style="margin:0 auto; display:block; font-family:'Times New Roman', serif; font-size:15px;">
+                <text x="95" y="20" text-anchor="middle" fill="#111">CH<tspan dy="4" font-size="11">3</tspan></text>
+                <line x1="95" y1="26" x2="95" y2="48" stroke="#111" stroke-width="1.6"/>
+                <text x="35" y="65" text-anchor="middle" fill="#111">CH<tspan dy="4" font-size="11">3</tspan></text>
+                <line x1="55" y1="60" x2="82" y2="60" stroke="#111" stroke-width="1.6"/>
+                <text x="95" y="65" text-anchor="middle" fill="#111">CH</text>
+                <line x1="112" y1="60" x2="140" y2="60" stroke="#111" stroke-width="1.6"/>
+                <text x="160" y="65" text-anchor="middle" fill="#111">CH<tspan dy="4" font-size="11">2</tspan></text>
+                <line x1="178" y1="60" x2="198" y2="60" stroke="#111" stroke-width="1.6"/>
+                <text x="212" y="65" text-anchor="middle" fill="#c5221f" font-weight="bold">Cl</text>
+              </svg>
+              <div style="font-weight:bold; color:#c5221f; font-size:14px; margin-top:6px;">1-chloromethylpropane</div>
+              <div style="font-size:13px; color:#555;">(minor product)</div>
+            </div>
+          </div>
+        `;
+      }
+    }
   }
 
   static parseHtmlContent(rawHtml, chapId) {
@@ -572,10 +725,18 @@ class DocxQuestionParser {
           }
 
           if (node.style) {
-            if (/^[A-D][\.\)]\s*/.test(txt)) {
+            if (/^[A-D][\.\)]\s*/.test(txt) && !hasImg) {
               node.style.cssText = 'padding-left: 24px; margin: 4px 0; font-family: "Times New Roman", "Noto Serif TC", "PMingLiU", serif; background: transparent;';
             } else if (isTable) {
-              node.style.cssText = 'border-collapse: collapse; margin: 12px 0; width: auto; font-family: "Times New Roman", "Noto Serif TC", "PMingLiU", serif;';
+              node.style.cssText = 'border-collapse: collapse; margin: 14px auto; width: 100%; max-width: 620px; font-family: "Times New Roman", "Noto Serif TC", "PMingLiU", serif;';
+              node.querySelectorAll('td, th').forEach(cell => {
+                cell.style.padding = '6px 12px';
+                cell.style.textAlign = 'center';
+                cell.style.verticalAlign = 'middle';
+                if (!cell.querySelector('img')) {
+                  cell.style.borderBottom = '1px solid #eaeaea';
+                }
+              });
             } else {
               node.style.cssText = 'margin: 6px 0; font-family: "Times New Roman", "Noto Serif TC", "PMingLiU", serif; background: transparent;';
             }
@@ -591,8 +752,11 @@ class DocxQuestionParser {
 
       this.stripGrayBoxNodes(stemDiv);
       this.stripGrayBoxNodes(expDiv);
+      this.normalizeStemAndEquations(stemDiv);
 
       const qDisplay = block.qCode || `Q${idx + 1}`;
+      this.enhanceExplanationContent(expDiv, qDisplay, stemDiv.textContent || '');
+
       resultList.push({
         id: `${qDisplay}_ch${chapId}`,
         qNumDisplay: qDisplay,
@@ -645,7 +809,7 @@ class DocxExtractor {
   }
 }
 
-// 8. 計時器控制函數
+// 8. 計時器控制函數 (整合於右下角懸浮窗)
 function startTimer() {
   if (window.chemApp.isTimerRunning) return;
   window.chemApp.isTimerRunning = true;
@@ -667,7 +831,7 @@ function resetTimer() {
 }
 
 function updateTimerDisplay() {
-  const el = document.getElementById('chapterTimerDisplay');
+  const el = document.getElementById('floatingTimerDisplay');
   if (el) {
     const mins = String(Math.floor(window.chemApp.timerSeconds / 60)).padStart(2, '0');
     const secs = String(window.chemApp.timerSeconds % 60).padStart(2, '0');
@@ -675,7 +839,7 @@ function updateTimerDisplay() {
   }
 }
 
-// 9. 右下角懸浮按鈕組
+// 9. 右下角懸浮按鈕組 (含計時器懸浮窗：暫停/繼續 + 重置按鈕、Streak、結束當前 MC、目錄選單)
 function ensureFloatingActionGroup() {
   let grp = document.getElementById('floatingActionGroup');
   if (!grp) {
@@ -683,6 +847,12 @@ function ensureFloatingActionGroup() {
     grp.id = 'floatingActionGroup';
     grp.style.cssText = 'position:fixed; bottom:20px; right:20px; z-index:9998; display:none; flex-direction:column; gap:10px; align-items:flex-end; font-family:sans-serif;';
     grp.innerHTML = `
+      <!-- 計時器懸浮窗 (含開始/暫停、重置按鈕) -->
+      <div id="floatingTimerBox" style="display:none; background:#fff; padding:6px 12px; border-radius:20px; border:1px solid #dadce0; box-shadow:0 4px 14px rgba(0,0,0,0.16); height:40px; box-sizing:border-box; align-items:center; gap:8px; white-space:nowrap;">
+        <span id="floatingTimerDisplay" style="font-family:monospace; font-weight:bold; font-size:14px; color:#1a73e8; min-width:42px; text-align:center;">00:00</span>
+        <button id="timerToggleBtn" type="button" style="border:none; background:#1a73e8; color:#fff; font-size:11px; padding:5px 10px; border-radius:12px; cursor:pointer; font-weight:bold;">開始</button>
+        <button id="timerResetBtn" type="button" style="border:none; background:#f1f3f4; color:#333; font-size:11px; padding:5px 10px; border-radius:12px; cursor:pointer; font-weight:bold;">重置</button>
+      </div>
       <div id="footerStreakBox" style="display:none; background:#e8f0fe; padding:0 18px; border-radius:20px; border:1px solid #aecbfa; font-size:13px; font-weight:bold; color:#1a73e8; box-shadow:0 4px 14px rgba(0,0,0,0.15); height:40px; min-width:116px; box-sizing:border-box; align-items:center; justify-content:center; white-space:nowrap;">
         Streak: <span id="footerStreakCount" style="margin-left:5px;">0</span>
       </div>
@@ -694,6 +864,29 @@ function ensureFloatingActionGroup() {
       </button>
     `;
     document.body.appendChild(grp);
+
+    const tBtn = grp.querySelector('#timerToggleBtn');
+    const rBtn = grp.querySelector('#timerResetBtn');
+
+    tBtn.onclick = () => {
+      SoundFX.playClick();
+      if (window.chemApp.isTimerRunning) {
+        pauseTimer();
+        tBtn.textContent = '繼續';
+        tBtn.style.background = '#34a853';
+      } else {
+        startTimer();
+        tBtn.textContent = '暫停';
+        tBtn.style.background = '#ea4335';
+      }
+    };
+
+    rBtn.onclick = () => {
+      SoundFX.playClick();
+      resetTimer();
+      tBtn.textContent = '開始';
+      tBtn.style.background = '#1a73e8';
+    };
 
     grp.querySelector('#mobileToggleSidebarBtn').onclick = () => {
       SoundFX.playClick();
@@ -719,6 +912,7 @@ function updateFloatingButtonsVisibility() {
   }
 
   grp.style.display = 'flex';
+  const timerBox = grp.querySelector('#floatingTimerBox');
   const streakBox = grp.querySelector('#footerStreakBox');
   const streakCount = grp.querySelector('#footerStreakCount');
   const endBtn = grp.querySelector('#endChapterBtn');
@@ -730,9 +924,11 @@ function updateFloatingButtonsVisibility() {
   if (streakCount) streakCount.textContent = currentStreak;
 
   if (window.chemApp.currentView === 'chapter') {
+    if (timerBox) timerBox.style.display = 'flex';
     if (streakBox) streakBox.style.display = 'flex';
     if (endBtn) endBtn.style.display = 'flex';
   } else {
+    if (timerBox) timerBox.style.display = 'none';
     if (streakBox) streakBox.style.display = 'none';
     if (endBtn) endBtn.style.display = 'none';
   }
@@ -812,7 +1008,7 @@ function openEndChapterConfirmModal() {
   modal.style.display = 'flex';
 }
 
-// 11. 視圖切換：回到首頁 vs. 進入章節練習
+// 11. 視圖切換：回到首頁 vs. 進入章節練習 (頂部列已移除計時器，更加簡潔)
 function showHomeView() {
   window.chemApp.currentView = 'home';
   pauseTimer();
@@ -840,36 +1036,25 @@ function switchRightPanelToChapterView() {
     const muted = window.chemApp.isMuted;
     wrapper = document.createElement('div');
     wrapper.id = 'chemChapterViewWrapper';
-    wrapper.style.cssText = 'width: 100%; max-width: 780px; margin: 0 auto; padding: 8px 12px 140px 12px; box-sizing: border-box;';
+    wrapper.style.cssText = 'width: 100%; max-width: 780px; margin: 0 auto; padding: 8px 12px 180px 12px; box-sizing: border-box;';
 
     wrapper.innerHTML = `
-      <div id="chapterHeaderBar" class="m3-card" style="background:#fff; padding:12px 16px; border-radius:22px; border:1px solid #e0e0e0; margin-bottom:14px; box-shadow:0 2px 8px rgba(0,0,0,0.04); display:flex; flex-direction:column; gap:10px;">
-        <div style="display:flex; justify-content:space-between; align-items:center; gap:8px; flex-wrap:wrap;">
-          <div style="display:flex; align-items:center; gap:8px; min-width:0; flex:1;">
-            <button id="backHomeTopBtn" class="sound-trigger" style="padding:6px 12px; font-size:12px; border:1px solid #d2e3fc; border-radius:14px; background:#e8f0fe; color:#1a73e8; font-weight:bold; cursor:pointer; white-space:nowrap;">
-              &lsaquo; 首頁
-            </button>
-            <h2 id="currentChapterTitle" style="margin:0; font-size:15px; color:#111; font-weight:700; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">請選擇章節</h2>
-          </div>
-          <div style="display:flex; align-items:center; gap:6px; white-space:nowrap;">
-            <button class="chem-mute-toggle-btn" style="padding:5px 10px; font-size:11px; border:1px solid ${muted ? '#f5c2c7' : '#dadce0'}; border-radius:12px; background:${muted ? '#fce8e6' : '#f1f3f4'}; color:${muted ? '#c5221f' : '#444'}; font-weight:bold; cursor:pointer;">
-              ${muted ? '靜音中' : '音效: 開'}
-            </button>
-            <label style="padding:5px 10px; font-size:11px; border:1px solid #dadce0; border-radius:12px; background:#f8f9fa; cursor:pointer; color:#444; font-weight:bold;" class="sound-trigger">
-              載入 .docx
-              <input type="file" id="manualDocxInput" accept=".docx" style="display:none;" />
-            </label>
-          </div>
+      <div id="chapterHeaderBar" class="m3-card" style="background:#fff; padding:12px 16px; border-radius:22px; border:1px solid #e0e0e0; margin-bottom:14px; box-shadow:0 2px 8px rgba(0,0,0,0.04); display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap;">
+        <div style="display:flex; align-items:center; gap:10px; min-width:0; flex:1;">
+          <button id="backHomeTopBtn" class="sound-trigger" style="padding:6px 12px; font-size:12px; border:1px solid #d2e3fc; border-radius:14px; background:#e8f0fe; color:#1a73e8; font-weight:bold; cursor:pointer; white-space:nowrap;">
+            返回首頁
+          </button>
+          <h2 id="currentChapterTitle" style="margin:0; font-size:15px; color:#111; font-weight:700; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">請選擇章節</h2>
         </div>
-
-        <div style="display:flex; justify-content:space-between; align-items:center; padding-top:8px; border-top:1px solid #f1f3f4; font-size:12px;">
-          <div style="display:flex; align-items:center; gap:6px;">
-            <span style="color:#666; font-weight:bold;">計時</span>
-            <span id="chapterTimerDisplay" style="font-family:monospace; font-weight:bold; font-size:13px; color:#1a73e8; background:#f8fafd; padding:2px 8px; border-radius:8px; border:1px solid #e0e0e0;">00:00</span>
-            <button id="timerToggleBtn" style="border:none; background:#1a73e8; color:#fff; font-size:11px; padding:4px 10px; border-radius:10px; cursor:pointer; font-weight:bold;">開始</button>
-            <button id="timerResetBtn" style="border:none; background:#f1f3f4; color:#444; font-size:11px; padding:4px 10px; border-radius:10px; cursor:pointer; font-weight:bold;">重置</button>
-          </div>
+        <div style="display:flex; align-items:center; gap:8px; white-space:nowrap;">
           <span id="chapterStats" style="font-size:12px; color:#666; font-weight:bold;"></span>
+          <button class="chem-mute-toggle-btn" style="padding:5px 10px; font-size:11px; border:1px solid ${muted ? '#f5c2c7' : '#dadce0'}; border-radius:12px; background:${muted ? '#fce8e6' : '#f1f3f4'}; color:${muted ? '#c5221f' : '#444'}; font-weight:bold; cursor:pointer;">
+            ${muted ? '靜音中' : '音效: 開'}
+          </button>
+          <label style="padding:5px 10px; font-size:11px; border:1px solid #dadce0; border-radius:12px; background:#f8f9fa; cursor:pointer; color:#444; font-weight:bold;" class="sound-trigger">
+            載入 .docx
+            <input type="file" id="manualDocxInput" accept=".docx" style="display:none;" />
+          </label>
         </div>
       </div>
       <div id="questionList"></div>
@@ -877,27 +1062,6 @@ function switchRightPanelToChapterView() {
     rightMain.appendChild(wrapper);
 
     wrapper.querySelector('.chem-mute-toggle-btn').onclick = () => SoundFX.toggleMute();
-
-    const tBtn = wrapper.querySelector('#timerToggleBtn');
-    const rBtn = wrapper.querySelector('#timerResetBtn');
-    tBtn.onclick = () => {
-      SoundFX.playClick();
-      if (window.chemApp.isTimerRunning) {
-        pauseTimer();
-        tBtn.textContent = '繼續';
-        tBtn.style.background = '#34a853';
-      } else {
-        startTimer();
-        tBtn.textContent = '暫停';
-        tBtn.style.background = '#ea4335';
-      }
-    };
-    rBtn.onclick = () => {
-      SoundFX.playClick();
-      resetTimer();
-      tBtn.textContent = '開始';
-      tBtn.style.background = '#1a73e8';
-    };
 
     wrapper.querySelector('#backHomeTopBtn').onclick = () => {
       SoundFX.playClick();
@@ -1016,7 +1180,7 @@ async function openChapter(chapId) {
   }
 }
 
-// 13. 渲染題目卡片（三重物理鎖死機制：一旦作答，整個選項區禁止任何二次點擊，直到結束當前 MC）
+// 13. 渲染題目卡片（智慧判斷行內反應箭頭 vs 獨立大圖、無 Emoji、單次作答鎖死）
 function renderQuestions(qList, chapId) {
   const wrapper = switchRightPanelToChapterView();
   const container = wrapper.querySelector('#questionList');
@@ -1065,16 +1229,41 @@ function renderQuestions(qList, chapId) {
       </div>
     `;
 
+    // 智慧圖片排版：若圖片是可逆箭頭 ⇌ 或與文字同行的符號，保持 inline-block；若是大圖則獨立置中
     card.querySelectorAll('img').forEach(img => {
-      img.style.maxWidth = '100%';
-      img.style.maxHeight = '216px';
-      img.style.width = 'auto';
-      img.style.height = 'auto';
-      img.style.display = 'block';
-      img.style.margin = '10px auto';
+      if (img.classList.contains('chem-inline-arrow')) return;
+
+      const parent = img.parentElement;
+      const siblingText = parent ? (parent.textContent || '').trim() : '';
+      const applySmartImageStyle = () => {
+        const nw = img.naturalWidth || parseInt(img.getAttribute('width') || '0', 10);
+        const nh = img.naturalHeight || parseInt(img.getAttribute('height') || '0', 10);
+
+        // 小尺寸符號圖片 (例如可逆箭頭 ⇌) 或與化學方程式文字同段落的圖片
+        if ((nw > 0 && nw <= 75 && nh > 0 && nh <= 36) || (siblingText.length > 0 && !/^[A-D]\.?$/.test(siblingText))) {
+          img.style.cssText = 'display:inline-block; vertical-align:middle; margin:0 6px; max-height:28px; width:auto; height:auto;';
+        } else if (parent && parent.closest('.chem-2x2-graph-grid, table')) {
+          img.style.cssText = 'max-width:100%; max-height:175px; width:auto; height:auto; display:inline-block; margin:4px auto;';
+        } else {
+          img.style.cssText = 'max-width:100%; max-height:216px; width:auto; height:auto; display:block; margin:10px auto;';
+        }
+      };
+
+      if (img.complete) {
+        applySmartImageStyle();
+      } else {
+        img.onload = applySmartImageStyle;
+        applySmartImageStyle();
+      }
     });
 
     DocxQuestionParser.stripGrayBoxNodes(card.querySelector('.q-native-body'));
+
+    // 二次檢查解析區是否需要補全 major/minor 結構圖 (針對舊快取防護)
+    const expBodyEl = card.querySelector('.exp-body');
+    if (expBodyEl) {
+      DocxQuestionParser.enhanceExplanationContent(expBodyEl, q.qNumDisplay || q.id, card.querySelector('.q-native-body').textContent || '');
+    }
 
     const optGroup = card.querySelector('.options-btn-group');
     const optBtns = card.querySelectorAll('.opt-act-btn');
@@ -1082,7 +1271,6 @@ function renderQuestions(qList, chapId) {
     const peekBtn = card.querySelector('.peek-ans-btn');
     const statusPrompt = card.querySelector('.q-status-prompt');
 
-    // 獨立閉包鎖：一旦變為 true，此題任何其他選項按鈕永遠無法觸發
     let isQuestionLocked = false;
 
     const lockAndRenderOptionState = (selectedOpt, playSound = false) => {
@@ -1093,11 +1281,10 @@ function renderQuestions(qList, chapId) {
       if (playSound) SoundFX.playClick(isCorrect);
 
       if (statusPrompt) {
-        statusPrompt.textContent = `🔒 已鎖定作答：選 ${selectedOpt}（${isCorrect ? '答對' : '答錯'} · 結束當前 MC 前不可更改）`;
+        statusPrompt.textContent = `已鎖定作答：選 ${selectedOpt}（${isCorrect ? '答對' : '答錯'} · 結束當前 MC 前不可更改）`;
         statusPrompt.style.color = isCorrect ? '#137333' : '#c5221f';
       }
 
-      // 物理封鎖整個按鈕群組點擊
       if (optGroup) {
         optGroup.style.pointerEvents = 'none';
         optGroup.style.userSelect = 'none';
@@ -1114,13 +1301,13 @@ function renderQuestions(qList, chapId) {
           b.style.color = '#fff';
           b.style.borderColor = '#34a853';
           b.style.opacity = '1';
-          b.textContent = `${b.dataset.opt} ✓`;
+          b.textContent = `${b.dataset.opt} (正解)`;
         } else if (selectedOpt && b.dataset.opt === selectedOpt && selectedOpt !== q.answer) {
           b.style.background = '#ea4335';
           b.style.color = '#fff';
           b.style.borderColor = '#ea4335';
           b.style.opacity = '1';
-          b.textContent = `${b.dataset.opt} ✗`;
+          b.textContent = `${b.dataset.opt} (已選)`;
         } else {
           b.style.background = '#f1f3f4';
           b.style.color = '#9aa0a6';
@@ -1132,7 +1319,6 @@ function renderQuestions(qList, chapId) {
       expPanel.style.display = 'block';
     };
 
-    // 檢查當次未結束的 Session 是否已經答過這題
     if (window.ChemUserLog) {
       const sessionRec = window.ChemUserLog.getSessionAnswer(chapId, q.id);
       if (sessionRec && sessionRec.chosen) {
@@ -1145,10 +1331,8 @@ function renderQuestions(qList, chapId) {
         e.preventDefault();
         e.stopPropagation();
 
-        // 若已鎖定，直接阻斷
         if (isQuestionLocked || card.dataset.locked === '1') return;
 
-        // 二次確認 Session 紀錄
         if (window.ChemUserLog) {
           const existing = window.ChemUserLog.getSessionAnswer(chapId, q.id);
           if (existing && existing.chosen) {
@@ -1171,7 +1355,6 @@ function renderQuestions(qList, chapId) {
             lang: window.chemApp.currentLang
           });
 
-          // 同步把 qOrder 存入 uniqueAnswers 與 sessionAnswers 方便首頁顯示「第幾題」
           try {
             const st = window.ChemUserLog.state;
             if (st.uniqueAnswers && st.uniqueAnswers[q.id]) {
@@ -1201,7 +1384,7 @@ function renderQuestions(qList, chapId) {
   });
 }
 
-// 14. 計算「多個最近做過的課題 (Multi-Recent Topics)」與「做了多少題、第幾題」明細
+// 14. 計算多個 Recent Topics
 function buildRecentTopicsList() {
   if (!window.ChemUserLog || !window.ChemUserLog.state) return [];
   const st = window.ChemUserLog.state;
@@ -1229,7 +1412,7 @@ function buildRecentTopicsList() {
         topicName: info.topic.topicName,
         chapterName: info.chapter.name,
         totalInChapter,
-        questionsMap: {}, // qId -> { qId, qNumDisplay, qOrder, chosen, correct, timestamp }
+        questionsMap: {},
         sessionCount: sessionAns[numId] ? Object.keys(sessionAns[numId]).length : 0,
         lastTimestamp: ''
       };
@@ -1237,7 +1420,6 @@ function buildRecentTopicsList() {
     return chapMap[numId];
   };
 
-  // 1. 從永久唯一答題紀錄 (uniqueAnswers) 匯入
   Object.values(uniqueAns).forEach(rec => {
     if (!rec || !rec.chapId) return;
     const entry = ensureChapEntry(rec.chapId);
@@ -1255,7 +1437,6 @@ function buildRecentTopicsList() {
     if (ts > entry.lastTimestamp) entry.lastTimestamp = ts;
   });
 
-  // 2. 從當次未結束 Session (sessionAnswers) 補充最新時間戳與狀態
   Object.entries(sessionAns).forEach(([cId, chapSession]) => {
     const entry = ensureChapEntry(cId);
     if (!entry || !chapSession) return;
@@ -1275,7 +1456,6 @@ function buildRecentTopicsList() {
     });
   });
 
-  // 3. 從每日紀錄 (dailyLogs) 補齊精準作答時間排序
   Object.entries(dailyLogs).forEach(([dateStr, dayObj]) => {
     (dayObj.items || []).forEach(it => {
       if (!it || !it.chapId) return;
@@ -1289,7 +1469,6 @@ function buildRecentTopicsList() {
     });
   });
 
-  // 4. 若 recentTopic 有打開過但尚未作答，也放入列表
   if (st.recentTopic && st.recentTopic.chapId) {
     const rtEntry = ensureChapEntry(st.recentTopic.chapId);
     if (rtEntry && (st.recentTopic.lastUpdated || '') > rtEntry.lastTimestamp) {
@@ -1297,7 +1476,6 @@ function buildRecentTopicsList() {
     }
   }
 
-  // 整理並按最後練習時間由新到舊排序
   return Object.values(chapMap)
     .filter(e => Object.keys(e.questionsMap).length > 0 || e.chapId === (st.recentTopic && st.recentTopic.chapId))
     .map(e => {
@@ -1313,9 +1491,7 @@ function buildRecentTopicsList() {
           : 0;
       const remainingRate = Math.max(0, 100 - completionRate);
 
-      // 按題號由小到大排序 (第 1 題, 第 2 題...)
       const sortedByOrder = qArr.slice().sort((a, b) => (a.qOrder || 999) - (b.qOrder || 999));
-      // 按作答時間由新到舊排序，找出「最新做到第幾題」
       const sortedByTime = qArr.slice().sort((a, b) => (b.timestamp || '').localeCompare(a.timestamp || ''));
       const latestQ = sortedByTime[0] || sortedByOrder[sortedByOrder.length - 1] || null;
 
@@ -1333,7 +1509,7 @@ function buildRecentTopicsList() {
     .sort((a, b) => (b.lastTimestamp || '').localeCompare(a.lastTimestamp || ''));
 }
 
-// 15. 首頁 Dashboard 渲染
+// 15. 首頁 Dashboard 渲染 (無 Emoji，CHEM QB 使用正體 Arial)
 function renderHomeDashboard() {
   let rightMain = document.getElementById('chemAppRootContainer') || document.body;
   let dashboardEl = document.getElementById('chemDashboardHome');
@@ -1380,7 +1556,6 @@ function renderHomeDashboard() {
 
   const muted = window.chemApp.isMuted;
 
-  // 渲染多個 Recent Topics 卡片列表（顯示做了多少題、最新做到第幾題、已做題號明細）
   const recentTopicsHtml =
     displayedRecentList.length === 0
       ? `
@@ -1392,10 +1567,9 @@ function renderHomeDashboard() {
           .map((item, idx) => {
             const totalTxt = item.totalInChapter > 0 ? `${item.answered} / ${item.totalInChapter} 題` : `已做 ${item.answered} 題`;
             const latestQTxt = item.latestQ
-              ? `最新做到：<b style="color:#1a73e8;">第 ${item.latestQ.qOrder} 題</b> (${item.latestQ.qNumDisplay} · 選 ${item.latestQ.chosen} ${item.latestQ.correct ? '✓' : '✗'})`
+              ? `最新做到：<b style="color:#1a73e8;">第 ${item.latestQ.qOrder} 題</b> (${item.latestQ.qNumDisplay} · 選 ${item.latestQ.chosen} · ${item.latestQ.correct ? '對' : '錯'})`
               : '尚未作答題目';
 
-            // 列出該章節做過的題號小標籤 (第 X 題)
             const qBadgesHtml =
               item.sortedByOrder.length === 0
                 ? ''
@@ -1409,7 +1583,7 @@ function renderHomeDashboard() {
                         <span title="${q.qNumDisplay} (選 ${q.chosen})" style="font-size:11px; font-weight:bold; padding:2px 7px; border-radius:8px; background:${
                           q.correct ? '#e6f4ea' : '#fce8e6'
                         }; color:${q.correct ? '#137333' : '#c5221f'};">
-                          第 ${q.qOrder} 題 ${q.correct ? '✓' : '✗'}
+                          第 ${q.qOrder} 題 (${q.correct ? '對' : '錯'})
                         </span>
                       `
                       )
@@ -1444,25 +1618,23 @@ function renderHomeDashboard() {
                     </div>
                   </div>
                   <button class="recent-chap-jump-btn sound-trigger" data-chid="${item.chapId}" style="background:#1a73e8; color:#fff; border:none; padding:7px 13px; border-radius:12px; font-size:12px; font-weight:bold; cursor:pointer; white-space:nowrap;">
-                    繼續練習 &rsaquo;
+                    繼續練習
                   </button>
                 </div>
 
-                <!-- 進度條 -->
                 <div style="width:100%; background:#e9eef6; height:6px; border-radius:3px; overflow:hidden; margin:8px 0;">
                   <div style="width:${item.completionRate}%; background:#34a853; height:100%; transition:width 0.3s;"></div>
                 </div>
 
-                <!-- 做了多少題 & 最新做到第幾題 -->
                 <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; font-size:12px; color:#444; background:#fff; padding:8px 12px; border-radius:12px; border:1px solid #eef0f4;">
                   <div>
-                    📊 <b>進度：</b><span style="color:#1a73e8; font-weight:bold;">${totalTxt}</span>
+                    <b>進度：</b><span style="color:#1a73e8; font-weight:bold;">${totalTxt}</span>
                     <span style="margin-left:6px; color:#34a853; font-weight:bold;">對 ${item.correct}</span> ·
                     <span style="color:#ea4335; font-weight:bold;">錯 ${item.wrong}</span> ·
                     <span style="color:#fbbc05; font-weight:bold;">完成 ${item.completionRate}%</span>
                   </div>
                   <div>
-                    📍 ${latestQTxt}
+                    ${latestQTxt}
                   </div>
                 </div>
 
@@ -1484,18 +1656,18 @@ function renderHomeDashboard() {
             <span style="font-size:11px; color:#34a853; background:#e6f4ea; padding:2px 7px; border-radius:8px; font-weight:bold;">對 ${item.correctCount}</span>
             <span style="font-size:11px; color:#ea4335; background:#fce8e6; padding:2px 7px; border-radius:8px; font-weight:bold;">錯 ${item.wrongCount}</span>
           </div>
-          <span style="color:#1a73e8; font-weight:bold; font-size:14px;">答了: ${item.count} 題 <span style="font-size:11px; color:#666;">(查看 &rsaquo;)</span></span>
+          <span style="color:#1a73e8; font-weight:bold; font-size:14px;">答了: ${item.count} 題 <span style="font-size:11px; color:#666;">(查看)</span></span>
         </div>
       `
           )
           .join('');
 
   dashboardEl.innerHTML = `
-    <!-- 清爽頂部導覽列 (含 v51 版本確認標記) -->
+    <!-- 頂部導覽列：CHEM QB 改為正體 Arial，無斜體 -->
     <div style="background:#fff; border:1px solid #e0e0e0; border-radius:24px; padding:10px 16px; margin-top:4px; margin-bottom:16px; box-shadow:0 2px 10px rgba(0,0,0,0.04); display:flex; justify-content:space-between; align-items:center; gap:8px; flex-wrap:wrap;">
       <div style="display:flex; align-items:center; gap:8px;">
-        <span style="font-size:16px; color:#1a73e8; font-weight:800; font-style:italic; letter-spacing:0.3px;">CHEM QB</span>
-        <span style="font-size:10px; color:#888; background:#f1f3f4; padding:2px 6px; border-radius:6px; font-weight:bold;">v51</span>
+        <span style="font-family:Arial, sans-serif; font-size:16px; color:#1a73e8; font-weight:700; font-style:normal; letter-spacing:0.3px;">CHEM QB</span>
+        <span style="font-size:10px; color:#888; background:#f1f3f4; padding:2px 6px; border-radius:6px; font-weight:bold;">v52</span>
         <span style="display:inline-flex; align-items:center; gap:5px; font-size:12px; font-weight:700; color:#1a73e8; background:#e8f0fe; padding:4px 10px; border-radius:12px;" title="${cloudDotTitle}">
           <span style="width:7px; height:7px; border-radius:50%; background:${cloudDotColor}; display:inline-block;"></span>
           ${summary.studentId}
@@ -1520,7 +1692,7 @@ function renderHomeDashboard() {
         ${
           recentTopicsList.length > 4
             ? `<button id="toggleMoreRecentBtn" class="sound-trigger" style="background:#e8f0fe; color:#1a73e8; border:none; padding:4px 10px; border-radius:10px; font-size:12px; font-weight:bold; cursor:pointer;">
-                ${window.chemApp.showAllRecentTopics ? '收起部分 ▲' : `展開全部 (${recentTopicsList.length}) ▼`}
+                ${window.chemApp.showAllRecentTopics ? '收起部分' : `展開全部 (${recentTopicsList.length})`}
               </button>`
             : ''
         }
@@ -1673,7 +1845,7 @@ function renderCenterDirectoryModal() {
       <div style="background:#fff; border-radius:20px; margin-bottom:12px; border:1px solid #e0e0e0; overflow:hidden; box-shadow:0 2px 6px rgba(0,0,0,0.03);">
         <div class="dir-topic-header sound-trigger" style="padding:14px 16px; background:#fafafa; font-weight:bold; font-size:14px; color:#222; cursor:pointer; display:flex; justify-content:space-between; align-items:center;">
           <span>${topic.topicName}</span>
-          <span class="dir-arrow" style="font-size:12px; color:#888;">${isCurrentTopic ? '▼' : '▶'}</span>
+          <span class="dir-arrow" style="font-size:12px; color:#888;">${isCurrentTopic ? '-' : '+'}</span>
         </div>
         <div class="dir-chapter-list" style="display:${isCurrentTopic ? 'flex' : 'none'}; flex-direction:column;">
     `;
@@ -1685,7 +1857,7 @@ function renderCenterDirectoryModal() {
           <div class="dir-chapter-item sound-trigger" data-chid="${ch.id}" style="padding:12px 16px 12px 22px; border-top:1px solid #f0f0f0; font-size:13px; color:${isActive ? '#1a73e8' : '#444'}; background:${isActive ? '#e8f0fe' : '#fff'}; font-weight:${isActive ? 'bold' : 'normal'}; cursor:pointer; display:flex; justify-content:space-between; align-items:center;">
             <span>${ch.name}</span>
             <span style="font-size:12px; color:#1a73e8; font-weight:bold; white-space:nowrap; margin-left:8px;">
-              ${inProgressCount > 0 ? `<span style="color:#e67c73;">進行中(${inProgressCount})</span> · ` : doneInChap > 0 ? `已答 ${doneInChap} 題 · ` : ''}進入 &rsaquo;
+              ${inProgressCount > 0 ? `<span style="color:#e67c73;">進行中(${inProgressCount})</span> · ` : doneInChap > 0 ? `已答 ${doneInChap} 題 · ` : ''}進入
             </span>
           </div>
       `;
@@ -1712,7 +1884,7 @@ function renderCenterDirectoryModal() {
       const arrow = e.currentTarget.querySelector('.dir-arrow');
       const isHidden = (list.style.display === 'none');
       list.style.display = isHidden ? 'flex' : 'none';
-      if (arrow) arrow.textContent = isHidden ? '▼' : '▶';
+      if (arrow) arrow.textContent = isHidden ? '-' : '+';
     };
   });
 
@@ -1726,7 +1898,7 @@ function renderCenterDirectoryModal() {
   });
 }
 
-// 17. 全屏登入 / 註冊閘道
+// 17. 全屏登入 / 註冊閘道 (CHEM QB 使用正體 Arial，無斜體)
 function ensureAuthOverlay() {
   let authOverlay = document.getElementById('chemAuthOverlay');
   if (authOverlay) return authOverlay;
@@ -1737,7 +1909,7 @@ function ensureAuthOverlay() {
 
   authOverlay.innerHTML = `
     <div style="background:#fff; padding:32px 34px; border-radius:28px; box-shadow:0 10px 34px rgba(0,0,0,0.12); width:100%; max-width:390px; text-align:center; border:1px solid #e0e0e0;">
-      <h2 style="margin:0 0 6px 0; color:#1a73e8; font-size:24px; font-weight:800; font-style:italic;">CHEM QB</h2>
+      <h2 style="margin:0 0 6px 0; color:#1a73e8; font-family:Arial, sans-serif; font-size:24px; font-weight:700; font-style:normal;">CHEM QB</h2>
       <p style="font-size:13px; color:#666; margin:0 0 22px 0;">請輸入學生 ID 登入或註冊</p>
       
       <div style="display:flex; flex-direction:column; gap:14px; text-align:left;">
@@ -1920,7 +2092,6 @@ async function bootChemApp() {
   if (window.ChemUserLog) {
     window.ChemUserLog.promptAdminAccess = openDiscreetAdminModal;
 
-    // 底層強制攔截：若當次 Session 該題已答過，絕不允許覆寫答案
     const origRecordFn = window.ChemUserLog.recordQuestionAnswer.bind(window.ChemUserLog);
     window.ChemUserLog.recordQuestionAnswer = function (params) {
       const existing = this.getSessionAnswer(params.chapId, params.qId);
