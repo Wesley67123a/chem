@@ -1,206 +1,305 @@
 /**
  * ============================================================================
  * HKDSE Chemistry Question Bank - Additional Layout Patch Module
- * File: patch_v60.js
- * Description: Targeted fixes for Equilibrium layout bugs without altering app.js
+ * File: patches/patch_v60.js (v60.2 - Image-Equilibrium & 2x2 Graph Fix)
+ * Description: Fixes image-based ⇌ symbols being mistaken for A/B/C/D graph
+ *              options, merges split equations, and cleans floating labels.
  * ============================================================================
  */
 
-(function() {
+(function () {
   'use strict';
 
-  console.log('[Patch v60] Layout fix module loaded.');
+  console.log('[Patch v60.2] Smart Equilibrium & Graph Layout Engine Loaded.');
 
-  // 核心修復邏輯
-  function applyLayoutFixesToContainer(container) {
-    if (!container) return;
+  // 判斷一段文字是否像化學反應式的一半 (例如含有 (g), (aq), (l), (s), H2O, 2SO3, 離子電荷等)
+  function isChemicalHalfEquation(text) {
+    if (!text) return false;
+    const t = text.trim();
+    if (!t || t.length > 95) return false;
+    // 排除長篇英文句子
+    if (/\b(which|following|consider|mixture|volume|temperature|system|statement|graph|shows|change)\b/i.test(t)) {
+      return false;
+    }
+    // 含有狀態符號 (g), (l), (s), (aq) 或典型化學式特徵
+    return (
+      /\([glsaq]{1,2}\)/i.test(t) ||
+      /[A-Z][a-z]?\d*[\+\-]?\s*\+\s*[A-Z0-9]/.test(t) ||
+      /^\([1-3]\)\s*[0-9A-Z\(]/.test(t) ||
+      /^[A-D]\.\s*[0-9A-Z\(]/.test(t)
+    );
+  }
 
-    // 1. 修復落單的化學平衡符號 (⇌ 或 ⇋)
-    const paragraphs = Array.from(container.querySelectorAll('p, div'));
-    for (let i = 1; i < paragraphs.length - 1; i++) {
-      const p = paragraphs[i];
-      const text = (p.textContent || '').trim();
-      
-      // 如果這行只是一個平衡符號
-      if (text === '⇌' || text === '⇋' || text === '&#8652;') {
-        const prev = paragraphs[i - 1];
-        const next = paragraphs[i + 1];
-        
-        // 確保前後都是化學式 (通常包含狀態標記如 (g), (aq), (l))
-        if (prev && next && /\([glaqs]+\)/i.test(prev.textContent) && /\([glaqs]+\)/i.test(next.textContent)) {
-          // 建立一個保護區塊，把反應物、符號、生成物綁在一起
-          const wrapper = document.createElement('div');
-          wrapper.style.cssText = 'display:block; text-align:left; margin:12px 0; padding:10px 14px; background:#F4F5FA; border:1px solid #CED4EC; border-radius:12px; font-family:"Times New Roman", serif; font-size:17px; line-height:1.6; word-break:break-all;';
-          
-          wrapper.innerHTML = `
-            <span style="display:inline-block; margin-right:8px;">${prev.innerHTML}</span>
-            <span style="display:inline-block; color:#48547A; font-weight:bold; margin:0 8px;">⇌</span>
-            <span style="display:inline-block; margin-left:8px;">${next.innerHTML}</span>
-          `;
-          
-          // 替換原本的 3 行
-          p.parentNode.insertBefore(wrapper, prev);
-          prev.remove();
-          p.remove();
-          next.remove();
-          
-          // 調整索引避免報錯
-          i += 1; 
-        }
+  // 判斷一張 <img> 是否其實是「平衡符號 ⇌」或行內小符號（而非大型 A/B/C/D 選項圖表）
+  function isInlineSymbolImage(img, prevText, nextText) {
+    if (!img) return false;
+
+    const natW = img.naturalWidth || 0;
+    const natH = img.naturalHeight || 0;
+
+    // 1. 若圖片已經載入且原始尺寸很小 (通常 ⇌ 圖片寬度 < 75px, 高度 < 45px)
+    if (natW > 0 && natH > 0) {
+      if (natW <= 80 && natH <= 50) return true;
+      // 真正的座標圖/裝置圖通常寬高都大於 85px
+      if (natW >= 95 && natH >= 75) return false;
+    }
+
+    // 2. 若圖片尚未完成解碼，檢查它的 base64 長度 (⇌ 小圖的 base64 極短，通常 < 3500 字元)
+    const src = img.getAttribute('src') || '';
+    if (src.startsWith('data:image/') && src.length < 3200) {
+      return true;
+    }
+
+    // 3. 根據前後文判斷：若圖片夾在兩段化學式中間，它 100% 是反應箭頭/平衡符號
+    if (isChemicalHalfEquation(prevText) && isChemicalHalfEquation(nextText)) {
+      return true;
+    }
+
+    return false;
+  }
+
+  // 主修復函數：針對單一題目的 .q-native-body 進行深度手術
+  function applyLayoutFixesToBody(body) {
+    if (!body) return;
+
+    // 若圖片還沒載入完（naturalWidth === 0），等待圖片載入後再重跑一次以確保尺寸判斷 100% 準確
+    const unloadedImgs = Array.from(body.querySelectorAll('img')).filter(img => !img.complete);
+    if (unloadedImgs.length > 0 && !body.dataset.patchWaitedImg) {
+      body.dataset.patchWaitedImg = '1';
+      Promise.all(
+        unloadedImgs.map(
+          img =>
+            new Promise(res => {
+              img.addEventListener('load', res, { once: true });
+              img.addEventListener('error', res, { once: true });
+              setTimeout(res, 400);
+            })
+        )
+      ).then(() => {
+        body.dataset.patchV60Applied = '';
+        applyLayoutFixesToBody(body);
+      });
+    }
+
+    // =========================================================================
+    // STEP 0: 拆除 app.js 先前可能誤包的「空白長條外框」(即包住單張 ⇌ 圖片的 div)
+    // =========================================================================
+    Array.from(body.querySelectorAll('div')).forEach(div => {
+      if (div.classList.contains('chem-eq-merged-line') || div.classList.contains('chem-patch-grid')) return;
+      const imgs = div.querySelectorAll('img');
+      const txt = (div.textContent || '').trim();
+      // 如果這個 div 是 app.js 產生的圖片外框 (只含 1 張圖且沒有文字)
+      if (imgs.length === 1 && txt === '' && div.parentNode) {
+        const parentP = div.parentNode;
+        parentP.insertBefore(imgs[0], div);
+        div.remove();
+      }
+    });
+
+    // =========================================================================
+    // STEP 1: 找出所有「只含一張 ⇌ 圖片（或純文字 ⇌）」的段落，與上下行化學式合併為一行！
+    // =========================================================================
+    const blocks = Array.from(body.children);
+    for (let i = 0; i < blocks.length; i++) {
+      const curr = blocks[i];
+      if (!curr || !curr.parentNode) continue;
+
+      const prev = curr.previousElementSibling;
+      const next = curr.nextElementSibling;
+      if (!prev || !next) continue;
+
+      const currText = (curr.textContent || '').trim();
+      const prevText = (prev.textContent || '').trim();
+      const nextText = (next.textContent || '').trim();
+
+      const currImgs = curr.querySelectorAll('img');
+      const isTextEq = currText === '⇌' || currText === '⇋' || currText === '↔';
+      const isImgEq =
+        currImgs.length === 1 &&
+        currText === '' &&
+        isInlineSymbolImage(currImgs[0], prevText, nextText);
+
+      if ((isTextEq || isImgEq) && isChemicalHalfEquation(prevText) && isChemicalHalfEquation(nextText)) {
+        const mergedLine = document.createElement('div');
+        mergedLine.className = 'chem-eq-merged-line';
+        mergedLine.style.cssText =
+          'display:flex; align-items:center; flex-wrap:wrap; gap:6px; margin:8px 0; padding:4px 0; font-family:"Times New Roman", "Noto Serif TC", serif; font-size:16px; color:#1D1F2C; line-height:1.6;';
+
+        const leftSpan = document.createElement('span');
+        leftSpan.innerHTML = prev.innerHTML.trim();
+
+        const midSpan = document.createElement('span');
+        midSpan.style.cssText =
+          'display:inline-flex; align-items:center; justify-content:center; margin:0 4px; color:#48547A; font-size:18px; line-height:1;';
+        // 統一替換成清晰銳利的標準向量 ⇌ 符號（或保留小尺寸原圖），徹底解決圖片版 ⇌ 忽大忽小問題
+        midSpan.innerHTML = '&#8652;';
+
+        const rightSpan = document.createElement('span');
+        rightSpan.innerHTML = next.innerHTML.trim();
+
+        mergedLine.appendChild(leftSpan);
+        mergedLine.appendChild(midSpan);
+        mergedLine.appendChild(rightSpan);
+
+        curr.parentNode.insertBefore(mergedLine, prev);
+        prev.remove();
+        curr.remove();
+        next.remove();
       }
     }
 
-    // 2. 修復多圖選項排版崩潰 (連續 3 張以上的圖片轉為 2x2 Grid)
-    const allImages = Array.from(container.querySelectorAll('img'));
-    let imgGroup = [];
-    
-    for (let i = 0; i < allImages.length; i++) {
-      const img = allImages[i];
-      const nextImg = allImages[i + 1];
-      imgGroup.push(img);
-      
-      // 判斷是否連續 (中間不能夾雜長文字段落)
-      let isContinuous = false;
-      if (nextImg) {
-        let curr = img.nextElementSibling;
-        isContinuous = true;
-        while (curr && curr !== nextImg && curr !== nextImg.parentNode) {
-          if (curr.textContent.trim().length > 10) { // 如果中間夾了超過 10 個字的文字，視為斷開
-            isContinuous = false;
-            break;
+    // =========================================================================
+    // STEP 2: 清理 Word 圖表拆散出來的漂浮座標軸文字 (Time, t, [CH3OH(g)], Concentration 等)
+    // =========================================================================
+    const floatingAxisTrash = [
+      'time',
+      't',
+      'concentration',
+      '[ch3oh(g)]',
+      'a(g)',
+      'b(g)',
+      'c(g)',
+      'rate',
+      'volume'
+    ];
+
+    Array.from(body.querySelectorAll('p, div')).forEach(el => {
+      if (el.classList.contains('chem-eq-merged-line') || el.classList.contains('chem-patch-grid')) return;
+      if (el.querySelector('img, svg, table')) return;
+
+      const rawTxt = (el.textContent || '').trim();
+      const lowerTxt = rawTxt.toLowerCase();
+
+      // 清除孤立的座標軸標籤或空得只剩 A. / B. / C. / D. 的殘留行
+      if (floatingAxisTrash.includes(lowerTxt)) {
+        el.style.display = 'none';
+      }
+    });
+
+    // 針對氣筒 (Gas syringe) 實驗圖散落的標籤進行收納
+    const syringeLabels = [];
+    Array.from(body.querySelectorAll('p')).forEach(p => {
+      if (p.querySelector('img')) return;
+      const t = (p.textContent || '').trim();
+      const tl = t.toLowerCase();
+      if (
+        (tl === 'plunger' ||
+          tl === 'rubber cap' ||
+          tl === 'gas syringe' ||
+          tl.startsWith('a gaseous mixture of')) &&
+        t.length < 48
+      ) {
+        syringeLabels.push(p);
+      }
+    });
+
+    if (syringeLabels.length >= 2) {
+      const allImgs = Array.from(body.querySelectorAll('img'));
+      const mainDiagram = allImgs.find(img => !isInlineSymbolImage(img, '', ''));
+      if (mainDiagram) {
+        const cap = document.createElement('div');
+        cap.style.cssText =
+          'font-size:12px; color:#5E6478; text-align:center; margin:4px 0 12px 0; font-family:sans-serif;';
+        cap.textContent =
+          '[' + syringeLabels.map(el => el.textContent.trim()).join(' · ') + ']';
+        const anchor = mainDiagram.closest('p, div') || mainDiagram;
+        anchor.parentNode.insertBefore(cap, anchor.nextSibling);
+        syringeLabels.forEach(el => (el.style.display = 'none'));
+      }
+    }
+
+    // =========================================================================
+    // STEP 3: 只篩選出「真正的大型圖表選項 (4 張濃度/速率圖)」，排成整齊 2x2 Grid！
+    // =========================================================================
+    const candidateGraphImgs = Array.from(body.querySelectorAll('img')).filter(img => {
+      if (img.closest('.chem-eq-merged-line')) return false;
+      return !isInlineSymbolImage(img, '', '');
+    });
+
+    // 當題目內正好有 4 張大圖（或 >= 3 張大圖選項）時，建立 2x2 選項 Grid
+    if (candidateGraphImgs.length >= 3) {
+      // 取最後 4 張大圖作為 A, B, C, D 選項圖（避免把題幹最上方的實驗裝置圖算進去）
+      const optionImgs =
+        candidateGraphImgs.length > 4
+          ? candidateGraphImgs.slice(candidateGraphImgs.length - 4)
+          : candidateGraphImgs.slice(0, 4);
+
+      if (optionImgs.length === 4 || optionImgs.length === 3) {
+        const gridContainer = document.createElement('div');
+        gridContainer.className = 'chem-patch-grid';
+        gridContainer.style.cssText =
+          'display:grid; grid-template-columns:repeat(2, minmax(0, 1fr)); gap:14px; margin:16px 0; width:100%; box-sizing:border-box;';
+
+        const firstImgBlock = optionImgs[0].closest('p, div') || optionImgs[0];
+        firstImgBlock.parentNode.insertBefore(gridContainer, firstImgBlock);
+
+        // 清除這幾張圖片附近殘留的純文字 "A.", "B.", "C.", "D." 段落，統一由 Grid 卡片標示
+        Array.from(body.querySelectorAll('p, div, span')).forEach(el => {
+          if (el.querySelector('img')) return;
+          const t = (el.textContent || '').trim();
+          if (/^[A-D]\.?$/.test(t)) {
+            el.style.display = 'none';
           }
-          curr = curr.nextElementSibling;
-        }
-      }
+        });
 
-      if (!isContinuous) {
-        if (imgGroup.length >= 3) {
-          // 觸發 Grid 轉換
-          const gridWrapper = document.createElement('div');
-          gridWrapper.style.cssText = 'display:grid; grid-template-columns:repeat(2, minmax(0, 1fr)); gap:16px; margin:16px 0; justify-items:center; align-items:end;';
-          
-          // 找到第一張圖的父節點位置插入 Grid
-          const anchor = imgGroup[0].closest('p') || imgGroup[0];
-          anchor.parentNode.insertBefore(gridWrapper, anchor);
-          
-          const labels = ['A.', 'B.', 'C.', 'D.'];
-          imgGroup.forEach((gImg, idx) => {
-            const itemBox = document.createElement('div');
-            itemBox.style.cssText = 'display:flex; flex-direction:column; align-items:center; gap:8px; width:100%;';
-            
-            // 嘗試抓取圖片前面的標籤 (A., B. ...)
-            let labelText = labels[idx] || '';
-            let prevNode = gImg.previousSibling;
-            while(prevNode) {
-              if (prevNode.nodeType === Node.TEXT_NODE && /^[A-D]\./.test(prevNode.textContent.trim())) {
-                labelText = prevNode.textContent.trim();
-                prevNode.textContent = ''; // 清除原本的文字
-                break;
-              }
-              prevNode = prevNode.previousSibling;
-            }
+        const optLetters = ['A.', 'B.', 'C.', 'D.'];
+        optionImgs.forEach((img, idx) => {
+          const oldWrapper = img.parentNode;
+          const cellCard = document.createElement('div');
+          cellCard.style.cssText =
+            'background:#FFFFFF; border:1.5px solid #E2E6F3; border-radius:18px; padding:12px 10px; display:flex; flex-direction:column; align-items:center; justify-content:space-between; gap:8px; box-sizing:border-box;';
 
-            const labelSpan = document.createElement('span');
-            labelSpan.textContent = labelText;
-            labelSpan.style.cssText = 'font-weight:bold; color:#48547A; font-family:sans-serif;';
-            
-            // 設定圖片樣式
-            gImg.style.cssText = 'max-width:90%; height:auto; max-height:120px; object-fit:contain; border:1px solid #E2E6F3; border-radius:8px; padding:4px;';
-            
-            itemBox.appendChild(gImg);
-            itemBox.appendChild(labelSpan);
-            gridWrapper.appendChild(itemBox);
-          });
-        }
-        imgGroup = []; // 重置
-      }
-    }
+          const badge = document.createElement('div');
+          badge.textContent = optLetters[idx] || '';
+          badge.style.cssText =
+            'font-family:sans-serif; font-size:13px; color:#48547A; background:#EEF0F8; padding:2px 12px; border-radius:10px;';
 
-    // 3. 清理圖片旁邊散落的零碎文字 (如 Time, Concentration, a gaseous mixture, plunger 等)
-    // 這些通常是單獨成行，且字數極短
-    const floatingWords = ['time', 't', 'concentration', 'a(g)', 'b(g)', 'c(g)'];
-    paragraphs.forEach(p => {
-      const txt = p.textContent.trim().toLowerCase();
-      // 如果這行文字完全等於我們要清掉的雜訊，且沒有包含圖片
-      if (floatingWords.includes(txt) && !p.querySelector('img, svg, table')) {
-        p.style.display = 'none';
-      }
-    });
+          // 固定圖表尺寸，清晰又不佔位
+          img.style.cssText =
+            'max-width:88% !important; max-height:115px !important; width:auto !important; height:auto !important; object-fit:contain !important; display:block !important; margin:0 auto !important;';
 
-    // 針對氣筒 (Gas syringe) 實驗的標註進行特殊處理
-    const labelsToCombine = [];
-    paragraphs.forEach(p => {
-      const txt = p.textContent.trim().toLowerCase();
-      if ((txt.includes('plunger') || txt.includes('rubber cap') || txt.includes('gas syringe') || txt.includes('a gaseous mixture')) && txt.length < 50 && !p.querySelector('img')) {
-        labelsToCombine.push(p);
-      }
-    });
+          cellCard.appendChild(img);
+          cellCard.appendChild(badge);
+          gridContainer.appendChild(cellCard);
 
-    if (labelsToCombine.length > 0) {
-      // 找到氣筒圖片
-      const syringeImg = Array.from(container.querySelectorAll('img')).find(img => img.src && img.src.length > 100); // 假設這張圖有被載入
-      if (syringeImg) {
-        const captionBox = document.createElement('div');
-        captionBox.style.cssText = 'font-size:12px; color:#5E6478; text-align:center; margin-top:-4px; margin-bottom:12px; font-style:italic;';
-        
-        let combinedText = labelsToCombine.map(l => l.textContent.trim()).join(' · ');
-        captionBox.textContent = `[Diagram Labels: ${combinedText}]`;
-        
-        const anchor = syringeImg.closest('p') || syringeImg;
-        if (anchor.nextSibling) {
-          anchor.parentNode.insertBefore(captionBox, anchor.nextSibling);
-        } else {
-          anchor.parentNode.appendChild(captionBox);
-        }
-        
-        // 隱藏原本散落的標籤
-        labelsToCombine.forEach(l => l.style.display = 'none');
+          // 若原本包著圖片的空框變空了，順手清掉
+          if (
+            oldWrapper &&
+            oldWrapper !== body &&
+            (oldWrapper.textContent || '').trim() === '' &&
+            oldWrapper.querySelectorAll('img').length === 0
+          ) {
+            oldWrapper.remove();
+          }
+        });
       }
     }
   }
 
-  // 監聽 DOM 變化，當新的題目卡片被渲染出來時，自動套用修復
-  const observer = new MutationObserver((mutations) => {
-    mutations.forEach(mutation => {
-      if (mutation.addedNodes.length > 0) {
-        mutation.addedNodes.forEach(node => {
-          if (node.nodeType === Node.ELEMENT_NODE) {
-            // 如果新增的是題目列表容器或題目卡片
-            if (node.id === 'questionList' || node.classList.contains('question-card')) {
-              // 稍微延遲執行，確保原本的 app.js 已經把 HTML 都塞進去了
-              setTimeout(() => {
-                const targetBodies = node.id === 'questionList' 
-                  ? node.querySelectorAll('.q-native-body') 
-                  : [node.querySelector('.q-native-body')];
-                
-                targetBodies.forEach(body => {
-                  if (body && !body.dataset.patchV60Applied) {
-                    applyLayoutFixesToContainer(body);
-                    body.dataset.patchV60Applied = 'true'; // 標記已處理，避免重複執行
-                  }
-                });
-              }, 50);
-            }
-          }
-        });
+  // 掃描頁面上所有題目卡片並套用修復
+  function scanAndPatchAllQuestions() {
+    document.querySelectorAll('.q-native-body').forEach(body => {
+      if (!body.dataset.patchV60Applied) {
+        body.dataset.patchV60Applied = 'true';
+        applyLayoutFixesToBody(body);
       }
     });
+  }
+
+  // 啟動 DOM 監聽器：當切換章節或題目渲染出來時自動執行
+  const observer = new MutationObserver(() => {
+    scanAndPatchAllQuestions();
   });
 
-  // 啟動監聽器，監視整個 #chemAppRootContainer 或是 body
-  window.addEventListener('load', () => {
+  function initPatchObserver() {
     const root = document.getElementById('chemAppRootContainer') || document.body;
     observer.observe(root, { childList: true, subtree: true });
-    
-    // 如果載入時已經有題目了，先執行一次
-    setTimeout(() => {
-      document.querySelectorAll('.q-native-body').forEach(body => {
-        if (!body.dataset.patchV60Applied) {
-          applyLayoutFixesToContainer(body);
-          body.dataset.patchV60Applied = 'true';
-        }
-      });
-    }, 500);
-  });
+    scanAndPatchAllQuestions();
+  }
 
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initPatchObserver);
+  } else {
+    initPatchObserver();
+  }
 })();
