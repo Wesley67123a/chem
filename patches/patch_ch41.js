@@ -1,7 +1,7 @@
 /**
  * ============================================================================
  * HKDSE Chemistry Question Bank - Chapter 41 Dedicated Patch Module
- * File: patches/patch_ch41.js (v60.10 - Pure Zero-Interference Graph Restoration)
+ * File: patches/patch_ch41.js (v60.12 - CSS & Direct Text Debris Purge)
  * Target: Chapter 41 (Chemical Equilibrium)
  * ============================================================================
  */
@@ -9,9 +9,8 @@
 (function () {
   'use strict';
 
-  console.log('[Patch Ch41] Chapter 41 dedicated fix module active (v60.10).');
+  console.log('[Patch Ch41] Chapter 41 dedicated fix module active (v60.12).');
 
-  // 注入純淨樣式：確保所有圖片回到最原始、不帶任何外框或白底的乾淨狀態
   function injectCh41Styles() {
     if (document.getElementById('chemPatchCh41Style')) return;
     const style = document.createElement('style');
@@ -47,7 +46,6 @@
         text-align: center !important;
         white-space: nowrap !important;
       }
-      /* 絕對禁止任何外框、陰影或白底干擾圖表圖片 */
       .q-native-body img {
         background: transparent !important;
         border: none !important;
@@ -71,7 +69,7 @@
     const qCode = qHeaderEl ? qHeaderEl.textContent.trim() : '';
     const fullText = body.textContent || '';
 
-    // 只修復 Qc 數學分式 (如 ChemMCQ41025)
+    // 1. 修復 Qc 數學分式
     if (qCode === 'ChemMCQ41025' || (fullText.includes('CoCl') && fullText.includes('reaction quotient'))) {
       const expectedOptions = {
         A: `A. <i>Q</i><sub>c</sub> = ${fracHtml('<i>z</i>', '<i>x</i> <i>y</i>')} mol<sup>&minus;4</sup> dm<sup>12</sup>`,
@@ -88,6 +86,18 @@
             p.innerHTML = expectedOptions[optLetter];
             p.style.margin = '10px 0';
           }
+        }
+      });
+    }
+
+    // 2. 徹底清掃圖表周圍的散落字元 (Time, Concentration, A(g), B(g), C(g) 等)
+    if (body.querySelector('img')) {
+      const debrisList = ['time', 'concentration', 'a(g)', 'b(g)', 'c(g)', 'no(g)', 'cl2(g)', 'nocl(g)', 't', "t'", "t\u2032"];
+      Array.from(body.querySelectorAll('p, div, span, font')).forEach(el => {
+        if (el.querySelector('img, table')) return;
+        const txt = (el.textContent || '').trim().toLowerCase();
+        if (debrisList.includes(txt) && txt.length < 15) {
+          el.style.display = 'none'; // 安全隱藏
         }
       });
     }
