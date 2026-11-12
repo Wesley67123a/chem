@@ -497,4 +497,59 @@
   const root = document.getElementById('chemAppRootContainer') || document.body;
   observer.observe(root, { childList: true, subtree: true });
 })();
+/**
+ * ============================================================================
+ * Additional Patch Snippet for Chapter 41: Graph Axes Label Integration
+ * Append this snippet to the bottom of your existing patches/patch_ch41.js
+ * ============================================================================
+ */
+(function() {
+  const observer = new MutationObserver(() => {
+    document.querySelectorAll('.question-card').forEach(card => {
+      const body = card.querySelector('.q-native-body');
+      if (body && !body.dataset.patchAxesCleaned) {
+        
+        // 檢查是否有圖表與散落的軸標籤 (例如 Concentration, Time, t, t' 等)
+        const hasGraphImg = body.querySelector('img');
+        if (hasGraphImg) {
+          const axisKeywords = ['concentration', 'time', 'rate', 'yield', 'temperature', 'pressure', "t'", 't', 'c(g)', 'a(g)', 'b(g)'];
+          const collectedAxisLabels = [];
+          
+          Array.from(body.querySelectorAll('p, div, span')).forEach(el => {
+            if (el.querySelector('img')) return;
+            const txt = (el.textContent || '').trim();
+            const lower = txt.toLowerCase();
+            
+            // 挑選出屬於 X 軸、Y 軸或時間點的散落文字
+            if (axisKeywords.includes(lower) && txt.length < 35) {
+              collectedAxisLabels.push(txt);
+              el.style.display = 'none'; // 隱藏原本亂飛的散落文字
+            }
+          });
+          
+          if (collectedAxisLabels.length > 0) {
+            body.dataset.patchAxesCleaned = 'true';
+            
+            // 將 X / Y 軸變數整理成一個漂亮的圖表座標說明框
+            const axisBox = document.createElement('div');
+            axisBox.style.cssText = 'background:#EEF0F8; color:#48547A; font-size:12px; padding:8px 14px; border-radius:12px; text-align:center; margin:10px auto; max-width:85%; border:1px solid #DFE3F8; font-family:sans-serif; line-height:1.5;';
+            
+            // 簡單分類 X 軸與 Y 軸變數
+            const yAxis = collectedAxisLabels.find(l => /concentration|rate|yield|temperature|pressure/i.test(l)) || 'Concentration';
+            const xAxis = collectedAxisLabels.find(l => /time/i.test(l)) || 'Time';
+            const timePoints = collectedAxisLabels.filter(l => l === 't' || l === "t'" || l === "t\u2032");
+            
+            axisBox.innerHTML = `<b>Graph Axes:</b> Y-axis: ${yAxis} &nbsp;|&nbsp; X-axis: ${xAxis} ${timePoints.length ? `(Time points: ${timePoints.join(', ' )})` : ''}`;
+            
+            const anchor = hasGraphImg.closest('p, div') || hasGraphImg;
+            anchor.parentNode.insertBefore(axisBox, anchor.nextSibling);
+          }
+        }
+      }
+    });
+  });
+
+  const root = document.getElementById('chemAppRootContainer') || document.body;
+  observer.observe(root, { childList: true, subtree: true });
+})();
 
