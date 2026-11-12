@@ -1,7 +1,7 @@
 /**
  * ============================================================================
  * HKDSE Chemistry Question Bank - Main UI & Material You Engine (app.js)
- * Version: 0.0.55 (Exact Material You HA-Theme Layout: Slate-Indigo & Periwinkle)
+ * Version: 0.0.56 (HKDSE Title, Pure SVG Icons, M3 Tonal Palette, Anti-Select & Bottom-Right Controls)
  * ============================================================================
  */
 
@@ -173,27 +173,44 @@ window.SYLLABUS_CONFIG = SYLLABUS_CONFIG;
 window.CHAPTER_MAP = CHAPTER_MAP;
 
 // ============================================================================
-// Material You 官方精確色系 (抄自截圖：石板靛藍 + 淡紫羅蘭柔霧藍，無視黃色)
+// Material You 官方統一色系 (純石板靛藍 & 柔霧紫藍強調色，零紅綠背景)
 // ============================================================================
 const M3 = {
-  bg: '#F6F7FB',              // 圖片背景：極淡雅的灰紫白底
-  surface: '#FFFFFF',         // 純白卡片表面
-  surfaceVariant: '#DFE3F8',  // 圖中「Harmonic Colors」同款淡紫羅蘭柔霧藍
-  surfaceTrack: '#ECEFFD',    // 圖中開關/滑軌淡色軌道
-  primary: '#48547A',         // 圖中 Switch 開關與標籤的「石板靛藍」核心強調色
-  textMain: '#1D1F2C',        // 主要標題：深石板色 (無粗體)
-  textSub: '#62677C',         // 次要文字：清爽灰藍
-  textMuted: '#8F94A6',       // 輔助文字
-  outline: '#ECEEF8',         // 極細邊框
-  correctBg: '#E7F4EC',       // 柔和鼠尾草綠 (答對)
-  correctText: '#2B613D',
-  wrongBg: '#FBEBEB',         // 柔和淡珊瑚粉 (答錯)
-  wrongText: '#8F3434'
+  bg: '#F6F7FB',               // 頁面底色
+  surface: '#FFFFFF',          // 純白卡片
+  surfaceVariant: '#DFE3F8',   // Material You 強調容器色 (Soft Periwinkle)
+  surfaceMuted: '#EEF0F8',     // Material You 次級中性容器色
+  surfaceTrack: '#E3E6F5',     // Switch 關閉軌道色
+  primary: '#48547A',          // Material You 核心強調色 (Slate Indigo)
+  primaryDark: '#333D5C',      // 深石板靛藍 (用於結束按鈕等高對比動作)
+  textMain: '#1D1F2C',         // 主要文字
+  textSub: '#5E6478',          // 次要文字
+  textMuted: '#8F94A6',        // 輔助文字
+  outline: '#E6E9F5',          // 柔和邊框
+  outlineStrong: '#C5CCE6'     // 虛線/次級強調邊框
+};
+
+// ============================================================================
+// 純程式碼 SVG 圖標庫 (徹底取代所有 Emoji)
+// ============================================================================
+const SVG_ICONS = {
+  menu: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><line x1="4" y1="7" x2="20" y2="7"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="17" x2="20" y2="17"/></svg>`,
+  moreVert: `<svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="6" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="12" cy="18" r="1.6"/></svg>`,
+  volumeOn: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/></svg>`,
+  volumeOff: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><line x1="23" y1="9" x2="17" y2="15"/><line x1="17" y1="9" x2="23" y2="15"/></svg>`,
+  person: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M5 20c1.5-3.5 4.2-5 7-5s5.5 1.5 7 5"/></svg>`,
+  topicIcon: `<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 3h6"/><path d="M10 3v5l-4.5 7.5A3 3 0 0 0 8.1 20h7.8a3 3 0 0 0 2.6-4.5L14 8V3"/></svg>`,
+  calendar: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="3"/><line x1="16" y1="3" x2="16" y2="7"/><line x1="8" y1="3" x2="8" y2="7"/><line x1="3" y1="10" x2="21" y2="10"/></svg>`,
+  timer: `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="13" r="8"/><polyline points="12 9 12 13 14.5 14.5"/><line x1="9" y1="2" x2="15" y2="2"/></svg>`,
+  flag: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg>`,
+  list: `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><line x1="8" y1="6" x2="20" y2="6"/><line x1="8" y1="12" x2="20" y2="12"/><line x1="8" y1="18" x2="20" y2="18"/><circle cx="4" cy="6" r="1"/><circle cx="4" cy="12" r="1"/><circle cx="4" cy="18" r="1"/></svg>`,
+  check: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>`,
+  cross: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>`
 };
 
 // 2. 全局 UI 狀態 (含計時器與雲端 Lap 分圈狀態)
 window.chemApp = {
-  version: '0.0.55',
+  version: '0.0.56',
   currentLang: localStorage.getItem('CHEM_LANG_V47') || 'e',
   isMuted: localStorage.getItem('CHEM_MUTED_V49') === '1',
   activeChapterId: null,
@@ -218,16 +235,32 @@ const FIREBASE_CONFIG = {
   measurementId: "G-9EB0718DGR"
 };
 
-// 動態注入 Material You HA-Theme 樣式 (完全不改 style.css)
-function injectImageM3ThemeOverrides() {
-  if (document.getElementById('chemImageM3ThemeStyle')) return;
+// ============================================================================
+// 動態注入 Material You 主題、全局去粗體、以及「防選取網頁內容」防護
+// ============================================================================
+function injectM3AndAntiSelectStyles() {
+  if (document.getElementById('chemM3AntiSelectStyle')) return;
   const st = document.createElement('style');
-  st.id = 'chemImageM3ThemeStyle';
+  st.id = 'chemM3AntiSelectStyle';
   st.textContent = `
     :root {
       --md-sys-color-primary: ${M3.primary} !important;
       --md-sys-color-surface: ${M3.surface} !important;
       --md-sys-color-surface-variant: ${M3.bg} !important;
+    }
+    html, body, #chemAppRootContainer, #chemDashboardHome, #chemChapterViewWrapper, .question-card, .q-native-body, .q-native-body *, .explanation-panel, .explanation-panel * {
+      -webkit-user-select: none !important;
+      -moz-user-select: none !important;
+      -ms-user-select: none !important;
+      user-select: none !important;
+      -webkit-touch-callout: none !important;
+    }
+    /* 僅允許輸入框打字選取 */
+    input, textarea {
+      -webkit-user-select: text !important;
+      -moz-user-select: text !important;
+      user-select: text !important;
+      -webkit-touch-callout: default !important;
     }
     body, #chemAppRootContainer {
       background-color: ${M3.bg} !important;
@@ -237,7 +270,6 @@ function injectImageM3ThemeOverrides() {
       margin: 0;
       padding: 0;
     }
-    /* 全面去粗體，維持 Material 3 現代細緻感 */
     h1, h2, h3, h4, b, strong, button, span, div, label, input, select {
       font-weight: 400 !important;
     }
@@ -255,7 +287,6 @@ function injectImageM3ThemeOverrides() {
       border-color: ${M3.outline} !important;
       border-radius: 28px !important;
     }
-    /* 點擊切換效果 */
     .m3-switch-track {
       width: 50px;
       height: 28px;
@@ -274,8 +305,28 @@ function injectImageM3ThemeOverrides() {
       transition: transform 0.25s ease;
       box-shadow: 0 1px 3px rgba(0,0,0,0.2);
     }
+    .lap-scroll-strip::-webkit-scrollbar {
+      height: 3px;
+    }
+    .lap-scroll-strip::-webkit-scrollbar-thumb {
+      background: ${M3.surfaceVariant};
+      border-radius: 3px;
+    }
   `;
   document.head.appendChild(st);
+
+  // JS 層攔截長按選取與複製動作 (防止 iOS 彈出 Copy / Search with Google / Explain with Gemini)
+  document.addEventListener('selectstart', (e) => {
+    const tag = e.target && e.target.tagName;
+    if (tag === 'INPUT' || tag === 'TEXTAREA') return;
+    e.preventDefault();
+  });
+
+  document.addEventListener('copy', (e) => {
+    const tag = e.target && e.target.tagName;
+    if (tag === 'INPUT' || tag === 'TEXTAREA') return;
+    e.preventDefault();
+  });
 }
 
 function formatDuration(sec) {
@@ -300,7 +351,7 @@ function extractQuestionOrderNumber(qNumDisplay, qId, fallbackIdx = null) {
 }
 
 // ============================================================================
-// 雲端分圈計時器儲存引擎 (借道 userlog.js 的 chapterCounts 自動同步至 Firebase)
+// 雲端分圈計時器儲存引擎 (自動同步至 Firebase)
 // ============================================================================
 function getCloudTimerMap() {
   if (!window.ChemUserLog || !window.ChemUserLog.state) return {};
@@ -422,7 +473,7 @@ function openDiscreetAdminModal() {
     <div style="background:${M3.surface}; width:100%; max-width:310px; padding:24px 26px; border-radius:28px; box-shadow:0 12px 36px rgba(72,84,122,0.12); text-align:center; border:1px solid ${M3.outline};">
       <h3 class="m3-title-medium" style="margin:0 0 14px 0; color:${M3.textMain}; font-size:16px;">Admin</h3>
       <input type="password" id="adminLocalPassInput" placeholder="Password" style="width:100%; padding:10px 14px; border:1px solid ${M3.outline}; border-radius:14px; font-size:14px; box-sizing:border-box; margin-bottom:8px; outline:none; background:${M3.bg}; color:${M3.textMain};" />
-      <div id="adminLocalPassErr" style="color:${M3.wrongText}; font-size:12px; min-height:18px; margin-bottom:10px;"></div>
+      <div id="adminLocalPassErr" style="color:${M3.textSub}; font-size:12px; min-height:18px; margin-bottom:10px;"></div>
       <div style="display:flex; gap:10px;">
         <button id="adminPassCancelBtn" style="flex:1; background:${M3.bg}; color:${M3.textSub}; border:1px solid ${M3.outline}; padding:9px; border-radius:14px; font-size:13px; cursor:pointer;">取消</button>
         <button id="adminPassConfirmBtn" style="flex:1; background:${M3.primary}; color:#fff; border:none; padding:9px; border-radius:14px; font-size:13px; cursor:pointer;">進入</button>
@@ -766,7 +817,9 @@ class DocxExtractor {
   }
 }
 
+// ============================================================================
 // 8. 計時器與雲端分圈 (Lap) 控制中心
+// ============================================================================
 function startTimer() {
   if (window.chemApp.isTimerRunning) return;
   window.chemApp.isTimerRunning = true;
@@ -830,14 +883,27 @@ function recordLap() {
   };
 
   window.chemApp.currentChapterLaps.unshift(newLap);
+  updateTimerDisplay();
   renderChapterLapsUI();
   saveChapterTimerAndLapsToCloud(chapId, true);
 }
 
 function updateTimerDisplay() {
-  const el = document.getElementById('chapterTimerDisplay');
-  if (el) {
-    el.textContent = formatDuration(window.chemApp.timerSeconds);
+  const formatted = formatDuration(window.chemApp.timerSeconds);
+  const el1 = document.getElementById('chapterTimerDisplay');
+  const el2 = document.getElementById('floatingTimerDisplay');
+  if (el1) el1.textContent = formatted;
+  if (el2) el2.textContent = formatted;
+
+  const laps = window.chemApp.currentChapterLaps || [];
+  const lapBadgeEl = document.getElementById('floatingLapBadge');
+  if (lapBadgeEl) {
+    if (laps.length > 0) {
+      lapBadgeEl.style.display = 'inline-block';
+      lapBadgeEl.textContent = `L${laps[0].lapNo} +${laps[0].splitText}`;
+    } else {
+      lapBadgeEl.style.display = 'none';
+    }
   }
 }
 
@@ -866,7 +932,112 @@ function renderChapterLapsUI() {
     .join('');
 }
 
-// 9. 答題結束確認彈窗
+// ============================================================================
+// 9. 右下角懸浮控制組 (包含：計時 + Lap、結束當前 MC、目錄選單)
+// ============================================================================
+function ensureFloatingActionGroup() {
+  let grp = document.getElementById('floatingActionGroup');
+  if (!grp) {
+    grp = document.createElement('div');
+    grp.id = 'floatingActionGroup';
+    grp.style.cssText = 'position:fixed; bottom:20px; right:18px; z-index:9998; display:none; flex-direction:column; gap:10px; align-items:flex-end; font-family:sans-serif;';
+    grp.innerHTML = `
+      <!-- 1. 計時與 Lap 懸浮膠囊 (僅在答題頁面顯示) -->
+      <div id="floatingTimerCapsule" style="display:none; background:${M3.surface}; border:1px solid ${M3.outline}; padding:5px 10px 5px 14px; border-radius:22px; box-shadow:0 4px 16px rgba(72,84,122,0.1); align-items:center; gap:8px; height:40px; box-sizing:border-box; white-space:nowrap;">
+        <span style="display:inline-flex; align-items:center; color:${M3.primary};">${SVG_ICONS.timer}</span>
+        <span id="floatingTimerDisplay" style="font-family:monospace; font-size:13px; color:${M3.textMain};">00:00</span>
+        <span id="floatingLapBadge" style="display:none; font-size:10px; background:${M3.surfaceVariant}; color:${M3.primary}; padding:2px 7px; border-radius:10px;"></span>
+        <button id="floatingTimerToggleBtn" style="border:none; background:${M3.primary}; color:#fff; font-size:11px; padding:5px 11px; border-radius:14px; cursor:pointer;">開始</button>
+        <button id="floatingTimerLapBtn" style="border:none; background:${M3.surfaceVariant}; color:${M3.primary}; font-size:11px; padding:5px 11px; border-radius:14px; cursor:pointer;">Lap</button>
+      </div>
+
+      <!-- 2. 結束當前 MC 按鈕 (僅在答題頁面顯示，純 Material You 深石板靛藍強調色) -->
+      <button id="endChapterBtn" class="sound-trigger" style="display:none; background:${M3.primaryDark}; color:#fff; border:none; padding:0 18px; border-radius:22px; font-size:13px; box-shadow:0 4px 14px rgba(51,61,92,0.18); cursor:pointer; height:40px; min-width:124px; box-sizing:border-box; align-items:center; justify-content:center; gap:6px; white-space:nowrap;">
+        ${SVG_ICONS.flag}
+        <span>結束當前 MC</span>
+      </button>
+
+      <!-- 3. 目錄選單按鈕 (首頁與答題頁面皆顯示) -->
+      <button id="mobileToggleSidebarBtn" class="sound-trigger" style="display:flex; background:${M3.primary}; color:#fff; border:none; padding:0 18px; border-radius:22px; font-size:13px; box-shadow:0 4px 14px rgba(72,84,122,0.22); cursor:pointer; height:42px; min-width:124px; box-sizing:border-box; align-items:center; justify-content:center; gap:6px; white-space:nowrap;">
+        ${SVG_ICONS.list}
+        <span>目錄選單</span>
+      </button>
+    `;
+    document.body.appendChild(grp);
+
+    const fToggleBtn = grp.querySelector('#floatingTimerToggleBtn');
+    const fLapBtn = grp.querySelector('#floatingTimerLapBtn');
+
+    fToggleBtn.onclick = () => {
+      SoundFX.playClick();
+      if (window.chemApp.isTimerRunning) {
+        pauseTimer();
+        fToggleBtn.textContent = '繼續';
+      } else {
+        startTimer();
+        fToggleBtn.textContent = '暫停';
+      }
+      syncAllTimerButtonsText();
+    };
+
+    fLapBtn.onclick = () => {
+      SoundFX.playClick();
+      recordLap();
+    };
+
+    grp.querySelector('#mobileToggleSidebarBtn').onclick = () => {
+      SoundFX.playClick();
+      renderCenterDirectoryModal();
+      const m = document.getElementById('centerDirectoryModal');
+      if (m) m.style.display = 'flex';
+    };
+
+    grp.querySelector('#endChapterBtn').onclick = () => {
+      SoundFX.playClick();
+      openEndChapterConfirmModal();
+    };
+  }
+  return grp;
+}
+
+function syncAllTimerButtonsText() {
+  const running = window.chemApp.isTimerRunning;
+  const hasElapsed = window.chemApp.timerSeconds > 0;
+  const label = running ? '暫停' : hasElapsed ? '繼續' : '開始';
+
+  const t1 = document.getElementById('timerToggleBtn');
+  const t2 = document.getElementById('floatingTimerToggleBtn');
+  if (t1) t1.textContent = label;
+  if (t2) t2.textContent = label;
+}
+
+function updateFloatingButtonsVisibility() {
+  const grp = ensureFloatingActionGroup();
+  const isLogged = window.ChemUserLog && window.ChemUserLog.currentUser !== null;
+  if (!isLogged) {
+    grp.style.display = 'none';
+    return;
+  }
+
+  grp.style.display = 'flex';
+  const timerCap = grp.querySelector('#floatingTimerCapsule');
+  const endBtn = grp.querySelector('#endChapterBtn');
+  const dirBtn = grp.querySelector('#mobileToggleSidebarBtn');
+
+  if (dirBtn) dirBtn.style.display = 'flex';
+
+  if (window.chemApp.currentView === 'chapter') {
+    if (timerCap) timerCap.style.display = 'flex';
+    if (endBtn) endBtn.style.display = 'flex';
+    updateTimerDisplay();
+    syncAllTimerButtonsText();
+  } else {
+    if (timerCap) timerCap.style.display = 'none';
+    if (endBtn) endBtn.style.display = 'none';
+  }
+}
+
+// 10. 「結束當前 MC」雙重確認內嵌彈窗 (纯 Material You 強調色，無紅綠)
 function openEndChapterConfirmModal() {
   let modal = document.getElementById('inlineConfirmModal');
   if (!modal) {
@@ -886,7 +1057,7 @@ function openEndChapterConfirmModal() {
         <p style="font-size:14px; color:${M3.primary}; margin:0 0 8px 0; line-height:1.5;">${statusText}</p>
         <p style="font-size:12px; color:${M3.textSub}; margin:0 0 20px 0; line-height:1.4;">${subText}</p>
         <div style="display:flex; gap:12px;">
-          <button id="confirmYesBtn" style="flex:1; background:${yesCount === 1 ? M3.wrongText : M3.wrongBg}; color:${yesCount === 1 ? '#fff' : M3.wrongText}; border:none; padding:10px; border-radius:16px; font-size:14px; cursor:pointer;">
+          <button id="confirmYesBtn" style="flex:1; background:${yesCount === 1 ? M3.primaryDark : M3.primary}; color:#fff; border:none; padding:10px; border-radius:16px; font-size:14px; cursor:pointer;">
             是 ${yesCount > 0 ? `(${yesCount}/2)` : ''}
           </button>
           <button id="confirmNoBtn" style="flex:1; background:${noCount === 1 ? M3.surfaceVariant : M3.bg}; color:${M3.textMain}; border:1px solid ${M3.outline}; padding:10px; border-radius:16px; font-size:14px; cursor:pointer;">
@@ -943,7 +1114,7 @@ function openEndChapterConfirmModal() {
   modal.style.display = 'flex';
 }
 
-// 10. 視圖切換
+// 11. 視圖切換
 function showHomeView() {
   window.chemApp.currentView = 'home';
   pauseTimer();
@@ -955,7 +1126,7 @@ function showHomeView() {
   const homeEl = document.getElementById('chemDashboardHome');
   if (homeEl) homeEl.style.display = 'block';
 
-  renderBottomNavigationBar();
+  updateFloatingButtonsVisibility();
 }
 
 function switchRightPanelToChapterView() {
@@ -970,11 +1141,11 @@ function switchRightPanelToChapterView() {
   if (!wrapper) {
     wrapper = document.createElement('div');
     wrapper.id = 'chemChapterViewWrapper';
-    wrapper.style.cssText = 'width: 100%; max-width: 620px; margin: 0 auto; padding: 14px 16px 120px 16px; box-sizing: border-box;';
+    wrapper.style.cssText = 'width: 100%; max-width: 620px; margin: 0 auto; padding: 14px 16px 160px 16px; box-sizing: border-box;';
 
     wrapper.innerHTML = `
-      <!-- 答題頁面頂部卡片 (直接抄圖中的簡潔圓角卡片排布) -->
-      <div class="m3-card" style="padding:16px 20px; border-radius:28px; margin-bottom:16px; display:flex; flex-direction:column; gap:12px;">
+      <!-- 答題頁面頂部卡片 -->
+      <div class="m3-card" style="padding:16px 20px; border-radius:28px; margin-bottom:16px; display:flex; flex-direction:column; gap:10px;">
         <div style="display:flex; justify-content:space-between; align-items:center; gap:8px;">
           <div style="display:flex; align-items:center; gap:10px; min-width:0; flex:1;">
             <button id="backHomeTopBtn" class="sound-trigger" style="padding:6px 14px; font-size:12px; border:none; border-radius:18px; background:${M3.surfaceVariant}; color:${M3.primary}; cursor:pointer; white-space:nowrap;">
@@ -982,27 +1153,24 @@ function switchRightPanelToChapterView() {
             </button>
             <h2 id="currentChapterTitle" class="m3-title-medium" style="margin:0; font-size:15px; color:${M3.textMain}; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">請選擇章節</h2>
           </div>
-          <div style="display:flex; align-items:center; gap:6px;">
+          <div style="display:flex; align-items:center; gap:8px; white-space:nowrap;">
+            <span id="chapterStats" style="font-size:12px; color:${M3.textSub};"></span>
             <label style="padding:6px 12px; font-size:11px; border:1px solid ${M3.outline}; border-radius:16px; background:${M3.surface}; cursor:pointer; color:${M3.textSub};" class="sound-trigger">
               載入 .docx
               <input type="file" id="manualDocxInput" accept=".docx" style="display:none;" />
             </label>
-            <button id="endChapterInlineBtn" class="sound-trigger" style="padding:6px 12px; font-size:11px; border:none; border-radius:16px; background:${M3.wrongBg}; color:${M3.wrongText}; cursor:pointer;">
-              結束練習
-            </button>
           </div>
         </div>
 
-        <!-- 計時器與 Lap 分圈列 (仿圖中組件槽排布) -->
+        <!-- 頂部同步計時與分圈列 -->
         <div style="display:flex; justify-content:space-between; align-items:center; padding-top:10px; border-top:1px solid ${M3.outline}; font-size:12px; flex-wrap:wrap; gap:8px;">
           <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
-            <span style="color:${M3.textSub};">計時</span>
-            <span id="chapterTimerDisplay" style="font-family:monospace; font-size:13px; color:${M3.primary}; background:${M3.bg}; padding:4px 10px; border-radius:12px; border:1px solid ${M3.outline};">00:00</span>
-            <button id="timerToggleBtn" style="border:none; background:${M3.primary}; color:#fff; font-size:11px; padding:5px 14px; border-radius:16px; cursor:pointer;">開始</button>
-            <button id="timerLapBtn" style="border:none; background:${M3.surfaceVariant}; color:${M3.primary}; font-size:11px; padding:5px 14px; border-radius:16px; cursor:pointer;">分圈 Lap</button>
-            <button id="timerResetBtn" style="border:1px solid ${M3.outline}; background:${M3.surface}; color:${M3.textSub}; font-size:11px; padding:5px 12px; border-radius:16px; cursor:pointer;">重置</button>
+            <span style="color:${M3.textSub}; display:inline-flex; align-items:center; gap:4px;">${SVG_ICONS.timer} 計時</span>
+            <span id="chapterTimerDisplay" style="font-family:monospace; font-size:13px; color:${M3.primary}; background:${M3.bg}; padding:3px 10px; border-radius:12px; border:1px solid ${M3.outline};">00:00</span>
+            <button id="timerToggleBtn" style="border:none; background:${M3.primary}; color:#fff; font-size:11px; padding:5px 12px; border-radius:14px; cursor:pointer;">開始</button>
+            <button id="timerLapBtn" style="border:none; background:${M3.surfaceVariant}; color:${M3.primary}; font-size:11px; padding:5px 12px; border-radius:14px; cursor:pointer;">分圈 Lap</button>
+            <button id="timerResetBtn" style="border:1px solid ${M3.outline}; background:${M3.surface}; color:${M3.textSub}; font-size:11px; padding:5px 10px; border-radius:14px; cursor:pointer;">重置</button>
           </div>
-          <span id="chapterStats" style="font-size:12px; color:${M3.textSub};"></span>
         </div>
 
         <div id="chapterLapsStrip" class="lap-scroll-strip" style="display:none; gap:6px; overflow-x:auto; padding-top:4px; padding-bottom:2px; align-items:center;"></div>
@@ -1010,11 +1178,6 @@ function switchRightPanelToChapterView() {
       <div id="questionList"></div>
     `;
     rightMain.appendChild(wrapper);
-
-    wrapper.querySelector('#endChapterInlineBtn').onclick = () => {
-      SoundFX.playClick();
-      openEndChapterConfirmModal();
-    };
 
     const tBtn = wrapper.querySelector('#timerToggleBtn');
     const lBtn = wrapper.querySelector('#timerLapBtn');
@@ -1024,13 +1187,10 @@ function switchRightPanelToChapterView() {
       SoundFX.playClick();
       if (window.chemApp.isTimerRunning) {
         pauseTimer();
-        tBtn.textContent = '繼續';
-        tBtn.style.background = M3.primary;
       } else {
         startTimer();
-        tBtn.textContent = '暫停';
-        tBtn.style.background = M3.wrongText;
       }
+      syncAllTimerButtonsText();
     };
 
     lBtn.onclick = () => {
@@ -1041,8 +1201,7 @@ function switchRightPanelToChapterView() {
     rBtn.onclick = () => {
       SoundFX.playClick();
       resetTimer();
-      tBtn.textContent = '開始';
-      tBtn.style.background = M3.primary;
+      syncAllTimerButtonsText();
     };
 
     wrapper.querySelector('#backHomeTopBtn').onclick = () => {
@@ -1068,17 +1227,17 @@ function switchRightPanelToChapterView() {
         }
         renderQuestions(list, chapId);
       } catch (err) {
-        qContainer.innerHTML = `<div style="color:${M3.wrongText}; padding:32px;">手動解析失敗：${err.message}</div>`;
+        qContainer.innerHTML = `<div style="color:${M3.textSub}; padding:32px;">手動解析失敗：${err.message}</div>`;
       }
     };
   }
 
   wrapper.style.display = 'block';
-  renderBottomNavigationBar();
+  updateFloatingButtonsVisibility();
   return wrapper;
 }
 
-// 11. 開啟章節
+// 12. 開啟章節
 async function openChapter(chapId) {
   window.chemApp.activeChapterId = chapId;
   const lookup = CHAPTER_MAP[chapId];
@@ -1088,12 +1247,8 @@ async function openChapter(chapId) {
   loadChapterTimerAndLapsFromCloud(chapId);
 
   const wrapper = switchRightPanelToChapterView();
-  const tBtn = document.getElementById('timerToggleBtn');
-  if (tBtn) {
-    tBtn.textContent = window.chemApp.timerSeconds > 0 ? '繼續' : '開始';
-    tBtn.style.background = M3.primary;
-  }
   updateTimerDisplay();
+  syncAllTimerButtonsText();
   renderChapterLapsUI();
 
   const titleEl = wrapper.querySelector('#currentChapterTitle');
@@ -1145,9 +1300,9 @@ async function openChapter(chapId) {
 
   if (!arrayBuffer) {
     container.innerHTML = `
-      <div style="text-align:center; padding:48px 24px; background:${M3.surface}; border-radius:28px; border:1px solid ${M3.wrongBg}; color:${M3.wrongText};">
-        <div style="font-size:15px; margin-bottom:8px;">找不到遠端題庫檔案 (ch${pad}_mcq_${lang}.docx)</div>
-        <div style="font-size:13px; color:${M3.textSub};">可點擊上方「載入 .docx」手動選擇題庫練習。</div>
+      <div style="text-align:center; padding:48px 24px; background:${M3.surface}; border-radius:28px; border:1px solid ${M3.outline}; color:${M3.textSub};">
+        <div style="font-size:15px; color:${M3.textMain}; margin-bottom:8px;">找不到遠端題庫檔案 (ch${pad}_mcq_${lang}.docx)</div>
+        <div style="font-size:13px;">可點擊上方「載入 .docx」手動選擇題庫練習。</div>
       </div>
     `;
     return;
@@ -1161,11 +1316,11 @@ async function openChapter(chapId) {
     if (window.ChemUserLog) window.ChemUserLog.setActiveChapter(chapId, list.length, lang);
     renderQuestions(list, chapId);
   } catch (err) {
-    container.innerHTML = `<div style="color:${M3.wrongText}; padding:32px; background:${M3.surface}; border-radius:28px;">解析失敗：${err.message}</div>`;
+    container.innerHTML = `<div style="color:${M3.textSub}; padding:32px; background:${M3.surface}; border-radius:28px;">解析失敗：${err.message}</div>`;
   }
 }
 
-// 12. 渲染題目卡片 (單次作答即鎖定)
+// 13. 渲染題目卡片 (Material You 強調色作答狀態 + 單次鎖死 + 防選取)
 function renderQuestions(qList, chapId) {
   const wrapper = switchRightPanelToChapterView();
   const container = wrapper.querySelector('#questionList');
@@ -1197,7 +1352,7 @@ function renderQuestions(qList, chapId) {
         </div>
         <div class="options-btn-group" style="display:flex; gap:10px;">
           ${['A', 'B', 'C', 'D'].map(k => `
-            <button type="button" class="opt-act-btn" data-opt="${k}" style="flex:1; padding:10px 2px; border:1px solid ${M3.outline}; border-radius:16px; background:${M3.bg}; color:${M3.primary}; cursor:pointer; font-size:14px; transition:all 0.15s ease;">
+            <button type="button" class="opt-act-btn" data-opt="${k}" style="flex:1; padding:10px 2px; border:1px solid ${M3.outline}; border-radius:16px; background:${M3.bg}; color:${M3.primary}; cursor:pointer; font-size:14px; transition:all 0.15s ease; display:inline-flex; align-items:center; justify-content:center; gap:4px;">
               ${k}
             </button>
           `).join('')}
@@ -1221,6 +1376,7 @@ function renderQuestions(qList, chapId) {
       img.style.height = 'auto';
       img.style.display = 'block';
       img.style.margin = '10px auto';
+      img.setAttribute('draggable', 'false');
     });
 
     DocxQuestionParser.stripGrayBoxNodes(card.querySelector('.q-native-body'));
@@ -1241,8 +1397,8 @@ function renderQuestions(qList, chapId) {
       if (playSound) SoundFX.playClick(isCorrect);
 
       if (statusPrompt) {
-        statusPrompt.textContent = `已鎖定：選 ${selectedOpt}（${isCorrect ? '答對' : '答錯'} · 結束當前 MC 前不可更改）`;
-        statusPrompt.style.color = isCorrect ? M3.correctText : M3.wrongText;
+        statusPrompt.textContent = `已鎖定：選 ${selectedOpt}（${isCorrect ? '對' : '錯'} · 結束當前 MC 前不可更改）`;
+        statusPrompt.style.color = isCorrect ? M3.primary : M3.textSub;
       }
 
       if (optGroup) {
@@ -1250,6 +1406,7 @@ function renderQuestions(qList, chapId) {
         optGroup.style.userSelect = 'none';
       }
 
+      // 純 Material You 強調色標示對錯（無紅綠背景）
       optBtns.forEach(b => {
         b.disabled = true;
         b.onclick = null;
@@ -1257,21 +1414,23 @@ function renderQuestions(qList, chapId) {
         b.style.pointerEvents = 'none';
 
         if (b.dataset.opt === q.answer) {
-          b.style.background = M3.correctBg;
-          b.style.color = M3.correctText;
-          b.style.borderColor = M3.correctText;
+          // 正解：Material You 主強調色實心填充
+          b.style.background = M3.primary;
+          b.style.color = '#FFFFFF';
+          b.style.border = `1px solid ${M3.primary}`;
           b.style.opacity = '1';
-          b.textContent = `${b.dataset.opt} (正解)`;
+          b.innerHTML = `${b.dataset.opt} ${SVG_ICONS.check}`;
         } else if (selectedOpt && b.dataset.opt === selectedOpt && selectedOpt !== q.answer) {
-          b.style.background = M3.wrongBg;
-          b.style.color = M3.wrongText;
-          b.style.borderColor = M3.wrongText;
+          // 誤選：Material You 柔霧紫藍容器 + 虛線邊框
+          b.style.background = M3.surfaceVariant;
+          b.style.color = M3.primary;
+          b.style.border = `1.5px dashed ${M3.primary}`;
           b.style.opacity = '1';
-          b.textContent = `${b.dataset.opt} (已選)`;
+          b.innerHTML = `${b.dataset.opt} ${SVG_ICONS.cross}`;
         } else {
           b.style.background = M3.surface;
           b.style.color = M3.textMuted;
-          b.style.borderColor = M3.outline;
+          b.style.border = `1px solid ${M3.outline}`;
           b.style.opacity = '0.35';
         }
       });
@@ -1305,7 +1464,7 @@ function renderQuestions(qList, chapId) {
         lockAndRenderOptionState(chosen, true);
 
         if (window.ChemUserLog) {
-          const res = window.ChemUserLog.recordQuestionAnswer({
+          window.ChemUserLog.recordQuestionAnswer({
             qId: q.id,
             qNumDisplay: q.qNumDisplay || `Q${qOrderNum}`,
             qOrder: qOrderNum,
@@ -1340,7 +1499,7 @@ function renderQuestions(qList, chapId) {
   });
 }
 
-// 13. 計算多個最近做過的課題
+// 14. 計算多個最近做過的課題
 function buildRecentTopicsList() {
   if (!window.ChemUserLog || !window.ChemUserLog.state) return [];
   const st = window.ChemUserLog.state;
@@ -1470,7 +1629,7 @@ function buildRecentTopicsList() {
     .sort((a, b) => (b.lastTimestamp || '').localeCompare(a.lastTimestamp || ''));
 }
 
-// 14. 首頁 Dashboard 渲染 (直接抄圖片裡的排布)
+// 15. 首頁 Dashboard 渲染 (左上角 HKDSE 標題 + 純 SVG 圖標 + Material You 強調色)
 function renderHomeDashboard() {
   let rightMain = document.getElementById('chemAppRootContainer') || document.body;
   let dashboardEl = document.getElementById('chemDashboardHome');
@@ -1478,7 +1637,7 @@ function renderHomeDashboard() {
   if (!dashboardEl) {
     dashboardEl = document.createElement('div');
     dashboardEl.id = 'chemDashboardHome';
-    dashboardEl.style.cssText = 'width:100%; max-width:600px; margin:0 auto; padding:16px 18px 120px 18px; box-sizing:border-box; font-family:sans-serif;';
+    dashboardEl.style.cssText = 'width:100%; max-width:600px; margin:0 auto; padding:16px 18px 110px 18px; box-sizing:border-box; font-family:sans-serif;';
     rightMain.appendChild(dashboardEl);
   }
 
@@ -1503,16 +1662,17 @@ function renderHomeDashboard() {
   const displayedRecentList = recentTopicsList.slice(0, visibleLimit);
   const muted = window.chemApp.isMuted;
 
-  // Recent Topics 渲染：仿圖中淡紫羅蘭柔霧藍 `#DFE3F8` 卡片與平鋪白色卡片
   const recentTopicsHtml =
     displayedRecentList.length === 0
       ? `
         <div style="background:${M3.surfaceVariant}; border-radius:28px; padding:22px; margin-bottom:16px;">
-          <div style="display:flex; align-items:center; gap:12px;">
-            <span style="font-size:24px;">🎨</span>
+          <div style="display:flex; align-items:center; gap:14px;">
+            <div style="width:38px; height:38px; border-radius:19px; background:${M3.surface}; color:${M3.primary}; display:flex; align-items:center; justify-content:center;">
+              ${SVG_ICONS.topicIcon}
+            </div>
             <div>
-              <div class="m3-title-medium" style="font-size:16px; color:${M3.textMain};">Harmonic Practice</div>
-              <div style="font-size:13px; color:${M3.textSub}; margin-top:2px;">尚未開始練習，點擊下方「課題目錄」開始刷題</div>
+              <div class="m3-title-medium" style="font-size:15px; color:${M3.textMain};">尚未開始練習</div>
+              <div style="font-size:13px; color:${M3.textSub}; margin-top:2px;">點擊右下角「目錄選單」選擇課題</div>
             </div>
           </div>
         </div>
@@ -1528,29 +1688,30 @@ function renderHomeDashboard() {
 
             const lapsSummaryHtml =
               item.laps && item.laps.length > 0
-                ? `<div style="font-size:11px; color:${M3.textSub}; margin-top:4px;">⏱️ 分圈 (${item.laps.length} 圈) · 最新 +${item.laps[0].splitText}</div>`
+                ? `<div style="font-size:11px; color:${M3.textSub}; margin-top:5px; display:flex; align-items:center; gap:4px;">${SVG_ICONS.timer} 分圈 (${item.laps.length} 圈) · 最新 +${item.laps[0].splitText} (總 ${item.laps[0].totalText})</div>`
                 : '';
 
             return `
               <div style="background:${cardBg}; border:1px solid ${isFirst ? 'transparent' : M3.outline}; border-radius:28px; padding:20px 22px; margin-bottom:14px; box-shadow:0 4px 18px rgba(72,84,122,0.03);">
-                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
-                  <div style="display:flex; align-items:center; gap:12px;">
-                    <span style="font-size:22px;">🎨</span>
-                    <div>
-                      <div class="m3-title-medium" style="font-size:16px; color:${M3.textMain};">
+                <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; margin-bottom:8px;">
+                  <div style="display:flex; align-items:center; gap:12px; min-width:0; flex:1;">
+                    <div style="width:38px; height:38px; border-radius:19px; background:${isFirst ? M3.surface : M3.surfaceVariant}; color:${M3.primary}; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+                      ${SVG_ICONS.topicIcon}
+                    </div>
+                    <div style="min-width:0; flex:1;">
+                      <div class="m3-title-medium" style="font-size:15px; color:${M3.textMain}; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
                         ${item.chapterName}
                       </div>
-                      <div style="font-size:13px; color:${M3.textSub}; margin-top:2px;">
+                      <div style="font-size:12px; color:${M3.textSub}; margin-top:2px;">
                         ${item.topicName} · 還差 ${item.remainingRate}% 完成
                       </div>
                     </div>
                   </div>
-                  <button class="recent-chap-jump-btn sound-trigger" data-chid="${item.chapId}" style="background:${M3.primary}; color:#fff; border:none; padding:8px 18px; border-radius:20px; font-size:12px; cursor:pointer;">
+                  <button class="recent-chap-jump-btn sound-trigger" data-chid="${item.chapId}" style="background:${M3.primary}; color:#fff; border:none; padding:8px 16px; border-radius:20px; font-size:12px; cursor:pointer; flex-shrink:0;">
                     繼續 &rsaquo;
                   </button>
                 </div>
 
-                <!-- 纖細滑軌風格進度條 -->
                 <div style="width:100%; background:${isFirst ? '#CBD2F3' : M3.surfaceVariant}; height:6px; border-radius:3px; overflow:hidden; margin:12px 0 8px 0;">
                   <div style="width:${item.completionRate}%; background:${M3.primary}; height:100%; transition:width 0.3s;"></div>
                 </div>
@@ -1565,17 +1726,18 @@ function renderHomeDashboard() {
           })
           .join('');
 
+  // 每日練習紀錄：對 / 錯 全部改為 Material You 強調色膠囊（無紅綠背景）
   const dailyListHtml =
     summary.dailyList.length === 0
-      ? `<div style="font-size:13px; color:${M3.textMuted}; text-align:center; padding:18px 0;">尚無今日作答記錄。</div>`
+      ? `<div style="font-size:13px; color:${M3.textMuted}; text-align:center; padding:18px 0;">尚無作答記錄。</div>`
       : summary.dailyList
           .map(
             item => `
-        <div class="daily-record-item sound-trigger" data-date="${item.date}" style="display:flex; justify-content:space-between; align-items:center; padding:12px 18px; background:${M3.surface}; border-radius:20px; margin-bottom:8px; border:1px solid ${M3.outline}; cursor:pointer;">
+        <div class="daily-record-item sound-trigger" data-date="${item.date}" style="display:flex; justify-content:space-between; align-items:center; padding:12px 16px; background:${M3.surface}; border-radius:20px; margin-bottom:8px; border:1px solid ${M3.outline}; cursor:pointer;">
           <div style="display:flex; align-items:center; gap:8px;">
             <span style="color:${M3.textMain}; font-size:13px;">${item.date}</span>
-            <span style="font-size:11px; color:${M3.correctText}; background:${M3.correctBg}; padding:2px 8px; border-radius:10px;">對 ${item.correctCount}</span>
-            <span style="font-size:11px; color:${M3.wrongText}; background:${M3.wrongBg}; padding:2px 8px; border-radius:10px;">錯 ${item.wrongCount}</span>
+            <span style="font-size:11px; color:${M3.primary}; background:${M3.surfaceVariant}; padding:2px 9px; border-radius:10px;">對 ${item.correctCount}</span>
+            <span style="font-size:11px; color:${M3.textSub}; background:${M3.surfaceMuted}; padding:2px 9px; border-radius:10px;">錯 ${item.wrongCount}</span>
           </div>
           <span style="color:${M3.primary}; font-size:13px;">答了 ${item.count} 題 &rsaquo;</span>
         </div>
@@ -1584,73 +1746,77 @@ function renderHomeDashboard() {
           .join('');
 
   dashboardEl.innerHTML = `
-    <!-- 頂部大標題排布 (完全仿照圖片 Material You / Theme for Home Assistant) -->
-    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:24px; padding:0 4px;">
-      <button id="topMenuHamburgerBtn" class="sound-trigger" style="background:none; border:none; font-size:22px; color:${M3.textMain}; cursor:pointer; padding:4px;">
-        ☰
+    <!-- 頂部圖標欄 -->
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; padding:0 4px;">
+      <button id="topMenuHamburgerBtn" class="sound-trigger" style="background:none; border:none; color:${M3.textMain}; cursor:pointer; padding:4px; display:inline-flex; align-items:center;">
+        ${SVG_ICONS.menu}
       </button>
-      <div style="display:flex; gap:12px; align-items:center;">
-        <button id="topAdminBtn" class="sound-trigger" style="background:none; border:none; font-size:18px; color:${M3.textSub}; cursor:pointer; padding:4px;" title="Admin">
-          ⋮
-        </button>
-      </div>
+      <button id="topAdminBtn" class="sound-trigger" style="background:none; border:none; color:${M3.textSub}; cursor:pointer; padding:4px; display:inline-flex; align-items:center;" title="Admin">
+        ${SVG_ICONS.moreVert}
+      </button>
     </div>
 
-    <div style="margin-bottom:28px; padding:0 4px;">
-      <h1 class="m3-title-medium" style="margin:0 0 6px 0; font-size:32px; color:${M3.textMain}; letter-spacing:-0.5px;">Material You</h1>
-      <div style="font-size:15px; color:${M3.textSub};">DSE Chemistry Question Bank · Wesley</div>
+    <!-- 左上角主標題改為 HKDSE -->
+    <div style="margin-bottom:26px; padding:0 4px;">
+      <h1 class="m3-title-medium" style="margin:0 0 6px 0; font-size:32px; color:${M3.textMain}; letter-spacing:-0.3px;">HKDSE</h1>
+      <div style="font-size:15px; color:${M3.textSub};">Chemistry Question Bank</div>
     </div>
 
-    <!-- 卡片 1：白色組件卡片 (完全抄圖片第 1 張卡片的開關與滑動條排布) -->
+    <!-- 卡片 1：控制組件卡片 -->
     <div class="m3-card" style="padding:22px 24px; margin-bottom:18px;">
-      <!-- Row 1: 音效開關 (Redesigned -> 音效反饋) -->
       <div style="display:flex; justify-content:space-between; align-items:center; padding-bottom:18px; border-bottom:1px solid ${M3.outline};">
         <div style="display:flex; align-items:center; gap:14px;">
-          <div style="width:36px; height:36px; border-radius:18px; background:${M3.bg}; display:flex; align-items:center; justify-content:center; color:${M3.primary}; font-size:17px;">
-            🔊
+          <div style="width:36px; height:36px; border-radius:18px; background:${M3.bg}; display:flex; align-items:center; justify-content:center; color:${M3.primary};">
+            ${!muted ? SVG_ICONS.volumeOn : SVG_ICONS.volumeOff}
           </div>
           <span style="font-size:15px; color:${M3.textMain};">音效反饋 (Sound FX)</span>
         </div>
-        <!-- 抄圖中石板靛藍色 Switch -->
         <div id="m3SoundSwitch" class="m3-switch-track" style="background-color:${!muted ? M3.primary : M3.surfaceTrack};">
           <div class="m3-switch-thumb" style="transform:${!muted ? 'translateX(26px)' : 'translateX(4px)'};"></div>
         </div>
       </div>
 
-      <!-- Row 2: 當前用戶與語言組件 (Components -> 學生 ID & 語言切換) -->
       <div style="display:flex; justify-content:space-between; align-items:center; padding-top:18px;">
         <div style="display:flex; align-items:center; gap:14px;">
-          <div style="width:36px; height:36px; border-radius:18px; background:${M3.bg}; display:flex; align-items:center; justify-content:center; color:${M3.primary}; font-size:17px;">
-            👤
+          <div style="width:36px; height:36px; border-radius:18px; background:${M3.bg}; display:flex; align-items:center; justify-content:center; color:${M3.primary};">
+            ${SVG_ICONS.person}
           </div>
           <div>
             <div style="font-size:15px; color:${M3.textMain};">登入學生</div>
             <div style="font-size:12px; color:${M3.textSub}; margin-top:2px;">${summary.studentId}</div>
           </div>
         </div>
-        <!-- 抄圖中滑塊控制器外觀 -->
         <div style="display:flex; align-items:center; gap:10px;">
           <div style="display:flex; background:${M3.surfaceVariant}; border-radius:16px; padding:3px; gap:2px;">
             <button id="langEnBtn" class="sound-trigger" style="border:none; background:${window.chemApp.currentLang === 'e' ? M3.primary : 'transparent'}; color:${window.chemApp.currentLang === 'e' ? '#fff' : M3.textSub}; padding:4px 12px; border-radius:14px; font-size:12px; cursor:pointer;">英</button>
             <button id="langZhBtn" class="sound-trigger" style="border:none; background:${window.chemApp.currentLang === 'c' ? M3.primary : 'transparent'}; color:${window.chemApp.currentLang === 'c' ? '#fff' : M3.textSub}; padding:4px 12px; border-radius:14px; font-size:12px; cursor:pointer;">中</button>
           </div>
-          <button id="homeLogoutBtn" class="sound-trigger" style="background:none; border:none; color:${M3.wrongText}; font-size:12px; cursor:pointer; padding:4px 6px;">
+          <button id="homeLogoutBtn" class="sound-trigger" style="background:${M3.surfaceMuted}; border:none; color:${M3.textSub}; font-size:12px; cursor:pointer; padding:6px 12px; border-radius:14px;">
             登出
           </button>
         </div>
       </div>
     </div>
 
-    <!-- 卡片 2：淡紫羅蘭柔霧藍強調卡片 (抄圖片第 2 張卡片 Harmonic Colors 排布) -->
+    <!-- 卡片 2：最近練習課題卡片 -->
     <div style="margin-bottom:18px;">
       ${recentTopicsHtml}
+      ${
+        recentTopicsList.length > 3
+          ? `<div style="text-align:center; margin-top:-4px; margin-bottom:12px;">
+              <button id="toggleMoreRecentBtn" class="sound-trigger" style="background:${M3.surface}; color:${M3.primary}; border:1px solid ${M3.outline}; padding:6px 16px; border-radius:16px; font-size:12px; cursor:pointer;">
+                ${window.chemApp.showAllRecentTopics ? '收起部分' : `顯示全部 (${recentTopicsList.length} 個章節)`}
+              </button>
+            </div>`
+          : ''
+      }
     </div>
 
-    <!-- 卡片 3：每日紀錄與刷題統計 (無視黃色，採用乾淨純白卡片) -->
+    <!-- 卡片 3：每日練習紀錄 -->
     <div class="m3-card" style="padding:22px 24px; margin-bottom:18px;">
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
-        <div style="display:flex; align-items:center; gap:12px;">
-          <span style="font-size:20px;">📅</span>
+        <div style="display:flex; align-items:center; gap:10px; color:${M3.primary};">
+          ${SVG_ICONS.calendar}
           <span class="m3-title-medium" style="font-size:15px; color:${M3.textMain};">每日練習紀錄</span>
         </div>
         <div style="display:flex; align-items:center; gap:6px;">
@@ -1684,10 +1850,16 @@ function renderHomeDashboard() {
     </div>
   `;
 
-  // 點擊音效 Switch 切換
   const switchEl = dashboardEl.querySelector('#m3SoundSwitch');
-  if (switchEl) {
-    switchEl.onclick = () => SoundFX.toggleMute();
+  if (switchEl) switchEl.onclick = () => SoundFX.toggleMute();
+
+  const toggleMoreBtn = dashboardEl.querySelector('#toggleMoreRecentBtn');
+  if (toggleMoreBtn) {
+    toggleMoreBtn.onclick = () => {
+      SoundFX.playClick();
+      window.chemApp.showAllRecentTopics = !window.chemApp.showAllRecentTopics;
+      renderHomeDashboard();
+    };
   }
 
   dashboardEl.querySelector('#topMenuHamburgerBtn').onclick = () => {
@@ -1748,72 +1920,6 @@ function renderHomeDashboard() {
     window.chemApp.currentLang = 'c';
     localStorage.setItem('CHEM_LANG_V47', 'c');
     renderHomeDashboard();
-  };
-}
-
-// ============================================================================
-// 15. 底部導覽列 (完全還原圖片最下方的 Home / Material Design / Settings 排布)
-// ============================================================================
-function renderBottomNavigationBar() {
-  let nav = document.getElementById('m3BottomNavBar');
-  const isLogged = window.ChemUserLog && window.ChemUserLog.currentUser !== null;
-
-  if (!isLogged) {
-    if (nav) nav.style.display = 'none';
-    return;
-  }
-
-  if (!nav) {
-    nav = document.createElement('div');
-    nav.id = 'm3BottomNavBar';
-    nav.style.cssText = `position:fixed; bottom:0; left:0; width:100vw; height:74px; background:${M3.bg}; border-top:1px solid ${M3.outline}; z-index:9998; display:flex; justify-content:space-around; align-items:center; font-family:sans-serif;`;
-    document.body.appendChild(nav);
-  }
-
-  nav.style.display = 'flex';
-  const isHome = window.chemApp.currentView === 'home';
-
-  nav.innerHTML = `
-    <!-- Tab 1: Home -->
-    <div id="m3NavHomeBtn" class="sound-trigger" style="display:flex; flex-direction:column; align-items:center; gap:4px; cursor:pointer; flex:1;">
-      <div style="width:60px; height:32px; border-radius:16px; background:${isHome ? M3.surfaceVariant : 'transparent'}; display:flex; align-items:center; justify-content:center; transition:all 0.2s ease;">
-        <span style="font-size:18px; color:${isHome ? M3.primary : M3.textSub};">🏠</span>
-      </div>
-      <span style="font-size:12px; color:${isHome ? M3.primary : M3.textSub};">Home</span>
-    </div>
-
-    <!-- Tab 2: Material Design (題目章節目錄) -->
-    <div id="m3NavChaptersBtn" class="sound-trigger" style="display:flex; flex-direction:column; align-items:center; gap:4px; cursor:pointer; flex:1;">
-      <div style="width:60px; height:32px; border-radius:16px; background:${!isHome ? M3.surfaceVariant : 'transparent'}; display:flex; align-items:center; justify-content:center; transition:all 0.2s ease;">
-        <span style="font-size:18px; color:${!isHome ? M3.primary : M3.textSub};">Ⓜ️</span>
-      </div>
-      <span style="font-size:12px; color:${!isHome ? M3.primary : M3.textSub};">Chapters</span>
-    </div>
-
-    <!-- Tab 3: Settings (Admin) -->
-    <div id="m3NavSettingsBtn" class="sound-trigger" style="display:flex; flex-direction:column; align-items:center; gap:4px; cursor:pointer; flex:1;">
-      <div style="width:60px; height:32px; border-radius:16px; background:transparent; display:flex; align-items:center; justify-content:center;">
-        <span style="font-size:18px; color:${M3.textSub};">⚙️</span>
-      </div>
-      <span style="font-size:12px; color:${M3.textSub};">Settings</span>
-    </div>
-  `;
-
-  nav.querySelector('#m3NavHomeBtn').onclick = () => {
-    SoundFX.playClick();
-    if (window.chemApp.currentView !== 'home') showHomeView();
-  };
-
-  nav.querySelector('#m3NavChaptersBtn').onclick = () => {
-    SoundFX.playClick();
-    renderCenterDirectoryModal();
-    const m = document.getElementById('centerDirectoryModal');
-    if (m) m.style.display = 'flex';
-  };
-
-  nav.querySelector('#m3NavSettingsBtn').onclick = () => {
-    SoundFX.playClick();
-    openDiscreetAdminModal();
   };
 }
 
@@ -1912,7 +2018,7 @@ function ensureAuthOverlay() {
 
   authOverlay.innerHTML = `
     <div style="background:${M3.surface}; padding:32px 34px; border-radius:28px; box-shadow:0 12px 36px rgba(72,84,122,0.08); width:100%; max-width:390px; text-align:center; border:1px solid ${M3.outline};">
-      <h2 class="m3-title-medium" style="margin:0 0 6px 0; color:${M3.primary}; font-size:22px; letter-spacing:0.5px;">CHEM QB</h2>
+      <h2 class="m3-title-medium" style="margin:0 0 6px 0; color:${M3.primary}; font-size:22px; letter-spacing:0.5px;">HKDSE</h2>
       <p style="font-size:13px; color:${M3.textSub}; margin:0 0 22px 0;">請輸入學生 ID 登入或註冊</p>
       
       <div style="display:flex; flex-direction:column; gap:14px; text-align:left;">
@@ -1935,7 +2041,7 @@ function ensureAuthOverlay() {
         </div>
       </div>
 
-      <div id="authErrorMsg" style="color:${M3.wrongText}; font-size:12px; margin-top:14px; min-height:18px; line-height:1.4;"></div>
+      <div id="authErrorMsg" style="color:${M3.textSub}; font-size:12px; margin-top:14px; min-height:18px; line-height:1.4;"></div>
 
       <div style="margin-top:12px; padding-top:10px; border-top:1px solid ${M3.outline}; display:flex; justify-content:flex-end;">
         <button id="loginOverlayAdminBtn" class="sound-trigger" style="background:transparent; border:none; color:${M3.textMuted}; font-size:11px; cursor:pointer; padding:2px 6px;">
@@ -1972,14 +2078,12 @@ function ensureAuthOverlay() {
 
   const submitAuth = async () => {
     SoundFX.playClick();
-    errMsg.style.color = M3.primary;
     errMsg.textContent = '正在驗證中...';
 
     if (!window.ChemUserLog) {
       await ensureUserLogModuleLoaded();
     }
     if (!window.ChemUserLog) {
-      errMsg.style.color = M3.wrongText;
       errMsg.textContent = '找不到 userlog.js！';
       return;
     }
@@ -1992,7 +2096,6 @@ function ensureAuthOverlay() {
     });
 
     if (!res.ok) {
-      errMsg.style.color = M3.wrongText;
       errMsg.textContent = res.message;
     } else {
       errMsg.textContent = '';
@@ -2047,7 +2150,7 @@ function cleanLegacyPageLayout() {
       child.tagName !== 'SCRIPT' &&
       child.id !== 'chemAppRootContainer' &&
       child.id !== 'chemAuthOverlay' &&
-      child.id !== 'm3BottomNavBar' &&
+      child.id !== 'floatingActionGroup' &&
       child.id !== 'centerDirectoryModal' &&
       child.id !== 'inlineConfirmModal' &&
       child.id !== 'chemAdminFullModal' &&
@@ -2070,9 +2173,10 @@ function cleanLegacyPageLayout() {
 // 19. 主程式啟動入口
 async function bootChemApp() {
   ensureStyleCssLoaded();
-  injectImageM3ThemeOverrides();
+  injectM3AndAntiSelectStyles();
   cleanLegacyPageLayout();
   const authOverlay = ensureAuthOverlay();
+  ensureFloatingActionGroup();
 
   document.addEventListener('click', (e) => {
     const target = e.target.closest('button, .sound-trigger');
@@ -2082,7 +2186,9 @@ async function bootChemApp() {
       !target.classList.contains('peek-ans-btn') &&
       target.id !== 'timerToggleBtn' &&
       target.id !== 'timerLapBtn' &&
-      target.id !== 'timerResetBtn'
+      target.id !== 'timerResetBtn' &&
+      target.id !== 'floatingTimerToggleBtn' &&
+      target.id !== 'floatingTimerLapBtn'
     ) {
       SoundFX.playClick();
     }
@@ -2121,12 +2227,13 @@ async function bootChemApp() {
         if (window.chemApp.currentView !== 'chapter') {
           showHomeView();
         } else {
-          renderBottomNavigationBar();
+          updateFloatingButtonsVisibility();
           const activeId = window.chemApp.activeChapterId;
           const dbKey = `${window.chemApp.currentLang}_${activeId}`;
           if (activeId && window.chemApp.questionsDB[dbKey]) {
             loadChapterTimerAndLapsFromCloud(activeId);
             updateTimerDisplay();
+            syncAllTimerButtonsText();
             renderChapterLapsUI();
             renderQuestions(window.chemApp.questionsDB[dbKey], activeId);
           }
@@ -2136,13 +2243,12 @@ async function bootChemApp() {
         }
       } else {
         authOverlay.style.display = 'flex';
-        renderBottomNavigationBar();
+        updateFloatingButtonsVisibility();
       }
     });
 
     window.ChemUserLog.onStateChange(() => {
       renderHomeDashboard();
-      renderBottomNavigationBar();
     });
 
     await window.ChemUserLog.initFirebase(FIREBASE_CONFIG);
