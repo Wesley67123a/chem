@@ -448,3 +448,53 @@
     startCh41Patch();
   }
 })();
+/**
+ * ============================================================================
+ * Additional Patch Snippet for Chapter 41: Gas Syringe Label Cleanup (MCQ41020)
+ * Append this snippet to the bottom of your existing patches/patch_ch41.js
+ * ============================================================================
+ */
+(function() {
+  const observer = new MutationObserver(() => {
+    document.querySelectorAll('.question-card').forEach(card => {
+      const qNum = card.querySelector('.q-number');
+      if (qNum && qNum.textContent.trim() === 'ChemMCQ41020') {
+        const body = card.querySelector('.q-native-body');
+        if (body && !body.dataset.patch41020Cleaned) {
+          body.dataset.patch41020Cleaned = 'true';
+          
+          // 找出氣筒圖片
+          const syringeImg = body.querySelector('img');
+          if (syringeImg) {
+            // 收集氣筒周圍散落的說明文字
+            const trashKeywords = ['a gaseous mixture', 'plunger', 'rubber cap', 'gas syringe'];
+            const collectedLabels = [];
+            
+            Array.from(body.querySelectorAll('p, div')).forEach(el => {
+              const txt = (el.textContent || '').trim();
+              const lower = txt.toLowerCase();
+              if (trashKeywords.some(k => lower.includes(k)) && txt.length < 50 && !el.querySelector('img')) {
+                collectedLabels.push(txt);
+                el.style.display = 'none'; // 隱藏散落的漂浮文字
+              }
+            });
+            
+            if (collectedLabels.length > 0) {
+              // 在氣筒圖片下方建立一個簡潔漂亮的圖例說明框
+              const captionBox = document.createElement('div');
+              captionBox.style.cssText = 'background:#EEF0F8; color:#48547A; font-size:12px; padding:8px 14px; border-radius:12px; text-align:center; margin:10px auto; max-width:85%; border:1px solid #DFE3F8; font-family:sans-serif; line-height:1.5;';
+              captionBox.innerHTML = '<b>Gas Syringe Labels:</b> ' + collectedLabels.join(' &nbsp;·&nbsp; ');
+              
+              const anchor = syringeImg.closest('p, div') || syringeImg;
+              anchor.parentNode.insertBefore(captionBox, anchor.nextSibling);
+            }
+          }
+        }
+      }
+    });
+  });
+
+  const root = document.getElementById('chemAppRootContainer') || document.body;
+  observer.observe(root, { childList: true, subtree: true });
+})();
+
