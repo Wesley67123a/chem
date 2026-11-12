@@ -1,31 +1,25 @@
 /**
  * ============================================================================
- * HKDSE Chemistry Question Bank - Chapter 41 Dedicated 2D Reconstruction Patch
- * File: patches/patch_ch41.js (v61.2 - Enlarged Graphs, Exact Coordinates & Clean Sweep)
- * Description:
- *   1. Enlarges all Ch41 graphs (~30% bigger, crisp 285px stage) with pixel-accurate
- *      2D overlay coordinates for Y-axis (including units like "Concentration / mol dm⁻³",
- *      "Concentration / M", "Kc"), X-axis ("Time", "Time / s", "Temperature"),
- *      dashed-line time markers (t, t', t₁, t₂), and curve-end species labels.
- *   2. Sweeps all remaining stray floating textbox debris so zero extra text leaks.
- *   3. Aligns 2-column & 4-column option/data tables (MCQ41026, 41046, 41048, 41053).
+ * HKDSE Chemistry Question Bank - Chapter 41 Dedicated Layout & Graph Patch
+ * File: patches/patch_ch41.js (v62.0 - Enlarged Graphs, Curve-Aligned Labels & Option Tables)
+ * Target: Chapter 41 (Chemical Equilibrium)
  * ============================================================================
  */
 
 (function () {
   'use strict';
 
-  console.log('[Patch Ch41 v61.2] Enlarged 2D Graph & Clean Sweep Engine Loaded.');
+  console.log('[Patch Ch41 v62.0] Enlarged 2D Graph, Debris Purge & Option Table Engine Loaded.');
 
   // ===========================================================================
-  // 1. 注入專屬 CSS 樣式
+  // 1. 注入專屬樣式：放大圖表、精準曲線對齊、標準 3 欄選項表格
   // ===========================================================================
   function injectStyles() {
-    if (document.getElementById('ch41PatchV61Styles')) return;
+    if (document.getElementById('ch41PatchV62Styles')) return;
     const style = document.createElement('style');
-    style.id = 'ch41PatchV61Styles';
+    style.id = 'ch41PatchV62Styles';
     style.textContent = `
-      /* 拆除所有誤加在圖片上的白框與邊框 */
+      /* 徹底清除圖片多餘白框與陰影 */
       .q-native-body img,
       .exp-body img {
         background: transparent !important;
@@ -35,7 +29,7 @@
         border-radius: 0 !important;
       }
 
-      /* 行內可逆反應符號 ⇌ 與文字基線 100% 對齊 */
+      /* 行內可逆反應符號 ⇌ 水平對齊 */
       .ch41-eq-arrow {
         display: inline-flex !important;
         align-items: center !important;
@@ -44,13 +38,11 @@
         margin: 0 5px !important;
         font-family: "Times New Roman", Cambria, serif !important;
         font-size: 18px !important;
-        font-weight: normal !important;
         line-height: 1 !important;
         color: #111111 !important;
         transform: translateY(-1px) !important;
       }
 
-      /* 合併後的單行化學反應式 */
       .ch41-reaction-line {
         display: block !important;
         margin: 8px 0 !important;
@@ -64,18 +56,18 @@
         margin: 10px 0 !important;
       }
 
-      /* 2D 座標圖重組畫布 (放大版 285px，高解析度清晰呈現) */
-      .ch41-2d-graph-stageWrapper {
+      /* 放大版 2D 座標圖畫布 */
+      .ch41-2d-graph-wrapper {
         width: 100% !important;
         text-align: center !important;
         overflow-x: auto !important;
-        margin: 8px 0 12px 0 !important;
+        margin: 10px 0 14px 0 !important;
       }
       .ch41-2d-graph-stage {
         position: relative !important;
         display: inline-block !important;
         margin: 6px auto !important;
-        padding: 10px 76px 34px 48px !important;
+        padding: 8px 68px 28px 42px !important;
         background: transparent !important;
         font-family: "Times New Roman", Times, serif !important;
         color: #111111 !important;
@@ -83,28 +75,25 @@
         box-sizing: content-box !important;
         user-select: none;
       }
-      .ch41-2d-graph-stage > img.ch41-stage-img {
+      /* 放大單張圖表尺寸 (清楚易讀，手機/iPad 自適應) */
+      .ch41-2d-graph-stage > img.ch41-stage-img,
+      .q-native-body img.ch41-enlarged-standalone-img {
         display: block !important;
-        width: 285px !important;
-        max-width: none !important;
-        max-height: none !important;
+        width: 295px !important;
+        max-width: 82vw !important;
+        max-height: 240px !important;
         height: auto !important;
-        margin: 0 !important;
+        margin: 10px auto !important;
         object-fit: contain !important;
       }
-      @media (max-width: 440px) {
-        .ch41-2d-graph-stage {
-          padding: 10px 66px 32px 42px !important;
-        }
-        .ch41-2d-graph-stage > img.ch41-stage-img {
-          width: 235px !important;
-        }
+      .ch41-2d-graph-stage > img.ch41-stage-img {
+        margin: 0 !important;
       }
 
-      /* Y 軸垂直旋轉標籤 (如 Concentration / mol dm⁻³, Kc) */
+      /* Y 軸垂直旋轉標籤 (如 Concentration / Kc) */
       .ch41-ylabel-rot {
         position: absolute !important;
-        left: 20px !important;
+        left: 16px !important;
         top: 45% !important;
         transform: translate(-50%, -50%) rotate(-90deg) !important;
         transform-origin: center center !important;
@@ -113,22 +102,11 @@
         font-size: 15px !important;
         color: #111111 !important;
       }
-      /* 若 Y 軸是短符號 (如 Kc)，保持水平置中在 Y 軸左側 */
-      .ch41-ylabel-horiz {
-        position: absolute !important;
-        left: 24px !important;
-        top: 44% !important;
-        transform: translate(-50%, -50%) !important;
-        white-space: nowrap !important;
-        font-family: "Times New Roman", Times, serif !important;
-        font-size: 16px !important;
-        color: #111111 !important;
-      }
 
-      /* 右側曲線末端物種標籤 (緊貼圖片右緣) */
+      /* 右側曲線末端物種標籤 (精準對齊三條水平線高度) */
       .ch41-curve-label {
         position: absolute !important;
-        left: calc(100% - 72px) !important;
+        left: calc(100% - 62px) !important;
         white-space: nowrap !important;
         font-family: "Times New Roman", Times, serif !important;
         font-size: 15px !important;
@@ -137,11 +115,11 @@
         text-align: left !important;
       }
 
-      /* X 軸底部時間/溫度標籤 */
+      /* X 軸底部時間/變數標籤 */
       .ch41-xlabel-time {
         position: absolute !important;
-        right: 68px !important;
-        bottom: 6px !important;
+        right: 54px !important;
+        bottom: 3px !important;
         white-space: nowrap !important;
         font-family: "Times New Roman", Times, serif !important;
         font-size: 15px !important;
@@ -149,28 +127,29 @@
       }
       .ch41-xlabel-t {
         position: absolute !important;
-        bottom: 7px !important;
+        bottom: 4px !important;
         transform: translateX(-50%) !important;
         white-space: nowrap !important;
         font-family: "Times New Roman", Times, serif !important;
+        font-style: italic !important;
         font-size: 15px !important;
         color: #111111 !important;
       }
 
-      /* 2x2 四格濃度圖 (放大版，如 ChemMCQ41019) */
+      /* 放大版 2x2 四格選項圖 (如 ChemMCQ41019) */
       .ch41-2x2-option-grid {
         display: grid !important;
-        grid-template-columns: repeat(2, minmax(225px, 1fr)) !important;
-        gap: 24px 20px !important;
+        grid-template-columns: repeat(2, minmax(220px, 1fr)) !important;
+        gap: 22px 16px !important;
         width: 100% !important;
         max-width: 620px !important;
-        margin: 16px auto 20px auto !important;
+        margin: 14px auto 18px auto !important;
         box-sizing: border-box !important;
       }
-      @media (max-width: 520px) {
+      @media (max-width: 540px) {
         .ch41-2x2-option-grid {
-          grid-template-columns: repeat(2, minmax(155px, 1fr)) !important;
-          gap: 16px 8px !important;
+          grid-template-columns: repeat(2, minmax(152px, 1fr)) !important;
+          gap: 14px 8px !important;
         }
       }
       .ch41-2x2-cell {
@@ -178,16 +157,14 @@
         display: flex !important;
         align-items: flex-start !important;
         justify-content: center !important;
-        padding: 4px 4px 24px 28px !important;
-        background: transparent !important;
-        border: none !important;
+        padding: 4px 4px 22px 26px !important;
       }
       .ch41-2x2-optletter {
         position: absolute !important;
         left: 0 !important;
         top: 0 !important;
         font-family: "Times New Roman", Times, serif !important;
-        font-size: 16px !important;
+        font-size: 15.5px !important;
         color: #111111 !important;
       }
       .ch41-2x2-miniStage {
@@ -197,32 +174,32 @@
       }
       .ch41-2x2-miniStage > img {
         display: block !important;
-        width: 175px !important;
+        width: 165px !important;
         max-width: 100% !important;
         height: auto !important;
         margin: 0 !important;
       }
-      @media (max-width: 520px) {
+      @media (max-width: 540px) {
         .ch41-2x2-miniStage > img {
-          width: 132px !important;
+          width: 126px !important;
         }
       }
 
-      /* 氣筒實驗裝置 2D 重組畫布 (放大版 290px, ChemMCQ41020) */
+      /* 氣筒實驗裝置 2D 畫布 (ChemMCQ41020) */
       .ch41-syringe-stage {
         position: relative !important;
-        width: 360px !important;
-        max-width: 98% !important;
-        margin: 18px auto !important;
-        padding: 38px 10px 34px 10px !important;
+        width: 340px !important;
+        max-width: 96% !important;
+        margin: 16px auto !important;
+        padding: 36px 10px 32px 10px !important;
         font-family: "Times New Roman", Times, serif !important;
-        font-size: 15px !important;
+        font-size: 14.5px !important;
         color: #111111 !important;
         text-align: center !important;
       }
       .ch41-syringe-stage > img {
         display: block !important;
-        width: 290px !important;
+        width: 265px !important;
         max-width: 92% !important;
         height: auto !important;
         margin: 0 auto !important;
@@ -247,45 +224,49 @@
         padding: 2px 5px 0 5px !important;
       }
 
-      /* 教科書風格對齊表格 */
-      .ch41-textbook-table {
+      /* 標準 3 欄對齊選項表格 (解決圖1、圖4、圖5假表格歪斜問題) */
+      .ch41-option-table {
         width: 100% !important;
-        max-width: 560px !important;
+        max-width: 580px !important;
         border-collapse: collapse !important;
-        margin: 12px auto !important;
-        font-family: "Times New Roman", Times, serif !important;
+        margin: 14px 0 16px 0 !important;
+        font-family: "Times New Roman", "Noto Serif TC", serif !important;
         font-size: 15.5px !important;
-        color: #111111 !important;
+        color: #1D1F2C !important;
       }
-      .ch41-textbook-table th,
-      .ch41-textbook-table td {
+      .ch41-option-table th {
+        padding: 6px 10px 8px 10px !important;
+        text-align: left !important;
+        vertical-align: bottom !important;
+        font-weight: normal !important;
+        text-decoration: underline !important;
+        color: #1D1F2C !important;
+      }
+      .ch41-option-table td {
         padding: 7px 10px !important;
-        text-align: center !important;
+        text-align: left !important;
         vertical-align: middle !important;
         border: none !important;
+        line-height: 1.45 !important;
       }
-      .ch41-textbook-table thead th {
-        border-bottom: 1.5px solid #1D1F2C !important;
-        font-weight: normal !important;
+      .ch41-option-table td.opt-col-letter {
+        width: 34px !important;
+        padding-left: 2px !important;
+        padding-right: 4px !important;
+        white-space: nowrap !important;
       }
     `;
     document.head.appendChild(style);
   }
 
-  // 輔助：將純文字化學式/變數轉為標準斜體與上下標 HTML
   function formatChemLabelHtml(raw) {
     if (!raw) return '';
     const t = raw.trim();
     if (/^[ABC]\(g\)$/.test(t)) return `<i>${t[0]}</i>(g)`;
-    if (/^Kc$/i.test(t)) return '<i>K</i><sub>c</sub>';
-    if (/^Qc$/i.test(t)) return '<i>Q</i><sub>c</sub>';
+    if (t === 'Kc' || t === 'Qc') return `<i>${t[0]}</i><sub>c</sub>`;
     if (t === 't') return '<i>t</i>';
     if (t === "t'" || t === 't\u2032') return '<i>t</i>&prime;';
-    if (t === 't1' || t === 't₁') return '<i>t</i><sub>1</sub>';
-    if (t === 't2' || t === 't₂') return '<i>t</i><sub>2</sub>';
     return t
-      .replace(/\bt1\b/g, '<i>t</i><sub>1</sub>')
-      .replace(/\bt2\b/g, '<i>t</i><sub>2</sub>')
       .replace(/([A-Za-z\])])(\d+)/g, '$1<sub>$2</sub>')
       .replace(/dm-3|dm−3/g, 'dm<sup>&minus;3</sup>');
   }
@@ -298,7 +279,7 @@
     if (!txt) return false;
     const t = txt.trim();
     if (!t || t.length > 90) return false;
-    if (/\b(which|following|consider|mixture|volume|temperature|system|statement|graph|shows|change|flask|moment|quotient|allowed|compressed|deductions)\b/i.test(t)) {
+    if (/\b(which|following|consider|mixture|volume|temperature|system|statement|graph|shows|change|flask|moment|quotient|allowed|compressed)\b/i.test(t)) {
       return false;
     }
     return (
@@ -318,29 +299,24 @@
       if (w >= 92 && h >= 72) return false;
     }
     const src = img.getAttribute('src') || '';
-    if (src.startsWith('data:image/') && src.length < 3500) {
-      return true;
-    }
-    if (isChemHalf(prevText) && isChemHalf(nextText)) {
-      return true;
-    }
+    if (src.startsWith('data:image/') && src.length < 3500) return true;
+    if (isChemHalf(prevText) && isChemHalf(nextText)) return true;
     return false;
   }
 
   // ===========================================================================
-  // STEP 1: 拯救並還原所有被 app.js 誤拆或誤包進 Grid 的 `⇌` 平衡方程式
+  // STEP 1: 解救並合併斷行的 ⇌ 平衡方程式
   // ===========================================================================
   function rescueEquilibriumEquations(body) {
     Array.from(body.querySelectorAll('div')).forEach(div => {
       if (
         div.classList.contains('ch41-2d-graph-stage') ||
-        div.classList.contains('ch41-2d-graph-stageWrapper') ||
+        div.classList.contains('ch41-2d-graph-wrapper') ||
         div.classList.contains('ch41-2x2-option-grid') ||
         div.classList.contains('ch41-syringe-stage')
       ) {
         return;
       }
-
       const styleAttr = div.getAttribute('style') || '';
       const imgs = Array.from(div.querySelectorAll('img'));
 
@@ -354,7 +330,6 @@
               el.querySelectorAll('img').length === 0 &&
               (el.textContent || '').trim() === ''
           );
-
           imgs.forEach((img, idx) => {
             if (isSmallArrowImage(img) && emptyBoxes[idx]) {
               emptyBoxes[idx].appendChild(img);
@@ -370,9 +345,7 @@
       }
 
       if (imgs.length <= 1 && (div.textContent || '').trim() === '' && div.parentNode) {
-        if (imgs.length === 1) {
-          div.parentNode.insertBefore(imgs[0], div);
-        }
+        if (imgs.length === 1) div.parentNode.insertBefore(imgs[0], div);
         div.remove();
       }
     });
@@ -415,7 +388,6 @@
         const isNumbered = /^\([1-3]\)|^[A-D]\./.test(prevTxt);
         merged.className = isNumbered ? 'ch41-reaction-line' : 'ch41-reaction-line ch41-reaction-center';
         merged.innerHTML = `${prev.innerHTML.trim()} <span class="ch41-eq-arrow">&#8652;</span> ${next.innerHTML.trim()}`;
-
         curr.parentNode.insertBefore(merged, prev);
         prev.remove();
         curr.remove();
@@ -425,22 +397,41 @@
   }
 
   // ===========================================================================
-  // STEP 2: 單張座標圖 + 散落標籤「2D 精準原地重組 + 徹底清場」
+  // STEP 2: 徹底清除圖表下方多出來的雜訊文字 (如 Concentration / mol dm-3, Time / s, t1 t2)
+  //         並放大單張圖表 + 精準對齊曲線與軸標籤
   // ===========================================================================
-  function reconstructSingle2DGraph(body, qCode) {
-    if (body.querySelector('.ch41-2d-graph-stage')) return;
-
+  function processSingleGraphAndDebris(body, qCode) {
     const graphImgs = Array.from(body.querySelectorAll('img')).filter(img => !isSmallArrowImage(img));
     if (graphImgs.length !== 1) return;
 
     const mainImg = graphImgs[0];
     const fullText = (body.textContent || '').toLowerCase();
 
+    // 氣筒題 (ChemMCQ41020)
     if (qCode === 'ChemMCQ41020' || fullText.includes('gas syringe')) {
       reconstructSyringeDiagram(body, mainImg);
       return;
     }
 
+    // 2A. 清除「圖片內部已經畫好字、但 Word 轉檔又在圖下面重複吐出來」的多餘殘留行
+    //     例如圖1的 "Concentration / mol dm-3", "t1 t2"；圖3的 "Concentration / M", "Time / s"
+    Array.from(body.querySelectorAll('p, div')).forEach(el => {
+      if (el.querySelector('img, table') || el.classList.contains('ch41-reaction-line')) return;
+      const raw = (el.textContent || '').replace(/\s+/g, ' ').trim();
+      const low = raw.toLowerCase();
+      if (!raw || raw.length > 42) return;
+
+      if (
+        /^concentration\s*\/\s*(?:mol\s*dm|m)/i.test(low) ||
+        /^time\s*\/\s*(?:s|min)/i.test(low) ||
+        /^t1\s*t2$/i.test(low) ||
+        /^t₁\s*t₂$/i.test(low)
+      ) {
+        el.remove();
+      }
+    });
+
+    // 2B. 掃描真正的浮動軸/曲線標籤 (尚未畫在圖裡面的散落標籤)
     let yAxisLabel = '';
     let xAxisLabel = '';
     const timeMarkers = [];
@@ -451,11 +442,10 @@
       if (el.querySelector('img, table') || el.classList.contains('ch41-reaction-line')) return;
       const raw = (el.textContent || '').replace(/\s+/g, ' ').trim();
       const low = raw.toLowerCase();
-      if (!raw || raw.length > 42) return;
+      if (!raw || raw.length > 36) return;
 
-      // 1. 識別 Y 軸標籤（支援 Concentration / mol dm⁻³, Concentration / M, Kc, Rate, Yield...）
       if (
-        /^concentration(?:\s*\/\s*(?:mol\s*dm\s*(?:-3|−3|\u207B\u00B3)?|m))?$/i.test(low) ||
+        low === 'concentration' ||
         low === 'kc' ||
         low === 'qc' ||
         low === 'rate' ||
@@ -463,39 +453,20 @@
         low.startsWith('yield of product') ||
         /^\[[a-z0-9\(\)\+\-]+\]$/i.test(raw)
       ) {
-        // 若同時有 "Concentration" 和 "Concentration / mol dm-3"，優先保留最完整有單位的那個
-        if (!yAxisLabel || raw.length > yAxisLabel.length) {
-          yAxisLabel = raw;
+        yAxisLabel = raw;
+        nodesToRemove.push(el);
+      } else if (low === 'time' || low === 'temperature' || low === 'pressure') {
+        xAxisLabel = raw;
+        nodesToRemove.push(el);
+      } else if (/^t(?:\s*t['\u2032]?)?$|^t['\u2032]$/.test(low)) {
+        if (low.includes("'") || low.includes('\u2032')) {
+          if (low.startsWith('t ') && low.length >= 3) timeMarkers.push('t', "t'");
+          else timeMarkers.push("t'");
+        } else {
+          timeMarkers.push('t');
         }
         nodesToRemove.push(el);
-      }
-      // 2. 識別 X 軸標籤（支援 Time, Time / s, Time / min, Temperature, Pressure）
-      else if (
-        /^time(?:\s*\/\s*(?:s|min|hr))?$/i.test(low) ||
-        low === 'temperature' ||
-        low === 'pressure'
-      ) {
-        if (!xAxisLabel || raw.length > xAxisLabel.length) {
-          xAxisLabel = raw;
-        }
-        nodesToRemove.push(el);
-      }
-      // 3. 識別 X 軸時間點標記 (t, t', t t', t1, t2, t1 t2)
-      else if (/^t[12₁₂'′]?(?:\s+t[12₁₂'′]?)?$/.test(low)) {
-        if (low.includes('1') || low.includes('₁')) timeMarkers.push('t1');
-        if (low.includes('2') || low.includes('₂')) timeMarkers.push('t2');
-        if (!low.includes('1') && !low.includes('2') && !low.includes('₁') && !low.includes('₂')) {
-          if (low.includes("'") || low.includes('\u2032')) {
-            if (low.startsWith('t ') && low.length >= 3) timeMarkers.push('t', "t'");
-            else timeMarkers.push("t'");
-          } else {
-            timeMarkers.push('t');
-          }
-        }
-        nodesToRemove.push(el);
-      }
-      // 4. 識別右側曲線標籤 (CO(g), CO2(g), I2(g), H2(g), HI(g), A(g), B(g), C(g), NO(g), Cl2(g), NOCl(g), 10 atm...)
-      else if (
+      } else if (
         /^[A-Za-z0-9]+\([glsaq]{1,2}\)$/.test(raw) ||
         /^\d+\s*atm$/i.test(raw) ||
         low === 'forward reaction' ||
@@ -506,39 +477,35 @@
       }
     });
 
+    // 若這張圖本身已經內含完整文字 (如圖1 ChemMCQ41079、圖3 ChemMCQ41043)，只需直接放大圖片即可！
     if (!yAxisLabel && !xAxisLabel && curveSpecies.length === 0 && timeMarkers.length === 0) {
+      mainImg.classList.add('ch41-enlarged-standalone-img');
       return;
     }
 
+    // 否則為空白座標圖 (如圖2 ChemMCQ41067 缺了 Y 軸 Kc，或 ChemMCQ41018/41028 缺了曲線標籤) 建立放大版 2D 畫布
+    if (body.querySelector('.ch41-2d-graph-stage')) return;
+
     if (!yAxisLabel && fullText.includes('concentration')) yAxisLabel = 'Concentration';
-    if (!xAxisLabel && (timeMarkers.length > 0 || fullText.includes('time'))) xAxisLabel = 'Time';
+    // 注意：像圖2 (ChemMCQ41067) X 軸圖裡已經畫了 Temperature，就不要多加 Time
+    if (!xAxisLabel && (timeMarkers.length > 0 || fullText.includes('with time'))) xAxisLabel = 'Time';
 
-    // 針對已知題號精準排定曲線由上到下順序，並計算該圖形專屬的垂直高度百分比
     let orderedCurves = curveSpecies.slice();
-    let customCurveTops = null;
-
     if (qCode === 'ChemMCQ41018' || (curveSpecies.includes('A(g)') && curveSpecies.includes('C(g)'))) {
       orderedCurves = ['C(g)', 'B(g)', 'A(g)'];
-      customCurveTops = ['22%', '63%', '82%'];
     } else if (qCode === 'ChemMCQ41028' || (curveSpecies.includes('NO(g)') && curveSpecies.includes('NOCl(g)'))) {
       orderedCurves = ['NO(g)', 'Cl2(g)', 'NOCl(g)'];
-      customCurveTops = ['24%', '58%', '80%'];
-    } else if (qCode === 'ChemMCQ41043' || (curveSpecies.includes('I2(g)') && curveSpecies.includes('HI(g)'))) {
-      // 圖3 (ChemMCQ41043): 由上到下依序為 I2(g) [最上方高線], H2(g) [中間線], HI(g) [最下方低線]
-      orderedCurves = ['I2(g)', 'H2(g)', 'HI(g)'];
-      customCurveTops = ['18%', '67%', '83%'];
-    } else if (qCode === 'ChemMCQ41079' || (curveSpecies.includes('CO(g)') && curveSpecies.includes('CO2(g)'))) {
-      // 圖1 (ChemMCQ41079): t2 後上方曲線為 CO(g)，下方曲線為 CO2(g)
-      orderedCurves = ['CO(g)', 'CO2(g)'];
-      customCurveTops = ['27%', '77%'];
     }
 
-    // 建立 2D 畫布容器
     const wrapper = document.createElement('div');
-    wrapper.className = 'ch41-2d-graph-stageWrapper';
+    wrapper.className = 'ch41-2d-graph-wrapper';
 
     const stage = document.createElement('div');
     stage.className = 'ch41-2d-graph-stage';
+    // 若沒有右側曲線文字 (如圖2 ChemMCQ41067)，減少右側留白讓圖更置中
+    if (orderedCurves.length === 0) {
+      stage.style.paddingRight = '24px';
+    }
 
     const imgAnchor = mainImg.closest('p, div') || mainImg;
     imgAnchor.parentNode.insertBefore(wrapper, imgAnchor);
@@ -546,69 +513,61 @@
     mainImg.className = 'ch41-stage-img';
     stage.appendChild(mainImg);
 
-    // 貼上左側 Y 軸標籤
     if (yAxisLabel) {
       const yEl = document.createElement('div');
-      const isShortSymbol = yAxisLabel.length <= 4; // 例如 Kc, Qc
-      yEl.className = isShortSymbol ? 'ch41-ylabel-horiz' : 'ch41-ylabel-rot';
+      yEl.className = 'ch41-ylabel-rot';
       yEl.innerHTML = formatChemLabelHtml(yAxisLabel);
       stage.appendChild(yEl);
     }
 
-    // 貼上右側曲線末端標籤
     if (orderedCurves.length > 0) {
-      const defaultTops =
+      // 精準對齊放大後 295px 圖表的三條水平曲線末端高度
+      const topPositions =
         orderedCurves.length === 3
-          ? ['22%', '63%', '82%']
+          ? ['24%', '65%', '83%']
           : orderedCurves.length === 2
-          ? ['28%', '76%']
+          ? ['32%', '74%']
           : ['50%'];
-      const tops = customCurveTops || defaultTops;
 
       orderedCurves.forEach((cTxt, idx) => {
         const cEl = document.createElement('div');
         cEl.className = 'ch41-curve-label';
-        cEl.style.top = tops[idx] || `${25 + idx * 25}%`;
+        cEl.style.top = topPositions[idx] || `${25 + idx * 25}%`;
         cEl.innerHTML = formatChemLabelHtml(cTxt);
         stage.appendChild(cEl);
       });
     }
 
-    // 貼上底部 X 軸虛線時間點 (t, t', t1, t2)
     const uniqueT = Array.from(new Set(timeMarkers));
     if (uniqueT.length === 1) {
       const tEl = document.createElement('div');
       tEl.className = 'ch41-xlabel-t';
-      tEl.style.left = '43%';
+      tEl.style.left = orderedCurves.length > 0 ? '42%' : '48%';
       tEl.innerHTML = formatChemLabelHtml(uniqueT[0]);
       stage.appendChild(tEl);
     } else if (uniqueT.length >= 2) {
-      // 雙虛線圖 (如 ChemMCQ41079 的 t1 與 t2)
-      const isT1T2 = uniqueT.includes('t1') && uniqueT.includes('t2');
       const t1 = document.createElement('div');
       t1.className = 'ch41-xlabel-t';
-      t1.style.left = isT1T2 ? '44%' : '37%';
-      t1.innerHTML = formatChemLabelHtml(uniqueT[0]);
+      t1.style.left = '35%';
+      t1.innerHTML = '<i>t</i>';
       stage.appendChild(t1);
 
       const t2 = document.createElement('div');
       t2.className = 'ch41-xlabel-t';
-      t2.style.left = isT1T2 ? '61%' : '56%';
-      t2.innerHTML = formatChemLabelHtml(uniqueT[1]);
+      t2.style.left = '54%';
+      t2.innerHTML = '<i>t</i>&prime;';
       stage.appendChild(t2);
     }
 
-    // 貼上右下角 X 軸變數名稱 (如 Time, Time / s, Temperature)
     if (xAxisLabel) {
       const xEl = document.createElement('div');
       xEl.className = 'ch41-xlabel-time';
-      xEl.innerHTML = formatChemLabelHtml(xAxisLabel);
+      xEl.innerHTML = xAxisLabel;
       stage.appendChild(xEl);
     }
 
     wrapper.appendChild(stage);
 
-    // 徹底清除所有散落在外的純文字段落，絕不留下任何多餘字！
     nodesToRemove.forEach(n => n.remove());
     if (imgAnchor !== body && (imgAnchor.textContent || '').trim() === '' && imgAnchor.querySelectorAll('img').length === 0) {
       imgAnchor.remove();
@@ -616,7 +575,7 @@
   }
 
   // ===========================================================================
-  // STEP 3: 針筒實驗圖 (`ChemMCQ41020`) 2D 原位標籤重組
+  // STEP 3: 氣筒實驗圖 (`ChemMCQ41020`) 2D 重組
   // ===========================================================================
   function reconstructSyringeDiagram(body, syringeImg) {
     if (body.querySelector('.ch41-syringe-stage')) return;
@@ -625,9 +584,7 @@
     Array.from(body.querySelectorAll('p, div')).forEach(el => {
       if (el.querySelector('img')) return;
       const t = (el.textContent || '').trim().toLowerCase();
-      if (trashKeywords.some(k => t.includes(k)) && t.length < 55) {
-        el.remove();
-      }
+      if (trashKeywords.some(k => t.includes(k)) && t.length < 55) el.remove();
     });
 
     const stage = document.createElement('div');
@@ -637,34 +594,21 @@
     anchor.parentNode.insertBefore(stage, anchor);
     stage.appendChild(syringeImg);
 
-    const lblPlunger = document.createElement('div');
-    lblPlunger.style.cssText = 'position:absolute; left:8px; top:10px; font-size:14px;';
-    lblPlunger.textContent = 'plunger';
+    stage.insertAdjacentHTML(
+      'beforeend',
+      `
+      <div style="position:absolute; left:8px; top:10px; font-size:14px;">plunger</div>
+      <div style="position:absolute; left:52%; top:6px; transform:translateX(-50%); font-size:14px; white-space:nowrap;">a gaseous mixture of H<sub>2</sub>, I<sub>2</sub> and HI</div>
+      <div style="position:absolute; right:8px; top:10px; font-size:14px;">rubber cap</div>
+      <div style="position:absolute; left:50%; bottom:4px; transform:translateX(-50%); font-size:14px;">gas syringe</div>
+      `
+    );
 
-    const lblMix = document.createElement('div');
-    lblMix.style.cssText = 'position:absolute; left:52%; top:6px; transform:translateX(-50%); font-size:14px; white-space:nowrap;';
-    lblMix.innerHTML = 'a gaseous mixture of H<sub>2</sub>, I<sub>2</sub> and HI';
-
-    const lblCap = document.createElement('div');
-    lblCap.style.cssText = 'position:absolute; right:8px; top:10px; font-size:14px;';
-    lblCap.textContent = 'rubber cap';
-
-    const lblSyringe = document.createElement('div');
-    lblSyringe.style.cssText = 'position:absolute; left:50%; bottom:4px; transform:translateX(-50%); font-size:14px;';
-    lblSyringe.textContent = 'gas syringe';
-
-    stage.appendChild(lblPlunger);
-    stage.appendChild(lblMix);
-    stage.appendChild(lblCap);
-    stage.appendChild(lblSyringe);
-
-    if (anchor !== body && (anchor.textContent || '').trim() === '') {
-      anchor.remove();
-    }
+    if (anchor !== body && (anchor.textContent || '').trim() === '') anchor.remove();
   }
 
   // ===========================================================================
-  // STEP 4: 四格圖表選項題 (如 `ChemMCQ41019`) 2x2 + 座標軸完整重組
+  // STEP 4: 放大版 2x2 四格圖表選項題 (如 `ChemMCQ41019`)
   // ===========================================================================
   function reconstruct2x2OptionGraphs(body) {
     if (body.querySelector('.ch41-2x2-option-grid')) return;
@@ -735,7 +679,7 @@
       if (hasTMarker) {
         const tLbl = document.createElement('div');
         tLbl.style.cssText =
-          'position:absolute; left:48%; bottom:3px; transform:translateX(-50%); font-family:"Times New Roman", serif; font-style:italic; font-size:13.5px; color:#111;';
+          'position:absolute; left:48%; bottom:2px; transform:translateX(-50%); font-family:"Times New Roman", serif; font-style:italic; font-size:13.5px; color:#111;';
         tLbl.textContent = 't';
         miniStage.appendChild(tLbl);
       }
@@ -743,7 +687,7 @@
       if (sharedXLabel) {
         const xLbl = document.createElement('div');
         xLbl.style.cssText =
-          'position:absolute; right:4px; bottom:2px; font-family:"Times New Roman", serif; font-size:13.5px; color:#111;';
+          'position:absolute; right:4px; bottom:1px; font-family:"Times New Roman", serif; font-size:13.5px; color:#111;';
         xLbl.textContent = sharedXLabel;
         miniStage.appendChild(xLbl);
       }
@@ -759,13 +703,131 @@
   }
 
   // ===========================================================================
-  // STEP 5: 修復遺失的 Qc 分式 (`ChemMCQ41025`) 與所有壓扁的 2 欄 / 4 欄選項表格
-  //         (支援 ChemMCQ41026, ChemMCQ41046, ChemMCQ41048, ChemMCQ41053)
+  // STEP 5: 自動將所有「假兩欄選項」(如圖1, 圖4, 圖5) 重構為標準 3 欄 HTML Table！
+  //         同時修復 Qc 數學分式與 Flask 濃度表
   // ===========================================================================
-  function restoreFractionsAndTables(card, body, qCode) {
+  function convertTwoColumnOptionsToTable(body) {
+    if (body.querySelector('.ch41-option-table')) return;
+
+    const blocks = Array.from(body.querySelectorAll('p, div')).filter(
+      el => !el.querySelector('img, table') && (el.textContent || '').trim().length > 0
+    );
+
+    // 尋找所有 A. B. C. D. 選項段落
+    const optNodes = {};
+    blocks.forEach(el => {
+      const txt = (el.textContent || '').trim();
+      const m = txt.match(/^([A-D])\.\s*(.+)$/);
+      if (m) {
+        optNodes[m[1]] = el;
+      }
+    });
+
+    if (!optNodes.A || !optNodes.B || !optNodes.C || !optNodes.D) return;
+
+    // 檢查 A. 段落的前一個兄弟元素是否為「雙欄表頭」（沒有 A./B./C./D. 開頭，且不含問號）
+    const headerEl = optNodes.A.previousElementSibling;
+    if (!headerEl || headerEl.querySelector('img, table')) return;
+
+    const headerRaw = headerEl.innerHTML.trim();
+    const headerTxt = (headerEl.textContent || '').replace(/\u00A0/g, ' ').trim();
+
+    // 排除普通題幹問句 (含有 ? 或 : 或以 Which / What / In which 開頭)
+    if (
+      !headerTxt ||
+      headerTxt.includes('?') ||
+      headerTxt.endsWith(':') ||
+      /^(Which|What|In which|Consider|The following)/i.test(headerTxt)
+    ) {
+      return;
+    }
+
+    // 拆分表頭為兩欄 (支援 Tab、連續空白、或已知 DSE 化學表頭關鍵字)
+    function splitTwoColumns(htmlStr, plainStr) {
+      // 1. 先嘗試用 HTML 中的 &nbsp; 連續空白或 Tab 拆分
+      const nbspSplit = htmlStr.split(/(?:&nbsp;|\u00A0|\t|\s){3,}/);
+      if (nbspSplit.length >= 2 && nbspSplit[0].trim() && nbspSplit[1].trim()) {
+        return [nbspSplit[0].trim(), nbspSplit.slice(1).join(' ').trim()];
+      }
+
+      // 2. 針對已知化學雙欄表頭/選項特徵進行智慧切割
+      const knownHeaderPatterns = [
+        /^(At time\s+<i>t<\/i><sub>1<\/sub>|At time\s+t1)\s+(.+)$/i,
+        /^(Sign of\s+(?:ΔH|&Delta;H|&#916;H))\s+(.+)$/i,
+        /^(<i>K<\/i><sub>c<\/sub>|Kc)\s+(.+)$/i,
+        /^(Reversible reaction)\s+(.+)$/i,
+        /^(Change in\s+<i>K<\/i><sub>c<\/sub>|Change in Kc)\s+(.+)$/i,
+        /^(Equilibrium position)\s+(.+)$/i
+      ];
+      for (const pat of knownHeaderPatterns) {
+        const m = htmlStr.match(pat);
+        if (m) return [m[1].trim(), m[2].trim()];
+      }
+
+      // 3. 針對選項內容的雙欄切割 (例如 "+ Decreases", "Increases Shifts to the left", "Add a catalyst. The volume...")
+      const optPatterns = [
+        /^([+\-−])\s+([A-Za-z].+)$/,
+        /^(Increases|Decreases|Remains unchanged|No change)\s+(Shifts.+|Increases|Decreases|Remains unchanged|No change)$/i,
+        /^(.+?\.)\s+([A-Z].+\.)$/,
+        /^(.+?(?:ΔH|&Delta;H|&#916;H)\s*[<>]\s*0)\s*((?:ΔH|&Delta;H|&#916;H)\s*[<>]\s*0)$/i
+      ];
+      for (const pat of optPatterns) {
+        const m = htmlStr.match(pat);
+        if (m) return [m[1].trim(), m[2].trim()];
+      }
+
+      return null;
+    }
+
+    const headerCols = splitTwoColumns(headerRaw, headerTxt);
+    if (!headerCols) return;
+
+    const parsedRows = [];
+    for (const letter of ['A', 'B', 'C', 'D']) {
+      const el = optNodes[letter];
+      // 去掉開頭的 "A."
+      const innerWithoutLetter = el.innerHTML.trim().replace(/^[A-D]\.\s*/, '');
+      const textWithoutLetter = (el.textContent || '').replace(/\u00A0/g, ' ').trim().replace(/^[A-D]\.\s*/, '');
+      const cols = splitTwoColumns(innerWithoutLetter, textWithoutLetter);
+      if (!cols) return; // 若四個選項無法一致拆成兩欄，則放棄轉換以策安全
+      parsedRows.push({ letter: `${letter}.`, col1: cols[0], col2: cols[1], el });
+    }
+
+    // 建立乾淨整齊的 3 欄 HTML Table
+    const table = document.createElement('table');
+    table.className = 'ch41-option-table';
+    table.innerHTML = `
+      <thead>
+        <tr>
+          <th class="opt-col-letter" style="text-decoration:none;"></th>
+          <th>${headerCols[0]}</th>
+          <th>${headerCols[1]}</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${parsedRows
+          .map(
+            r => `
+          <tr>
+            <td class="opt-col-letter">${r.letter}</td>
+            <td>${r.col1}</td>
+            <td>${r.col2}</td>
+          </tr>
+        `
+          )
+          .join('')}
+      </tbody>
+    `;
+
+    headerEl.parentNode.insertBefore(table, headerEl);
+    headerEl.remove();
+    parsedRows.forEach(r => r.el.remove());
+  }
+
+  function restoreFractionsAndDataTables(body, qCode) {
     const fullText = body.textContent || '';
 
-    // 5A. 修復 ChemMCQ41025 的 Qc 分子分母上下分式
+    // 修復 ChemMCQ41025 的 Qc 分子分母上下分式
     if (qCode === 'ChemMCQ41025' || (fullText.includes('CoCl') && fullText.includes('reaction quotient'))) {
       const qcMap = {
         A: `A. &nbsp; <i>Q</i><sub>c</sub> = ${buildFrac('<i>z</i>', '<i>x y</i>')} mol<sup>&minus;4</sup> dm<sup>12</sup>`,
@@ -785,7 +847,7 @@
       });
     }
 
-    // 5B. 修復 ChemMCQ41026 的 Flask 濃度表格表頭
+    // 修復 ChemMCQ41026 的 Flask 濃度數據表格
     Array.from(body.querySelectorAll('p')).forEach(p => {
       const t = (p.textContent || '').replace(/\s+/g, ' ').trim();
       if (/^Flask\s+\[Cl/i.test(t)) {
@@ -801,96 +863,11 @@
             </tr>
           `;
           nextEl.insertBefore(thead, nextEl.firstChild);
-          nextEl.className = 'ch41-textbook-table';
+          nextEl.className = 'ch41-option-table';
           p.remove();
         }
       }
     });
-
-    // 5C. 通用修復所有壓扁的 2 欄選項表格：
-    //     - ChemMCQ41046: Sign of ΔH | Product yield as temperature increases
-    //     - ChemMCQ41048: Kc | Equilibrium position
-    //     - ChemMCQ41053: Reversible reaction | Enthalpy change of reaction
-    if (!body.querySelector('.ch41-aligned-opt-table')) {
-      const twoColSpecs = [
-        {
-          match: t => t.includes('Sign of') && t.includes('Product yield'),
-          h1: '<u>Sign of &Delta;<i>H</i></u>',
-          h2: '<u>Product yield as temperature increases</u>',
-          splitRow: raw => {
-            const m = raw.match(/^([A-D]\.)\s*([\+\-\u2212])\s*(Increases|Decreases)$/i);
-            return m ? [m[1], m[2], m[3]] : null;
-          }
-        },
-        {
-          match: t => /^Kc\s+Equilibrium position$/i.test(t),
-          h1: '<u><i>K</i><sub>c</sub></u>',
-          h2: '<u>Equilibrium position</u>',
-          splitRow: raw => {
-            const m = raw.match(/^([A-D]\.)\s*(Increases|Decreases|Remains unchanged)\s+(Shifts to the left|Shifts to the right|Does not shift)$/i);
-            return m ? [m[1], m[2], m[3]] : null;
-          }
-        },
-        {
-          match: t => t.includes('Reversible reaction') && t.includes('Enthalpy change'),
-          h1: '<u>Reversible reaction</u>',
-          h2: '<u>Enthalpy change of reaction</u>',
-          splitRow: (raw, html) => {
-            const idx = html.search(/ΔH|&#916;H|&Delta;H/i);
-            if (idx === -1) return null;
-            const left = html.slice(0, idx).trim();
-            const right = html.slice(idx).trim();
-            const m = left.match(/^([A-D]\.)\s*(.*)/);
-            return m ? [m[1], m[2], `<i>${right}</i>`] : null;
-          }
-        }
-      ];
-
-      const allPs = Array.from(body.querySelectorAll('p, div'));
-      for (const spec of twoColSpecs) {
-        const headerP = allPs.find(p => spec.match((p.textContent || '').replace(/\s+/g, ' ').trim()));
-        if (!headerP) continue;
-
-        const optPs = allPs.filter(p => /^[A-D]\.\s*/.test((p.textContent || '').trim()));
-        if (optPs.length === 4) {
-          const tbl = document.createElement('table');
-          tbl.className = 'ch41-textbook-table ch41-aligned-opt-table';
-          tbl.innerHTML = `
-            <thead>
-              <tr>
-                <th style="width:36px;"></th>
-                <th>${spec.h1}</th>
-                <th>${spec.h2}</th>
-              </tr>
-            </thead>
-            <tbody></tbody>
-          `;
-          const tbody = tbl.querySelector('tbody');
-
-          let allMatched = true;
-          optPs.forEach(opt => {
-            const rawTxt = (opt.textContent || '').replace(/\s+/g, ' ').trim();
-            const cols = spec.splitRow(rawTxt, opt.innerHTML);
-            if (cols) {
-              const tr = document.createElement('tr');
-              tr.innerHTML = `
-                <td style="text-align:left;">${cols[0]}</td>
-                <td>${cols[1]}</td>
-                <td>${cols[2]}</td>
-              `;
-              tbody.appendChild(tr);
-            } else {
-              allMatched = false;
-            }
-          });
-
-          if (allMatched) {
-            optPs.forEach(opt => opt.remove());
-            headerP.replaceWith(tbl);
-          }
-        }
-      }
-    }
   }
 
   // ===========================================================================
@@ -914,7 +891,7 @@
             })
         )
       ).then(() => {
-        body.dataset.ch41V61Done = '';
+        body.dataset.ch41V62Done = '';
         processQuestionCard(card);
       });
     }
@@ -923,17 +900,18 @@
     const qCode = qNumEl ? qNumEl.textContent.trim() : '';
 
     rescueEquilibriumEquations(body);
-    reconstructSingle2DGraph(body, qCode);
+    processSingleGraphAndDebris(body, qCode);
     reconstruct2x2OptionGraphs(body);
-    restoreFractionsAndTables(card, body, qCode);
+    convertTwoColumnOptionsToTable(body);
+    restoreFractionsAndDataTables(body, qCode);
   }
 
   function scanAllCards() {
     injectStyles();
     document.querySelectorAll('.question-card').forEach(card => {
       const body = card.querySelector('.q-native-body');
-      if (body && !body.dataset.ch41V61Done) {
-        body.dataset.ch41V61Done = '1';
+      if (body && !body.dataset.ch41V62Done) {
+        body.dataset.ch41V62Done = '1';
         processQuestionCard(card);
       }
     });
