@@ -1,7 +1,8 @@
 /**
  * ============================================================================
  * HKDSE Chemistry Question Bank - Main UI & Material You Engine (app.js)
- * Version: 0.0.57 (Layout Prevention Engine, Explanation Image Fix, 40% Smaller Images, Wider Margins & Streak Restored)
+ * Version: 0.0.58 (Explanation Image Recovery, Exact 40% Image Scale-Down,
+ *                  Wide Landscape/Portrait Borders & Permanent Layout Guard)
  * ============================================================================
  */
 
@@ -176,7 +177,7 @@ window.CHAPTER_MAP = CHAPTER_MAP;
 // Material You 官方統一色系 (純石板靛藍 & 柔霧紫藍強調色，零紅綠背景)
 // ============================================================================
 const M3 = {
-  bg: '#F4F5FA',               // 頁面柔和底色
+  bg: '#EFF1F8',               // 頁面柔和灰紫藍底色 (襯托純白卡片與加寬邊框)
   surface: '#FFFFFF',          // 純白卡片
   surfaceVariant: '#DFE3F8',   // Material You 強調容器色 (Soft Periwinkle)
   surfaceMuted: '#EEF0F8',     // Material You 次級中性容器色
@@ -186,8 +187,8 @@ const M3 = {
   textMain: '#1D1F2C',         // 主要文字
   textSub: '#5E6478',          // 次要文字
   textMuted: '#8F94A6',        // 輔助文字
-  outline: '#E2E6F3',          // 柔和邊框
-  outlineStrong: '#C5CCE6'     // 進階強調邊框
+  outline: '#CED4EC',          // 加寬明顯的柔和邊框色
+  outlineStrong: '#B5BFE2'     // 進階強調邊框
 };
 
 // ============================================================================
@@ -211,7 +212,7 @@ const SVG_ICONS = {
 
 // 2. 全局 UI 狀態
 window.chemApp = {
-  version: '0.0.57',
+  version: '0.0.58',
   currentLang: localStorage.getItem('CHEM_LANG_V47') || 'e',
   isMuted: localStorage.getItem('CHEM_MUTED_V49') === '1',
   activeChapterId: null,
@@ -237,12 +238,12 @@ const FIREBASE_CONFIG = {
 };
 
 // ============================================================================
-// 動態注入 Material You 主題、橫豎屏寬邊距、表格防斷行、圖片縮小 40% 與防選取規則
+// 動態注入 Material You 主題、橫豎屏寬邊框護欄、圖片精準縮小 40% 與防選取規則
 // ============================================================================
 function injectM3AndResponsiveLayoutStyles() {
-  if (document.getElementById('chemM3ResponsiveStyleV57')) return;
+  if (document.getElementById('chemM3ResponsiveStyleV58')) return;
   const st = document.createElement('style');
-  st.id = 'chemM3ResponsiveStyleV57';
+  st.id = 'chemM3ResponsiveStyleV58';
   st.textContent = `
     :root {
       --md-sys-color-primary: ${M3.primary} !important;
@@ -269,8 +270,8 @@ function injectM3AndResponsiveLayoutStyles() {
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", sans-serif !important;
       margin: 0;
       padding: 0;
+      overflow-x: hidden !important;
     }
-    /* 全局細字重 */
     h1, h2, h3, h4, b, strong, button, span, div, label, input, select, td, th {
       font-weight: 400 !important;
     }
@@ -278,64 +279,109 @@ function injectM3AndResponsiveLayoutStyles() {
       font-weight: 500 !important;
     }
 
-    /* 橫屏與豎屏自適應容器：加寬左右兩側留白邊距，避免貼邊與擁擠 */
+    /* 橫豎屏自適應容器：加寬卡片與兩側邊框，防止在 iPad 橫屏過窄或豎屏貼邊 */
     .chem-responsive-container {
-      width: 100%;
-      max-width: 720px;
-      margin: 0 auto;
-      padding: 18px clamp(24px, 6.5vw, 56px) 190px clamp(24px, 6.5vw, 56px);
-      box-sizing: border-box;
+      width: 100% !important;
+      max-width: 860px !important;
+      margin: 0 auto !important;
+      padding: 20px clamp(20px, 5vw, 48px) 190px clamp(20px, 5vw, 48px) !important;
+      box-sizing: border-box !important;
     }
-    @media (orientation: landscape) and (min-width: 700px) {
+    /* 橫屏模式 (Landscape) 自動放寬容器至 960px，同時給右下角懸浮按鈕留出安全邊距 */
+    @media (orientation: landscape) and (min-width: 768px) {
       .chem-responsive-container {
-        max-width: 820px;
-        padding: 22px clamp(44px, 9vw, 96px) 190px clamp(44px, 9vw, 96px);
+        max-width: 980px !important;
+        padding: 24px 160px 160px 56px !important;
+      }
+    }
+    /* 豎屏模式 (Portrait) 兩邊留出立體寬邊距 */
+    @media (orientation: portrait) {
+      .chem-responsive-container {
+        max-width: 92vw !important;
+        padding: 16px 4vw 200px 4vw !important;
       }
     }
 
+    /* 加寬兩邊邊框：2.5px 立體柔和邊框 + 寬內距 */
     .m3-card, .question-card {
       background: ${M3.surface} !important;
-      border: 1.5px solid ${M3.outline} !important;
+      border: 2.5px solid ${M3.outline} !important;
       border-radius: 28px !important;
-      box-shadow: 0 4px 20px rgba(72, 84, 122, 0.04) !important;
+      box-shadow: 0 6px 24px rgba(72, 84, 122, 0.05) !important;
+      box-sizing: border-box !important;
+      overflow: hidden !important;
+    }
+    .question-card {
+      padding: 26px clamp(22px, 4vw, 38px) !important;
     }
 
-    /* 防止題目與解析內的表格壓縮黏在一起、防止 (1) / A. 斷行 */
+    /* 永久防止 Layout 崩潰護欄 (Prevent future layout bugs) */
+    .q-native-body, .exp-body {
+      width: 100% !important;
+      box-sizing: border-box !important;
+      overflow-x: auto !important;
+      word-wrap: break-word !important;
+      overflow-wrap: break-word !important;
+    }
+    .q-native-body p, .exp-body p {
+      margin: 8px 0 !important;
+      line-height: 1.7 !important;
+    }
     .q-native-body table, .exp-body table {
-      border-collapse: collapse !important;
+      border-collapse: separate !important;
+      border-spacing: 0 !important;
       margin: 12px 0 !important;
       width: auto !important;
+      min-width: 55% !important;
       max-width: 100% !important;
       background: transparent !important;
     }
     .q-native-body td, .q-native-body th, .exp-body td, .exp-body th {
-      padding: 6px 14px 6px 4px !important;
+      padding: 8px 18px 8px 6px !important;
       vertical-align: middle !important;
       line-height: 1.6 !important;
-      border: none !important;
+      border-bottom: 1px solid ${M3.surfaceMuted} !important;
+      text-align: left !important;
+    }
+    .q-native-body tr:last-child td, .exp-body tr:last-child td {
+      border-bottom: none !important;
     }
     /* 鎖定表格第一欄 (如 A. B. C. D. 或 (1) (2) (3)) 絕對不斷行 */
     .q-native-body tr > td:first-child, .exp-body tr > td:first-child {
       white-space: nowrap !important;
       word-break: keep-all !important;
-      padding-right: 12px !important;
+      padding-right: 16px !important;
+      width: 1% !important;
     }
 
-    /* Extract 出的題目與解析圖片縮小 40% (原 216px -> 130px，寬度上限 60%) */
-    .q-native-body img, .exp-body img {
-      max-width: 60% !important;
-      max-height: 130px !important;
+    /* 題目與解析圖片預設縮小 40% (原 ~200px 降至 max-height: 105px, max-width: 48%) */
+    .q-native-body img {
+      max-width: 48% !important;
+      max-height: 105px !important;
       width: auto !important;
       height: auto !important;
       object-fit: contain !important;
       display: block !important;
-      margin: 8px auto !important;
-      border-radius: 8px;
+      margin: 10px auto !important;
     }
-    /* 若圖片在表格內 (例如結構式配對表)，自動維持清晰比例且縮小 40% */
+    /* 解析區內的圖片完整顯示且比例適中 */
+    .exp-body img {
+      max-width: 58% !important;
+      max-height: 135px !important;
+      width: auto !important;
+      height: auto !important;
+      object-fit: contain !important;
+      display: block !important;
+      margin: 10px auto !important;
+      background: #FFFFFF !important;
+      padding: 6px !important;
+      border-radius: 12px !important;
+      border: 1px solid ${M3.outline} !important;
+    }
+    /* 表格內的化學結構圖縮小 40% */
     .q-native-body td img, .exp-body td img {
-      max-width: 180px !important;
-      max-height: 115px !important;
+      max-width: 145px !important;
+      max-height: 88px !important;
       margin: 4px 0 !important;
     }
 
@@ -383,6 +429,42 @@ function injectM3AndResponsiveLayoutStyles() {
     if (tag === 'INPUT' || tag === 'TEXTAREA') return;
     e.preventDefault();
   });
+}
+
+// 動態將圖片按照真實像素精準縮小 40% (即乘以 0.6)
+function applyExact40PercentShrink(imgEl, isInsideTable = false, isExplanation = false) {
+  if (!imgEl) return;
+  imgEl.removeAttribute('width');
+  imgEl.removeAttribute('height');
+  imgEl.setAttribute('draggable', 'false');
+
+  const scaleImageNow = () => {
+    const natW = imgEl.naturalWidth;
+    const natH = imgEl.naturalHeight;
+    if (natW > 0 && natH > 0) {
+      // 計算縮小 40% 後的目標尺寸 (乘以 0.6)，並設定合理上下限防止過大或過小看不清
+      const factor = isExplanation ? 0.65 : 0.55;
+      const maxCapH = isInsideTable ? 88 : isExplanation ? 140 : 108;
+      const targetW = Math.round(natW * factor);
+      const targetH = Math.round(natH * factor);
+
+      if (targetH > maxCapH) {
+        const ratio = maxCapH / targetH;
+        imgEl.style.setProperty('width', `${Math.round(targetW * ratio)}px`, 'important');
+        imgEl.style.setProperty('height', `${maxCapH}px`, 'important');
+      } else {
+        imgEl.style.setProperty('width', `${targetW}px`, 'important');
+        imgEl.style.setProperty('height', `${targetH}px`, 'important');
+      }
+      imgEl.style.setProperty('max-width', '100%', 'important');
+    }
+  };
+
+  if (imgEl.complete && imgEl.naturalWidth > 0) {
+    scaleImageNow();
+  } else {
+    imgEl.addEventListener('load', scaleImageNow, { once: true });
+  }
 }
 
 function formatDuration(sec) {
@@ -526,7 +608,7 @@ function openDiscreetAdminModal() {
   }
 
   pwdModal.innerHTML = `
-    <div style="background:${M3.surface}; width:100%; max-width:310px; padding:24px 26px; border-radius:28px; box-shadow:0 12px 36px rgba(72,84,122,0.12); text-align:center; border:1px solid ${M3.outline};">
+    <div style="background:${M3.surface}; width:100%; max-width:310px; padding:24px 26px; border-radius:28px; box-shadow:0 12px 36px rgba(72,84,122,0.12); text-align:center; border:2px solid ${M3.outline};">
       <h3 class="m3-title-medium" style="margin:0 0 14px 0; color:${M3.textMain}; font-size:16px;">Admin</h3>
       <input type="password" id="adminLocalPassInput" placeholder="Password" style="width:100%; padding:10px 14px; border:1px solid ${M3.outline}; border-radius:14px; font-size:14px; box-sizing:border-box; margin-bottom:8px; outline:none; background:${M3.bg}; color:${M3.textMain};" />
       <div id="adminLocalPassErr" style="color:${M3.textSub}; font-size:12px; min-height:18px; margin-bottom:10px;"></div>
@@ -563,13 +645,13 @@ function openDiscreetAdminModal() {
   };
 }
 
-// 5. IndexedDB 題庫快取引擎 (升級為 V57 以強制重新解析並修復舊快取遺失的解析圖片與表格)
+// 5. IndexedDB 題庫快取引擎 (升級為 V58，確保清除舊快取並重新提取所有遺失的解析圖片)
 class ChemChapterCache {
   static dbPromise = null;
   static getDB() {
     if (!this.dbPromise) {
       this.dbPromise = new Promise((resolve, reject) => {
-        const req = indexedDB.open('HKDSE_CHEM_QB_CACHE_V57', 1);
+        const req = indexedDB.open('HKDSE_CHEM_QB_CACHE_V58', 1);
         req.onupgradeneeded = (e) => {
           const db = e.target.result;
           if (!db.objectStoreNames.contains('chapters')) db.createObjectStore('chapters');
@@ -607,7 +689,7 @@ class ChemChapterCache {
 }
 
 // ============================================================================
-// 6. 深度穿透式 DOM 切題引擎 (修復多欄表格擠壓 + 修復解析圖片消失 + 圖片縮小 40%)
+// 6. 深度穿透式 DOM 切題引擎 (100% 保護解析內的圖片與標註符號 *，防止誤刪任何化學圖)
 // ============================================================================
 class DocxQuestionParser {
   static cleanInlineNoise(htmlStr) {
@@ -641,12 +723,13 @@ class DocxQuestionParser {
     return patterns.some(p => p.test(t));
   }
 
+  /**
+   * 安全清理灰底與空白節點：
+   * 只要節點本身是 IMG/SVG，或內部含有任何 IMG/SVG，絕對禁止移除！
+   */
   static stripGrayBoxNodes(rootEl) {
     if (!rootEl) return;
     rootEl.querySelectorAll('span, div, p, td, th, font, s, u, b, i').forEach(el => {
-      const hasMedia = el.querySelector && el.querySelector('img, svg, canvas') !== null;
-      if (hasMedia) return;
-
       if (el.style) {
         el.style.backgroundColor = 'transparent';
         el.style.background = 'none';
@@ -654,6 +737,12 @@ class DocxQuestionParser {
       if (el.hasAttribute && el.hasAttribute('bgcolor')) {
         el.removeAttribute('bgcolor');
       }
+
+      const hasMedia =
+        el.tagName === 'IMG' ||
+        el.tagName === 'SVG' ||
+        (el.querySelector && el.querySelector('img, svg, canvas, table') !== null);
+      if (hasMedia) return;
 
       const cleanedTxt = (el.textContent || '')
         .replace(/[\u200B-\u200D\uFEFF\u00A0\s]/g, '')
@@ -663,28 +752,36 @@ class DocxQuestionParser {
         el.remove();
       }
     });
-
-    rootEl.querySelectorAll('img').forEach(img => {
-      const w = parseInt(img.getAttribute('width') || '0', 10);
-      const h = parseInt(img.getAttribute('height') || '0', 10);
-      if (w > 0 && w <= 14 && h > 0 && h <= 14) {
-        img.remove();
-      }
-    });
   }
 
   /**
-   * 智慧型區塊拆解：
-   * - 若 TABLE 是包住整道題目的外框表（含 ChemMCQ 或 Answer:），則逐列觀察：
-   *   - 若某列 (TR) 只有 1 個有效儲存格，展開其子節點。
-   *   - 若某列 (TR) 有多個儲存格（例如圖一 Addition reaction | Major product 雙欄選項表，或圖二 (1) | 結構式圖），
-   *     則完整保留該雙欄/多欄表格結構，絕不拆散成黏在一起的文字！
+   * 智慧型區塊拆解 (強化圖片保護)：
+   * 確保無論圖片藏在單欄 Table、多欄 Table、巢狀 Div、Span 或 <br> 分割段落中，
+   * 都不會在拆解時遺失！
    */
   static flattenBlocks(root) {
     const blocks = [];
     const walk = (node) => {
+      if (!node) return;
+      if (node.nodeType === Node.TEXT_NODE) {
+        const txt = (node.textContent || '').trim();
+        if (txt) {
+          const p = document.createElement('p');
+          p.textContent = txt;
+          blocks.push(p);
+        }
+        return;
+      }
       if (node.nodeType !== Node.ELEMENT_NODE) return;
+
       const tag = node.tagName.toUpperCase();
+
+      if (tag === 'IMG' || tag === 'SVG') {
+        const p = document.createElement('p');
+        p.appendChild(node.cloneNode(true));
+        blocks.push(p);
+        return;
+      }
 
       if (tag === 'TABLE') {
         const tableTxt = node.textContent || '';
@@ -705,22 +802,22 @@ class DocxQuestionParser {
 
           Array.from(node.rows || node.querySelectorAll('tr')).forEach(tr => {
             const cells = Array.from(tr.cells || tr.querySelectorAll('td, th'));
-            const nonEmptyCells = cells.filter(c => (c.textContent || '').trim() !== '' || c.querySelector('img, svg, table'));
+            const nonEmptyCells = cells.filter(
+              c => (c.textContent || '').trim() !== '' || c.querySelector('img, svg, table')
+            );
             const trTxt = tr.textContent || '';
             const hasMarker = /ChemMCQ\s*\d+/i.test(trTxt) || /(?:Answer|Ans|答案)\s*[:：]/i.test(trTxt);
 
             if (!hasMarker && nonEmptyCells.length >= 2) {
-              // 多欄資料列（如配對表、左編號右圖片）：保留為表格列！
               pendingDataRows.push(tr);
             } else {
               flushPendingDataRows();
               cells.forEach(cell => {
-                if (cell.children.length > 0) {
-                  Array.from(cell.children).forEach(ch => walk(ch));
-                } else if ((cell.textContent || '').trim() || cell.querySelector('img, svg')) {
-                  const p = document.createElement('p');
-                  p.innerHTML = cell.innerHTML;
-                  blocks.push(p);
+                // 使用 childNodes 確保文字與直接子圖片都不會漏掉
+                if (cell.children.length > 0 && !cell.querySelector('img')) {
+                  Array.from(cell.childNodes).forEach(ch => walk(ch));
+                } else if ((cell.textContent || '').trim() || cell.querySelector('img, svg, table')) {
+                  Array.from(cell.childNodes).forEach(ch => walk(ch));
                 }
               });
             }
@@ -734,15 +831,18 @@ class DocxQuestionParser {
         return;
       }
 
-      if (['DIV', 'SECTION', 'ARTICLE', 'MAIN', 'TBODY', 'TR', 'TD', 'UL', 'OL'].includes(tag)) {
-        if (node.children.length > 0) {
-          Array.from(node.children).forEach(child => walk(child));
+      if (['DIV', 'SECTION', 'ARTICLE', 'MAIN', 'TBODY', 'TR', 'TD', 'TH', 'UL', 'OL', 'LI'].includes(tag)) {
+        if (node.childNodes.length > 0) {
+          Array.from(node.childNodes).forEach(child => walk(child));
           return;
         }
       }
 
-      const cleanedHtml = this.cleanInlineNoise(node.innerHTML);
-      if (/<br\s*\/?>/i.test(cleanedHtml) && !node.querySelector('table')) {
+      const cleanedHtml = this.cleanInlineNoise(node.innerHTML || '');
+      // 重要修復：如果段落內含有 <img>，不要用 <br> 切碎，否則圖片與上方的星號 * 或標註會分開甚至遺失
+      const hasImgInside = node.querySelector && node.querySelector('img, svg, table') !== null;
+
+      if (!hasImgInside && /<br\s*\/?>/i.test(cleanedHtml)) {
         cleanedHtml.split(/<br\s*\/?>/i).forEach(part => {
           const p = document.createElement('p');
           p.innerHTML = part.trim();
@@ -750,13 +850,16 @@ class DocxQuestionParser {
           if ((p.textContent || '').trim() || p.querySelector('img, svg')) blocks.push(p);
         });
       } else {
-        const p = node.cloneNode(true);
+        const p = document.createElement('p');
         p.innerHTML = cleanedHtml.trim();
         this.stripGrayBoxNodes(p);
-        if ((p.textContent || '').trim() || p.querySelector('img, svg') || tag === 'TABLE') blocks.push(p);
+        if ((p.textContent || '').trim() || p.querySelector('img, svg, table')) {
+          blocks.push(p);
+        }
       }
     };
-    Array.from(root.children).forEach(child => walk(child));
+
+    Array.from(root.childNodes).forEach(child => walk(child));
     return blocks;
   }
 
@@ -778,7 +881,9 @@ class DocxQuestionParser {
 
     flatNodes.forEach(node => {
       const text = (node.textContent || '').trim();
-      const hasMedia = node.querySelector && node.querySelector('img, svg') !== null;
+      const hasMedia =
+        node.tagName === 'IMG' ||
+        (node.querySelector && node.querySelector('img, svg, canvas') !== null);
       const isTable = node.tagName && node.tagName.toUpperCase() === 'TABLE';
 
       if (!hasMedia && !isTable && this.isPureNoiseLine(text)) return;
@@ -813,13 +918,14 @@ class DocxQuestionParser {
 
       block.nodes.forEach(node => {
         const txt = (node.textContent || '').replace(/[\u25A0-\u25FF\u2610-\u2612\uF06F□☐■▪▫]/g, '').trim();
-        const hasMedia = node.querySelector && node.querySelector('img, svg') !== null;
+        const hasMedia =
+          node.tagName === 'IMG' ||
+          (node.querySelector && node.querySelector('img, svg, canvas') !== null);
         const isTable = node.tagName && node.tagName.toUpperCase() === 'TABLE';
 
         if (!txt && !hasMedia && !isTable) return;
 
         if (!foundAnswer) {
-          // 檢查此節點是否包含 Answer: X
           const isOptionLine = /^[A-D][\.\)]\s*/.test(txt);
           const ansMatch = !isOptionLine ? txt.match(ansInlineRegex) : null;
 
@@ -827,7 +933,7 @@ class DocxQuestionParser {
             foundAnswer = true;
             answerLetter = ansMatch[1].toUpperCase();
 
-            // 重要修復：保留 Answer: 同一節點內的圖片 (<img>) 與後續文字，絕不丟失解析圖片！
+            // 完整保留 Answer: 節點內附帶的圖片與說明文字
             const remainderNode = node.cloneNode(true);
             remainderNode.innerHTML = remainderNode.innerHTML.replace(
               /(?:Answer|Ans|答案)\s*[:：]?\s*\(?[A-D]\)?[\s\.、:：\-—]*/i,
@@ -846,15 +952,21 @@ class DocxQuestionParser {
             if (isOptionLine) {
               node.style.cssText = 'padding-left: 20px; margin: 6px 0; font-family: "Times New Roman", "Noto Serif TC", "PMingLiU", serif; background: transparent;';
             } else if (isTable) {
-              node.style.cssText = 'border-collapse: collapse; margin: 12px 0; width: auto; max-width: 100%; font-family: "Times New Roman", "Noto Serif TC", "PMingLiU", serif;';
+              node.style.cssText = 'border-collapse: separate; margin: 12px 0; width: auto; max-width: 100%; font-family: "Times New Roman", "Noto Serif TC", "PMingLiU", serif;';
             } else {
               node.style.cssText = 'margin: 6px 0; font-family: "Times New Roman", "Noto Serif TC", "PMingLiU", serif; background: transparent;';
             }
           }
           stemDiv.appendChild(node);
         } else {
-          // Answer 之後的所有文字、化學結構圖、表格全部完整進入解析區
-          if (txt.length > 0 || hasMedia || isTable) {
+          // Answer 之後的所有文字、化學結構圖、表格全部進入解析區
+          // 過濾掉單獨只有一個孤立星號 * 且沒有圖片的空標註行 (或與圖片合併呈現)
+          if (txt === '*' && !hasMedia && !isTable) {
+            const starNote = document.createElement('div');
+            starNote.style.cssText = `font-size:12px; color:${M3.primary}; margin:2px 0; font-family:sans-serif;`;
+            starNote.textContent = '(* Chiral centre / 手性碳標記)';
+            expDiv.appendChild(starNote);
+          } else if (txt.length > 0 || hasMedia || isTable) {
             if (node.style) {
               node.style.cssText = 'margin: 6px 0; line-height: 1.65; font-family: "Times New Roman", "Noto Serif TC", "PMingLiU", serif; background: transparent;';
             }
@@ -881,7 +993,7 @@ class DocxQuestionParser {
   }
 }
 
-// 7. DOCX 載入器
+// 7. DOCX 載入器 (支援所有嵌入圖片格式提取)
 class DocxExtractor {
   static async ensureMammoth() {
     if (typeof mammoth !== 'undefined') return;
@@ -908,9 +1020,11 @@ class DocxExtractor {
     const result = await mammoth.convertToHtml(
       { arrayBuffer: arrayBuffer },
       {
+        ignoreEmptyParagraphs: false,
         convertImage: mammoth.images.imgElement((image) => {
           return image.read('base64').then((imageBuffer) => {
-            const cType = image.contentType || 'image/png';
+            let cType = (image.contentType || 'image/png').toLowerCase();
+            if (!cType.startsWith('image/')) cType = 'image/png';
             return { src: 'data:' + cType + ';base64,' + imageBuffer };
           });
         })
@@ -1036,7 +1150,7 @@ function renderChapterLapsUI() {
 }
 
 // ============================================================================
-// 9. 右下角懸浮控制組 (包含：Streak 連對、計時 + Lap、結束當前 MC、目錄選單)
+// 9. 右下角懸浮控制組 (Streak 連對、計時 + Lap、結束當前 MC、目錄選單)
 // ============================================================================
 function ensureFloatingActionGroup() {
   let grp = document.getElementById('floatingActionGroup');
@@ -1045,14 +1159,14 @@ function ensureFloatingActionGroup() {
     grp.id = 'floatingActionGroup';
     grp.style.cssText = 'position:fixed; bottom:18px; right:16px; z-index:9998; display:none; flex-direction:column; gap:8px; align-items:flex-end; font-family:sans-serif;';
     grp.innerHTML = `
-      <!-- 1. Streak 連對膠囊 (答題頁面顯示) -->
-      <div id="footerStreakBox" style="display:none; background:${M3.surfaceVariant}; color:${M3.primary}; border:1px solid ${M3.outlineStrong}; padding:0 16px; border-radius:20px; font-size:12px; box-shadow:0 4px 14px rgba(72,84,122,0.1); height:36px; min-width:118px; box-sizing:border-box; align-items:center; justify-content:center; gap:5px; white-space:nowrap;">
+      <!-- 1. Streak 連對膠囊 -->
+      <div id="footerStreakBox" style="display:none; background:${M3.surfaceVariant}; color:${M3.primary}; border:1.5px solid ${M3.outlineStrong}; padding:0 16px; border-radius:20px; font-size:12px; box-shadow:0 4px 14px rgba(72,84,122,0.1); height:36px; min-width:118px; box-sizing:border-box; align-items:center; justify-content:center; gap:5px; white-space:nowrap;">
         ${SVG_ICONS.bolt}
         <span>Streak: <span id="footerStreakCount">0</span></span>
       </div>
 
-      <!-- 2. 計時與 Lap 懸浮膠囊 (答題頁面顯示) -->
-      <div id="floatingTimerCapsule" style="display:none; background:${M3.surface}; border:1px solid ${M3.outline}; padding:4px 9px 4px 12px; border-radius:20px; box-shadow:0 4px 16px rgba(72,84,122,0.1); align-items:center; gap:6px; height:38px; box-sizing:border-box; white-space:nowrap;">
+      <!-- 2. 計時與 Lap 懸浮膠囊 -->
+      <div id="floatingTimerCapsule" style="display:none; background:${M3.surface}; border:1.5px solid ${M3.outline}; padding:4px 9px 4px 12px; border-radius:20px; box-shadow:0 4px 16px rgba(72,84,122,0.1); align-items:center; gap:6px; height:38px; box-sizing:border-box; white-space:nowrap;">
         <span style="display:inline-flex; align-items:center; color:${M3.primary};">${SVG_ICONS.timer}</span>
         <span id="floatingTimerDisplay" style="font-family:monospace; font-size:12px; color:${M3.textMain};">00:00</span>
         <span id="floatingLapBadge" style="display:none; font-size:10px; background:${M3.surfaceVariant}; color:${M3.primary}; padding:2px 6px; border-radius:8px;"></span>
@@ -1166,7 +1280,7 @@ function openEndChapterConfirmModal() {
 
   const renderModalStep = (statusText, subText) => {
     modal.innerHTML = `
-      <div style="background:${M3.surface}; padding:26px 28px; border-radius:28px; width:100%; max-width:340px; text-align:center; box-shadow:0 14px 40px rgba(72,84,122,0.15); border:1px solid ${M3.outline};">
+      <div style="background:${M3.surface}; padding:26px 28px; border-radius:28px; width:100%; max-width:340px; text-align:center; box-shadow:0 14px 40px rgba(72,84,122,0.15); border:2px solid ${M3.outline};">
         <h3 class="m3-title-medium" style="margin:0 0 10px 0; font-size:17px; color:${M3.textMain};">結束當前 MC 練習</h3>
         <p style="font-size:14px; color:${M3.primary}; margin:0 0 8px 0; line-height:1.5;">${statusText}</p>
         <p style="font-size:12px; color:${M3.textSub}; margin:0 0 20px 0; line-height:1.4;">${subText}</p>
@@ -1228,7 +1342,7 @@ function openEndChapterConfirmModal() {
   modal.style.display = 'flex';
 }
 
-// 11. 視圖切換 (套用橫豎屏寬邊距容器 .chem-responsive-container)
+// 11. 視圖切換
 function showHomeView() {
   window.chemApp.currentView = 'home';
   pauseTimer();
@@ -1258,7 +1372,7 @@ function switchRightPanelToChapterView() {
     wrapper.className = 'chem-responsive-container';
 
     wrapper.innerHTML = `
-      <div class="m3-card" style="padding:16px 22px; border-radius:28px; margin-bottom:18px; display:flex; flex-direction:column; gap:10px;">
+      <div class="m3-card" style="padding:18px 26px; border-radius:28px; margin-bottom:20px; display:flex; flex-direction:column; gap:10px;">
         <div style="display:flex; justify-content:space-between; align-items:center; gap:8px; flex-wrap:wrap;">
           <div style="display:flex; align-items:center; gap:10px; min-width:0; flex:1;">
             <button id="backHomeTopBtn" class="sound-trigger" style="padding:6px 14px; font-size:12px; border:none; border-radius:18px; background:${M3.surfaceVariant}; color:${M3.primary}; cursor:pointer; white-space:nowrap;">
@@ -1387,7 +1501,7 @@ async function openChapter(chapId) {
   }
 
   container.innerHTML = `
-    <div style="text-align:center; padding:56px 20px; background:${M3.surface}; border-radius:28px; border:1px solid ${M3.outline}; color:${M3.textSub};">
+    <div style="text-align:center; padding:56px 20px; background:${M3.surface}; border-radius:28px; border:2px solid ${M3.outline}; color:${M3.textSub};">
       <div style="font-size:15px; color:${M3.primary}; margin-bottom:8px;">正在載入並解析題庫...</div>
     </div>
   `;
@@ -1412,7 +1526,7 @@ async function openChapter(chapId) {
 
   if (!arrayBuffer) {
     container.innerHTML = `
-      <div style="text-align:center; padding:48px 24px; background:${M3.surface}; border-radius:28px; border:1px solid ${M3.outline}; color:${M3.textSub};">
+      <div style="text-align:center; padding:48px 24px; background:${M3.surface}; border-radius:28px; border:2px solid ${M3.outline}; color:${M3.textSub};">
         <div style="font-size:15px; color:${M3.textMain}; margin-bottom:8px;">找不到遠端題庫檔案 (ch${pad}_mcq_${lang}.docx)</div>
         <div style="font-size:13px;">可點擊上方「載入 .docx」手動選擇題庫練習。</div>
       </div>
@@ -1432,7 +1546,7 @@ async function openChapter(chapId) {
   }
 }
 
-// 13. 渲染題目卡片 (圖片縮小 40% + 解析圖片完整顯示 + 表格防斷行 + Streak 聯動)
+// 13. 渲染題目卡片 (題目圖片精準縮小 40% + 解析圖片完整顯示 + 寬邊框防跑版)
 function renderQuestions(qList, chapId) {
   const wrapper = switchRightPanelToChapterView();
   const container = wrapper.querySelector('#questionList');
@@ -1445,56 +1559,55 @@ function renderQuestions(qList, chapId) {
     const qOrderNum = index + 1;
     const card = document.createElement('div');
     card.className = 'question-card m3-card';
-    card.style.cssText = `background:${M3.surface}; border-radius:28px; padding:24px 28px; margin-bottom:18px; border:1.5px solid ${M3.outline}; font-family:"Times New Roman", "Noto Serif TC", "PMingLiU", serif; box-sizing:border-box; width:100%;`;
+    card.style.cssText = `background:${M3.surface}; border-radius:28px; margin-bottom:20px; border:2.5px solid ${M3.outline}; font-family:"Times New Roman", "Noto Serif TC", "PMingLiU", serif; box-sizing:border-box; width:100%;`;
 
     const hasExplanation = q.explanationHtml && q.explanationHtml.length > 0;
 
     card.innerHTML = `
-      <div class="q-header" style="margin-bottom:12px; display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid ${M3.outline}; padding-bottom:8px;">
+      <div class="q-header" style="margin-bottom:14px; display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid ${M3.outline}; padding-bottom:10px;">
         <span class="q-number" style="color:${M3.primary}; font-size:14px; font-family:sans-serif;">${q.qNumDisplay || `Q${qOrderNum}`}</span>
         <span style="font-size:12px; color:${M3.textMuted}; font-family:sans-serif;">第 ${qOrderNum} / ${qList.length} 題</span>
       </div>
       <div class="q-native-body" style="line-height:1.75; font-size:16px; color:${M3.textMain}; overflow-x:auto; word-break:break-word; font-family:'Times New Roman', 'Noto Serif TC', 'PMingLiU', serif;">
         ${q.htmlContent}
       </div>
-      <div class="interactive-action-bar" style="margin-top:18px; padding-top:12px; border-top:1px dashed ${M3.outline}; font-family:sans-serif;">
+      <div class="interactive-action-bar" style="margin-top:18px; padding-top:14px; border-top:1px dashed ${M3.outline}; font-family:sans-serif;">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; gap:8px; flex-wrap:wrap;">
           <span class="q-status-prompt" style="color:${M3.textSub}; font-size:12px;">請選擇答案：</span>
           <button class="peek-ans-btn sound-trigger" style="border:none; background:${M3.surfaceMuted}; color:${M3.primary}; font-size:11px; cursor:pointer; padding:4px 10px; border-radius:10px;">顯示 / 隱藏解析</button>
         </div>
-        <div class="options-btn-group" style="display:flex; gap:10px;">
+        <div class="options-btn-group" style="display:flex; gap:12px;">
           ${['A', 'B', 'C', 'D'].map(k => `
-            <button type="button" class="opt-act-btn" data-opt="${k}" style="flex:1; padding:10px 2px; border:1px solid ${M3.outline}; border-radius:16px; background:${M3.bg}; color:${M3.primary}; cursor:pointer; font-size:14px; transition:all 0.15s ease; display:inline-flex; align-items:center; justify-content:center; gap:4px;">
+            <button type="button" class="opt-act-btn" data-opt="${k}" style="flex:1; padding:10px 2px; border:1.5px solid ${M3.outline}; border-radius:16px; background:${M3.bg}; color:${M3.primary}; cursor:pointer; font-size:14px; transition:all 0.15s ease; display:inline-flex; align-items:center; justify-content:center; gap:4px;">
               ${k}
             </button>
           `).join('')}
         </div>
       </div>
-      <div class="explanation-panel" style="display:none; margin-top:14px; padding:14px 18px; background:${M3.surfaceVariant}; border-left:3px solid ${M3.primary}; border-radius:16px; font-family:'Times New Roman', 'Noto Serif TC', serif; overflow-x:auto;">
+      <div class="explanation-panel" style="display:none; margin-top:16px; padding:16px 20px; background:${M3.surfaceVariant}; border-left:3.5px solid ${M3.primary}; border-radius:18px; font-family:'Times New Roman', 'Noto Serif TC', serif; overflow-x:auto;">
         <div class="exp-title" style="color:${M3.primary}; font-size:14px; font-family:sans-serif; margin-bottom:${hasExplanation ? '8px' : '0'};">
           Answer: ${q.answer}
         </div>
         ${hasExplanation
-          ? `<div class="exp-body" style="font-size:14px; color:${M3.textMain}; line-height:1.68; word-break:break-word;">${q.explanationHtml}</div>`
+          ? `<div class="exp-body" style="font-size:14px; color:${M3.textMain}; line-height:1.7; word-break:break-word;">${q.explanationHtml}</div>`
           : `<div style="font-size:12px; color:${M3.textMuted}; font-family:sans-serif; margin-top:4px;">（本題原檔無附帶文字解析）</div>`
         }
       </div>
     `;
 
-    // 針對題目與解析內的所有圖片統一縮小 40% 並禁止拖曳
-    card.querySelectorAll('.q-native-body img, .exp-body img').forEach(img => {
-      img.removeAttribute('width');
-      img.removeAttribute('height');
-      img.style.maxWidth = '60%';
-      img.style.maxHeight = '130px';
-      img.style.width = 'auto';
-      img.style.height = 'auto';
-      img.style.display = 'block';
-      img.style.margin = '8px auto';
-      img.setAttribute('draggable', 'false');
+    // 1. 題目區的圖片：精準縮小 40%
+    card.querySelectorAll('.q-native-body img').forEach(img => {
+      const inTable = img.closest('table') !== null;
+      applyExact40PercentShrink(img, inTable, false);
     });
 
-    // 針對表格內的結構式圖片微調尺寸並強制首欄不斷行
+    // 2. 解析區的圖片：確保完整顯示並按比例縮放
+    card.querySelectorAll('.exp-body img').forEach(img => {
+      const inTable = img.closest('table') !== null;
+      applyExact40PercentShrink(img, inTable, true);
+    });
+
+    // 3. 針對所有表格強制首欄不斷行，防止 (1) 斷成兩行
     card.querySelectorAll('table').forEach(tbl => {
       tbl.querySelectorAll('tr').forEach(tr => {
         const firstTd = tr.querySelector('td, th');
@@ -1502,11 +1615,6 @@ function renderQuestions(qList, chapId) {
           firstTd.style.whiteSpace = 'nowrap';
           firstTd.style.wordBreak = 'keep-all';
         }
-      });
-      tbl.querySelectorAll('img').forEach(img => {
-        img.style.maxWidth = '180px';
-        img.style.maxHeight = '115px';
-        img.style.margin = '4px 0';
       });
     });
 
@@ -1548,7 +1656,7 @@ function renderQuestions(qList, chapId) {
         if (b.dataset.opt === q.answer) {
           b.style.background = M3.primary;
           b.style.color = '#FFFFFF';
-          b.style.border = `1px solid ${M3.primary}`;
+          b.style.border = `1.5px solid ${M3.primary}`;
           b.style.opacity = '1';
           b.innerHTML = `${b.dataset.opt} ${SVG_ICONS.check}`;
         } else if (selectedOpt && b.dataset.opt === selectedOpt && selectedOpt !== q.answer) {
@@ -1762,7 +1870,7 @@ function buildRecentTopicsList() {
     .sort((a, b) => (b.lastTimestamp || '').localeCompare(a.lastTimestamp || ''));
 }
 
-// 15. 首頁 Dashboard 渲染 (套用橫豎屏寬邊距 .chem-responsive-container)
+// 15. 首頁 Dashboard 渲染
 function renderHomeDashboard() {
   let rightMain = document.getElementById('chemAppRootContainer') || document.body;
   let dashboardEl = document.getElementById('chemDashboardHome');
@@ -1798,7 +1906,7 @@ function renderHomeDashboard() {
   const recentTopicsHtml =
     displayedRecentList.length === 0
       ? `
-        <div style="background:${M3.surfaceVariant}; border-radius:28px; padding:22px; margin-bottom:16px;">
+        <div style="background:${M3.surfaceVariant}; border-radius:28px; padding:22px; margin-bottom:16px; border:2px solid ${M3.outlineStrong};">
           <div style="display:flex; align-items:center; gap:14px;">
             <div style="width:38px; height:38px; border-radius:19px; background:${M3.surface}; color:${M3.primary}; display:flex; align-items:center; justify-content:center;">
               ${SVG_ICONS.topicIcon}
@@ -1825,7 +1933,7 @@ function renderHomeDashboard() {
                 : '';
 
             return `
-              <div style="background:${cardBg}; border:1.5px solid ${isFirst ? M3.outlineStrong : M3.outline}; border-radius:28px; padding:20px 24px; margin-bottom:14px; box-shadow:0 4px 18px rgba(72,84,122,0.03);">
+              <div style="background:${cardBg}; border:2.5px solid ${isFirst ? M3.outlineStrong : M3.outline}; border-radius:28px; padding:22px 26px; margin-bottom:16px; box-shadow:0 4px 18px rgba(72,84,122,0.04);">
                 <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; margin-bottom:8px;">
                   <div style="display:flex; align-items:center; gap:12px; min-width:0; flex:1;">
                     <div style="width:38px; height:38px; border-radius:19px; background:${isFirst ? M3.surface : M3.surfaceVariant}; color:${M3.primary}; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
@@ -1865,7 +1973,7 @@ function renderHomeDashboard() {
       : summary.dailyList
           .map(
             item => `
-        <div class="daily-record-item sound-trigger" data-date="${item.date}" style="display:flex; justify-content:space-between; align-items:center; padding:12px 16px; background:${M3.surface}; border-radius:20px; margin-bottom:8px; border:1px solid ${M3.outline}; cursor:pointer;">
+        <div class="daily-record-item sound-trigger" data-date="${item.date}" style="display:flex; justify-content:space-between; align-items:center; padding:12px 16px; background:${M3.surface}; border-radius:20px; margin-bottom:8px; border:1.5px solid ${M3.outline}; cursor:pointer;">
           <div style="display:flex; align-items:center; gap:8px;">
             <span style="color:${M3.textMain}; font-size:13px;">${item.date}</span>
             <span style="font-size:11px; color:${M3.primary}; background:${M3.surfaceVariant}; padding:2px 9px; border-radius:10px;">對 ${item.correctCount}</span>
@@ -1892,7 +2000,7 @@ function renderHomeDashboard() {
       <div style="font-size:15px; color:${M3.textSub};">Chemistry Question Bank</div>
     </div>
 
-    <div class="m3-card" style="padding:22px 24px; margin-bottom:18px;">
+    <div class="m3-card" style="padding:22px 26px; margin-bottom:18px;">
       <div style="display:flex; justify-content:space-between; align-items:center; padding-bottom:18px; border-bottom:1px solid ${M3.outline};">
         <div style="display:flex; align-items:center; gap:14px;">
           <div style="width:36px; height:36px; border-radius:18px; background:${M3.bg}; display:flex; align-items:center; justify-content:center; color:${M3.primary};">
@@ -1932,7 +2040,7 @@ function renderHomeDashboard() {
       ${
         recentTopicsList.length > 3
           ? `<div style="text-align:center; margin-top:-4px; margin-bottom:12px;">
-              <button id="toggleMoreRecentBtn" class="sound-trigger" style="background:${M3.surface}; color:${M3.primary}; border:1px solid ${M3.outline}; padding:6px 16px; border-radius:16px; font-size:12px; cursor:pointer;">
+              <button id="toggleMoreRecentBtn" class="sound-trigger" style="background:${M3.surface}; color:${M3.primary}; border:1.5px solid ${M3.outline}; padding:6px 16px; border-radius:16px; font-size:12px; cursor:pointer;">
                 ${window.chemApp.showAllRecentTopics ? '收起部分' : `顯示全部 (${recentTopicsList.length} 個章節)`}
               </button>
             </div>`
@@ -1940,7 +2048,7 @@ function renderHomeDashboard() {
       }
     </div>
 
-    <div class="m3-card" style="padding:22px 24px; margin-bottom:18px;">
+    <div class="m3-card" style="padding:22px 26px; margin-bottom:18px;">
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; flex-wrap:wrap; gap:8px;">
         <div style="display:flex; align-items:center; gap:10px; color:${M3.primary};">
           ${SVG_ICONS.calendar}
@@ -1956,7 +2064,7 @@ function renderHomeDashboard() {
       </div>
     </div>
 
-    <div class="m3-card" style="padding:18px 24px; display:flex; justify-content:space-around; align-items:center; text-align:center;">
+    <div class="m3-card" style="padding:18px 26px; display:flex; justify-content:space-around; align-items:center; text-align:center;">
       <div>
         <div style="font-size:12px; color:${M3.textSub};">總 Topic</div>
         <div style="font-size:18px; color:${M3.textMain}; margin-top:2px;">15</div>
@@ -2063,7 +2171,7 @@ function renderCenterDirectoryModal() {
   const sessionAns = (window.ChemUserLog && window.ChemUserLog.state.sessionAnswers) || {};
 
   let contentHtml = `
-    <div style="background:${M3.surface}; width:100%; max-width:440px; height:82vh; max-height:640px; border-radius:28px; box-shadow:0 14px 44px rgba(72,84,122,0.15); display:flex; flex-direction:column; overflow:hidden; border:1px solid ${M3.outline};">
+    <div style="background:${M3.surface}; width:100%; max-width:440px; height:82vh; max-height:640px; border-radius:28px; box-shadow:0 14px 44px rgba(72,84,122,0.15); display:flex; flex-direction:column; overflow:hidden; border:2px solid ${M3.outline};">
       <div style="padding:18px 24px; background:${M3.surfaceVariant}; color:${M3.primary}; display:flex; justify-content:space-between; align-items:center;">
         <div>
           <h2 class="m3-title-medium" style="margin:0; font-size:16px;">選擇 Topic / Chapter</h2>
@@ -2077,7 +2185,7 @@ function renderCenterDirectoryModal() {
   SYLLABUS_CONFIG.forEach(topic => {
     const isCurrentTopic = topic.chapters.some(c => c.id === window.chemApp.activeChapterId);
     contentHtml += `
-      <div style="background:${M3.surface}; border-radius:20px; margin-bottom:10px; border:1px solid ${M3.outline}; overflow:hidden;">
+      <div style="background:${M3.surface}; border-radius:20px; margin-bottom:10px; border:1.5px solid ${M3.outline}; overflow:hidden;">
         <div class="dir-topic-header sound-trigger" style="padding:13px 16px; background:${M3.surface}; font-size:14px; color:${M3.textMain}; cursor:pointer; display:flex; justify-content:space-between; align-items:center;">
           <span>${topic.topicName}</span>
           <span class="dir-arrow" style="font-size:11px; color:${M3.textSub};">${isCurrentTopic ? '▼' : '▶'}</span>
@@ -2143,22 +2251,22 @@ function ensureAuthOverlay() {
   authOverlay.style.cssText = `position:fixed; top:0; left:0; width:100vw; height:100vh; background:${M3.bg}; z-index:99999; display:flex; justify-content:center; align-items:center; padding:16px; box-sizing:border-box; font-family:sans-serif;`;
 
   authOverlay.innerHTML = `
-    <div style="background:${M3.surface}; padding:32px 34px; border-radius:28px; box-shadow:0 12px 36px rgba(72,84,122,0.08); width:100%; max-width:390px; text-align:center; border:1px solid ${M3.outline};">
+    <div style="background:${M3.surface}; padding:32px 34px; border-radius:28px; box-shadow:0 12px 36px rgba(72,84,122,0.08); width:100%; max-width:390px; text-align:center; border:2.5px solid ${M3.outline};">
       <h2 class="m3-title-medium" style="margin:0 0 6px 0; color:${M3.primary}; font-size:22px; letter-spacing:0.5px;">HKDSE</h2>
       <p style="font-size:13px; color:${M3.textSub}; margin:0 0 22px 0;">請輸入學生 ID 登入或註冊</p>
       
       <div style="display:flex; flex-direction:column; gap:14px; text-align:left;">
         <div>
           <label style="font-size:12px; color:${M3.textSub}; display:block; margin-bottom:4px;">學生 ID (5A / 5B / 5C / 5D + 班號)</label>
-          <input type="text" id="customUserIdInput" placeholder="例如: 5A1" style="width:100%; padding:11px 14px; border:1px solid ${M3.outline}; border-radius:14px; font-size:14px; box-sizing:border-box; background:${M3.bg}; color:${M3.textMain}; outline:none;" />
+          <input type="text" id="customUserIdInput" placeholder="例如: 5A1" style="width:100%; padding:11px 14px; border:1.5px solid ${M3.outline}; border-radius:14px; font-size:14px; box-sizing:border-box; background:${M3.bg}; color:${M3.textMain}; outline:none;" />
         </div>
         <div>
           <label style="font-size:12px; color:${M3.textSub}; display:block; margin-bottom:4px;">密碼</label>
-          <input type="password" id="customUserPassInput" placeholder="輸入密碼" style="width:100%; padding:11px 14px; border:1px solid ${M3.outline}; border-radius:14px; font-size:14px; box-sizing:border-box; background:${M3.bg}; color:${M3.textMain}; outline:none;" />
+          <input type="password" id="customUserPassInput" placeholder="輸入密碼" style="width:100%; padding:11px 14px; border:1.5px solid ${M3.outline}; border-radius:14px; font-size:14px; box-sizing:border-box; background:${M3.bg}; color:${M3.textMain}; outline:none;" />
         </div>
         <div id="confirmPassGroup" style="display:none;">
           <label style="font-size:12px; color:${M3.textSub}; display:block; margin-bottom:4px;">確認密碼</label>
-          <input type="password" id="customUserPassConfirmInput" placeholder="再次輸入相同密碼" style="width:100%; padding:11px 14px; border:1px solid ${M3.outline}; border-radius:14px; font-size:14px; box-sizing:border-box; background:${M3.bg}; color:${M3.textMain}; outline:none;" />
+          <input type="password" id="customUserPassConfirmInput" placeholder="再次輸入相同密碼" style="width:100%; padding:11px 14px; border:1.5px solid ${M3.outline}; border-radius:14px; font-size:14px; box-sizing:border-box; background:${M3.bg}; color:${M3.textMain}; outline:none;" />
         </div>
 
         <div style="display:flex; gap:10px; margin-top:4px;">
