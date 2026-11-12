@@ -2457,3 +2457,296 @@ if (document.readyState === 'loading') {
 
   detectAndLoadCurrentChapter();
 })();
+/**
+ * ============================================================================
+ * Version Tracker, Anti-Zoom & Strict Directory Background Scroll Lock
+ * Current Version: 0.1.12 (Increment on every new release)
+ * Append this snippet to the very bottom of app.js
+ * ============================================================================
+ */
+(function () {
+  'use strict';
+
+  const APP_VERSION = '0.1.12';
+  window.CHEM_APP_VERSION = APP_VERSION;
+
+  // --------------------------------------------------------------------------
+  // 1. 版本號檢測與畫面左下角狀態標籤（方便每次更新後即時確認是否載入新版）
+  // --------------------------------------------------------------------------
+  function initVersionBadge() {
+    const prevVersion = localStorage.getItem('chem_app_version');
+    if (prevVersion && prevVersion !== APP_VERSION) {
+      console.log(`[ChemApp] 版本已更新：v${prevVersion} -> v${APP_VERSION}`);
+    } else {
+      console.log(`[ChemApp] 當前版本：v${APP_VERSION}`);
+    }
+    localStorage.setItem('chem_app_version', APP_VERSION);
+
+    if (document.getElementById('chemVersionBadge')) return;
+    const badge = document.createElement('div');
+    badge.id = 'chemVersionBadge';
+    badge.textContent = `v${APP_VERSION}`;
+    badge.title = `當前題庫程式版本 v${APP_VERSION}（點擊檢查版本）`;
+    badge.style.cssText = [
+      'position: fixed',
+      'left: 12px',
+      'bottom: 12px',
+      'z-index: 9998',
+      'background: rgba(29, 31, 44, 0.72)',
+      'color: #FFFFFF',
+      'font-family: -apple-system, BlinkMacSystemFont, sans-serif',
+      'font-size: 11px',
+      'font-weight: 600',
+      'letter-spacing: 0.4px',
+      'padding: 4px 10px',
+      'border-radius: 999px',
+      'backdrop-filter: blur(6px)',
+      '-webkit-backdrop-filter: blur(6px)',
+      'box-shadow: 0 2px 8px rgba(0,0,0,0.12)',
+      'user-select: none',
+      'cursor: pointer'
+    ].join(';');
+
+    badge.addEventListener('click', () => {
+      badge.textContent = `v${APP_VERSION} ✓ 已是最新`;
+      setTimeout(() => {
+        badge.textContent = `v${APP_VERSION}`;
+      }, 1600);
+    });
+
+    document.body.appendChild(badge);
+  }
+
+  // --------------------------------------------------------------------------
+  // 2. 徹底關閉網頁內放大功能（雙指捏合、雙擊放大、觸控板縮放）
+  // --------------------------------------------------------------------------
+  function disablePageZoom() {
+    let viewport = document.querySelector('meta[name="viewport"]');
+    if (!viewport) {
+      viewport = document.createElement('meta');
+      viewport.name = 'viewport';
+      document.head.appendChild(viewport);
+    }
+    viewport.setAttribute(
+      'content',
+      'width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no, viewport-fit=cover'
+    );
+
+    if (!document.getElementById('chemLockV0112Style')) {
+      const style = document.createElement('style');
+      style.id = 'chemLockV0112Style';
+      style.textContent = `
+        html, body {
+          touch-action: pan-x pan-y !important;
+          -ms-touch-action: pan-x pan-y !important;
+          overscroll-behavior: none !important;
+        }
+        * {
+          touch-action: manipulation;
+        }
+        html.chem-dir-locked,
+        body.chem-dir-locked,
+        body.chem-dir-locked #chemAppRootContainer {
+          overflow: hidden !important;
+          overscroll-behavior: none !important;
+        }
+      `;
+      document.head.appendChild(style);
+    }
+
+    // 攔截 iPadOS / iOS Safari 原生縮放手勢
+    ['gesturestart', 'gesturechange', 'gestureend'].forEach(evt => {
+      document.addEventListener(evt, e => e.preventDefault(), { passive: false });
+    });
+
+    // 攔截雙指觸控縮放
+    document.addEventListener(
+      'touchstart',
+      e => {
+        if (e.touches && e.touches.length > 1) {
+          e.preventDefault();
+        }
+      },
+      { passive: false }
+    );
+    document.addEventListener(
+      'touchmove',
+      e => {
+        if (e.touches && e.touches.length > 1) {
+          e.preventDefault();
+        }
+      },
+      { passive: false }
+    );
+
+    // 攔截雙擊放大 (300ms 內連續點擊)
+    let lastTouchEnd = 0;
+    document.addEventListener(
+      'touchend',
+      e => {
+        const now = Date.now();
+        if (now - lastTouchEnd <= 300) {
+          e.preventDefault();
+        }
+        lastTouchEnd = now;
+      },
+      { passive: false }
+    );
+
+    // 攔截觸控板雙指捏合縮放 (Ctrl + Wheel)
+    document.addEventListener(
+      'wheel',
+      e => {
+        if (e.ctrlKey) {
+          e.preventDefault();
+        }
+      },
+      { passive: false }
+    );
+  }
+
+  // --------------------------------------------------------------------------
+  // 3. 打開目錄時徹底鎖死背景滑動（支援觸控手勢與觸控板滾輪）
+  // --------------------------------------------------------------------------
+  let isDirOpen = false;
+
+  // 判斷目前畫面上是否有開啟目錄抽屜或全螢幕遮罩
+  function detectDirectoryOpen() {
+    const candidates = Array.from(document.querySelectorAll('div, aside, nav, dialog, section'));
+    const found = candidates.some(el => {
+      if (el === document.body || el === document.documentElement || el.id === 'chemVersionBadge') {
+        return false;
+      }
+      const style = window.getComputedStyle(el);
+      if (style.display === 'none' || style.visibility === 'hidden' || parseFloat(style.opacity) === 0) {
+        return false;
+      }
+      if (style.position !== 'fixed' && style.position !== 'absolute') {
+        return false;
+      }
+      // 排除右下角常駐的懸浮控制列（包含「結束當前 MC」按鈕的區塊）
+      const txt = el.textContent || '';
+      if (txt.includes('結束當前 MC') && el.getBoundingClientRect().width < 260) {
+        return false;
+      }
+
+      const rect = el.getBoundingClientRect();
+      const isBackdrop = rect.width >= window.innerWidth * 0.85 && rect.height >= window.innerHeight * 0.85;
+      const isDrawer = rect.width >= 200 && rect.height >= window.innerHeight * 0.35 && (parseInt(style.zIndex, 10) || 0) >= 10;
+      return isBackdrop || isDrawer;
+    });
+
+    if (found !== isDirOpen) {
+      isDirOpen = found;
+      document.documentElement.classList.toggle('chem-dir-locked', isDirOpen);
+      document.body.classList.toggle('chem-dir-locked', isDirOpen);
+    }
+    return isDirOpen;
+  }
+
+  // 尋找手指／滑鼠所在位置的可捲動目錄容器
+  function findScrollableMenuContainer(target) {
+    let el = target;
+    const rootContainer = document.getElementById('chemAppRootContainer');
+    while (el && el !== document.body && el !== document.documentElement && el !== rootContainer) {
+      const style = window.getComputedStyle(el);
+      const oy = style.overflowY;
+      if ((oy === 'auto' || oy === 'scroll') && el.scrollHeight > el.clientHeight + 1) {
+        return el;
+      }
+      el = el.parentElement;
+    }
+    return null;
+  }
+
+  let touchStartY = 0;
+  document.addEventListener(
+    'touchstart',
+    e => {
+      if (e.touches && e.touches.length === 1) {
+        touchStartY = e.touches[0].clientY;
+      }
+    },
+    { passive: true }
+  );
+
+  // 攔截觸控滑動：目錄開啟時，非目錄內部捲動區一律禁止移動
+  document.addEventListener(
+    'touchmove',
+    e => {
+      if (!detectDirectoryOpen()) return;
+      if (e.touches && e.touches.length > 1) return;
+
+      const menuScroller = findScrollableMenuContainer(e.target);
+      if (!menuScroller) {
+        // 滑在黑底遮罩或目錄標題列上時，直接阻斷事件防止背景跟著動
+        e.preventDefault();
+        return;
+      }
+
+      menuScroller.style.overscrollBehavior = 'contain';
+      const currentY = e.touches[0].clientY;
+      const deltaY = currentY - touchStartY;
+      const atTop = menuScroller.scrollTop <= 0;
+      const atBottom = menuScroller.scrollTop + menuScroller.clientHeight >= menuScroller.scrollHeight - 1;
+
+      if ((atTop && deltaY > 0) || (atBottom && deltaY < 0)) {
+        e.preventDefault();
+      }
+    },
+    { passive: false }
+  );
+
+  // 攔截 iPad 觸控板／外接滑鼠滾輪 (Wheel)：目錄開啟時禁止背景捲動
+  document.addEventListener(
+    'wheel',
+    e => {
+      if (!detectDirectoryOpen()) return;
+      const menuScroller = findScrollableMenuContainer(e.target);
+      if (!menuScroller) {
+        e.preventDefault();
+        return;
+      }
+      const atTop = menuScroller.scrollTop <= 0;
+      const atBottom = menuScroller.scrollTop + menuScroller.clientHeight >= menuScroller.scrollHeight - 1;
+      if ((atTop && e.deltaY < 0) || (atBottom && e.deltaY > 0)) {
+        e.preventDefault();
+      }
+    },
+    { passive: false }
+  );
+
+  // 點擊「目錄選單」按鈕時立即觸發狀態檢測
+  document.addEventListener(
+    'click',
+    e => {
+      const btn = e.target.closest('button, [role="button"], div');
+      if (btn && (btn.textContent || '').includes('目錄選單')) {
+        setTimeout(detectDirectoryOpen, 30);
+        setTimeout(detectDirectoryOpen, 150);
+      }
+    },
+    true
+  );
+
+  function init() {
+    initVersionBadge();
+    disablePageZoom();
+    const observer = new MutationObserver(() => {
+      detectDirectoryOpen();
+    });
+    observer.observe(document.body, {
+      childList: true,
+      subtree: true,
+      attributes: true,
+      attributeFilter: ['style', 'class', 'hidden', 'open']
+    });
+    detectDirectoryOpen();
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+  } else {
+    init();
+  }
+})();
