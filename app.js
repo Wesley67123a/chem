@@ -2750,3 +2750,682 @@ if (document.readyState === 'loading') {
     init();
   }
 })();
+/**
+ * ============================================================================
+ * HKDSE Subject Switcher (Chem / Bio), Version Tracker (v0.1.15),
+ * Anti-Zoom & Strict Directory Background Scroll Lock (Clean No-Emoji UI)
+ * Append this complete module to the very bottom of app.js
+ * ============================================================================
+ */
+(function () {
+  'use strict';
+
+  const APP_VERSION = '0.1.15';
+  window.CHEM_APP_VERSION = APP_VERSION;
+
+  // ==========================================================================
+  // 1. HKDSE Biology 完整章節目錄設定
+  // ==========================================================================
+  const BIO_CHAPTERS = [
+    { id: 1, title: 'Ch 1: Introducing Biology (生物學入門)', file: 'bio/bioqb_ch01_mcq_e.docx' },
+    { id: 2, title: 'Ch 2: The Cell as the Basic Unit of Life (細胞)', file: 'bio/bioqb_ch02_mcq_e.docx' },
+    { id: 3, title: 'Ch 3: Movement of Substances across Membrane (物質穿越細胞膜)', file: 'bio/bioqb_ch03_mcq_e.docx' },
+    { id: 4, title: 'Ch 4: Enzymes and Metabolism (酶與新陳代謝)', file: 'bio/bioqb_ch04_mcq_e.docx' },
+    { id: 5, title: 'Ch 5: Food and Humans (食物與人類)', file: 'bio/bioqb_ch05_mcq_e.docx' },
+    { id: 6, title: 'Ch 6: Nutrition in Humans (人的營養)', file: 'bio/bioqb_ch06_mcq_e.docx' },
+    { id: 7, title: 'Ch 7: Gas Exchange in Humans (人的氣體交換)', file: 'bio/bioqb_ch07_mcq_e.docx' },
+    { id: 8, title: 'Ch 8: Transport in Humans (人體內的轉運)', file: 'bio/bioqb_ch08_mcq_e.docx' },
+    { id: 9, title: 'Ch 9: Nutrition and Gas Exchange in Plants (植物的營養與氣體交換)', file: 'bio/bioqb_ch09_mcq_e.docx' },
+    { id: 10, title: 'Ch 10: Transpiration, Transport and Support in Plants (蒸騰、轉運與支持)', file: 'bio/bioqb_ch10_mcq_e.docx' },
+    { id: 11, title: 'Ch 11: Cell Cycle and Division (細胞週期與分裂)', file: 'bio/bioqb_ch11_mcq_e.docx' },
+    { id: 12, title: 'Ch 12: Reproduction in Flowering Plants (有花植物的生殖)', file: 'bio/bioqb_ch12_mcq_e.docx' },
+    { id: 13, title: 'Ch 13: Reproduction in Humans (人的生殖)', file: 'bio/bioqb_ch13_mcq_e.docx' },
+    { id: 14, title: 'Ch 14: Growth and Development (生長與發育)', file: 'bio/bioqb_ch14_mcq_e.docx' },
+    { id: 15, title: 'Ch 15: Detecting the Environment (環境的探測)', file: 'bio/bioqb_ch15_mcq_e.docx' },
+    { id: 16, title: 'Ch 16: Coordination in Humans (人體的協調)', file: 'bio/bioqb_ch16_mcq_e.docx' },
+    { id: 17, title: 'Ch 17: Movement in Humans (人體的運動)', file: 'bio/bioqb_ch17_mcq_e.docx' },
+    { id: 18, title: 'Ch 18: Homeostasis (體內平衡)', file: 'bio/bioqb_ch18_mcq_e.docx' },
+    { id: 19, title: 'Ch 19: Ecosystems (生態系)', file: 'bio/bioqb_ch19_mcq_e.docx' },
+    { id: 20, title: 'Ch 20: Photosynthesis (光合作用)', file: 'bio/bioqb_ch20_mcq_e.docx' },
+    { id: 21, title: 'Ch 21: Respiration (呼吸作用)', file: 'bio/bioqb_ch21_mcq_e.docx' },
+    { id: 22, title: 'Ch 22: Non-infectious Diseases (非傳染病)', file: 'bio/bioqb_ch22_mcq_e.docx' },
+    { id: 23, title: 'Ch 23: Infectious Diseases (傳染病)', file: 'bio/bioqb_ch23_mcq_e.docx' },
+    { id: 24, title: 'Ch 24: Body Defence Mechanisms (身體防禦機制)', file: 'bio/bioqb_ch24_mcq_e.docx' },
+    { id: 25, title: 'Ch 25: Basic Genetics (基礎遺傳學)', file: 'bio/bioqb_ch25_mcq_e.docx' },
+    { id: 26, title: 'Ch 26: Molecular Genetics (分子遺傳學)', file: 'bio/bioqb_ch26_mcq_e.docx' },
+    { id: 27, title: 'Ch 27: Biotechnology (生物工程)', file: 'bio/bioqb_ch27_mcq_e.docx' },
+    { id: 28, title: 'Ch 28: Biodiversity (生物多樣性)', file: 'bio/bioqb_ch28_mcq_e.docx' },
+    { id: 29, title: 'Ch 29: Evolution (進化)', file: 'bio/bioqb_ch29_mcq_e.docx' }
+  ];
+
+  // ==========================================================================
+  // 2. 注入左上角切換鈕與 Bio 分區專屬樣式
+  // ==========================================================================
+  function injectSubjectSwitcherStyles() {
+    if (document.getElementById('dseSubjectSwitcherStyle')) return;
+    const style = document.createElement('style');
+    style.id = 'dseSubjectSwitcherStyle';
+    style.textContent = `
+      #dseSubjectSwitchBtn {
+        position: fixed !important;
+        top: max(12px, env(safe-area-inset-top)) !important;
+        left: 12px !important;
+        z-index: 9999 !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        gap: 6px !important;
+        padding: 6px 14px !important;
+        border-radius: 999px !important;
+        border: 1.5px solid rgba(29, 31, 44, 0.14) !important;
+        background: rgba(255, 255, 255, 0.92) !important;
+        color: #1D1F2C !important;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
+        font-size: 13px !important;
+        font-weight: 700 !important;
+        letter-spacing: 0.3px !important;
+        box-shadow: 0 3px 12px rgba(0, 0, 0, 0.12) !important;
+        backdrop-filter: blur(8px) !important;
+        -webkit-backdrop-filter: blur(8px) !important;
+        cursor: pointer !important;
+        user-select: none !important;
+        transition: transform 0.15s ease, background 0.2s ease, border-color 0.2s ease !important;
+      }
+      #dseSubjectSwitchBtn:active {
+        transform: scale(0.95) !important;
+      }
+      #dseSubjectSwitchBtn.is-bio-mode {
+        background: #1B5E20 !important;
+        color: #FFFFFF !important;
+        border-color: #2E7D32 !important;
+        box-shadow: 0 3px 14px rgba(27, 94, 32, 0.32) !important;
+      }
+
+      #bioAppRootContainer {
+        display: none;
+        max-width: 780px;
+        margin: 0 auto;
+        padding: 58px 16px 120px 16px;
+        font-family: -apple-system, BlinkMacSystemFont, "Noto Sans TC", sans-serif;
+        color: #1D1F2C;
+        box-sizing: border-box;
+      }
+      #bioAppRootContainer.active {
+        display: block !important;
+      }
+
+      .bio-header-card {
+        background: linear-gradient(135deg, #E8F5E9 0%, #F1F8E9 100%);
+        border: 1px solid #C8E6C9;
+        border-radius: 20px;
+        padding: 18px 20px;
+        margin-bottom: 18px;
+        box-shadow: 0 4px 16px rgba(27, 94, 32, 0.06);
+      }
+      .bio-header-title {
+        font-size: 19px;
+        font-weight: 800;
+        color: #1B5E20;
+        margin: 0 0 6px 0;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+      .bio-toolbar {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-top: 12px;
+        align-items: center;
+      }
+      .bio-select {
+        flex: 1;
+        min-width: 210px;
+        padding: 9px 12px;
+        border-radius: 12px;
+        border: 1.5px solid #A5D6A7;
+        background: #FFFFFF;
+        color: #1D1F2C;
+        font-size: 14px;
+        font-weight: 600;
+        outline: none;
+      }
+      .bio-btn {
+        padding: 9px 14px;
+        border-radius: 12px;
+        border: none;
+        background: #2E7D32;
+        color: #FFFFFF;
+        font-size: 13.5px;
+        font-weight: 700;
+        cursor: pointer;
+        white-space: nowrap;
+      }
+      .bio-btn-outline {
+        padding: 8px 13px;
+        border-radius: 12px;
+        border: 1.5px solid #2E7D32;
+        background: #FFFFFF;
+        color: #1B5E20;
+        font-size: 13.5px;
+        font-weight: 700;
+        cursor: pointer;
+        white-space: nowrap;
+      }
+
+      .bio-q-card {
+        background: #FFFFFF;
+        border: 1px solid #E2E8F0;
+        border-radius: 18px;
+        padding: 18px 20px;
+        margin-bottom: 16px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.04);
+      }
+      .bio-q-meta {
+        display: flex;
+        justify-content: space-between;
+        font-size: 12.5px;
+        font-weight: 700;
+        color: #2E7D32;
+        margin-bottom: 10px;
+        padding-bottom: 6px;
+        border-bottom: 1px dashed #E2E8F0;
+      }
+      .bio-q-body {
+        font-family: "Times New Roman", "Noto Serif TC", serif;
+        font-size: 16px;
+        line-height: 1.65;
+        color: #111111;
+      }
+      .bio-q-body img {
+        max-width: 85% !important;
+        max-height: 220px !important;
+        display: block;
+        margin: 10px auto;
+        object-fit: contain;
+        mix-blend-mode: multiply;
+      }
+      .bio-ans-row {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 8px;
+        margin-top: 14px;
+        padding-top: 12px;
+        border-top: 1px dashed #E2E8F0;
+      }
+      .bio-opt-btn {
+        padding: 9px 0;
+        border-radius: 12px;
+        border: 1.5px solid #CBD5E1;
+        background: #F8FAFC;
+        font-weight: 700;
+        font-size: 14.5px;
+        color: #1E293B;
+        cursor: pointer;
+      }
+      .bio-opt-btn.correct {
+        background: #1B5E20 !important;
+        border-color: #1B5E20 !important;
+        color: #FFFFFF !important;
+      }
+      .bio-opt-btn.wrong {
+        background: #C62828 !important;
+        border-color: #C62828 !important;
+        color: #FFFFFF !important;
+      }
+      .bio-exp-box {
+        display: none;
+        margin-top: 12px;
+        padding: 12px 14px;
+        border-radius: 12px;
+        background: #F1F8E9;
+        border-left: 4px solid #2E7D32;
+        font-family: "Times New Roman", "Noto Serif TC", serif;
+        font-size: 15px;
+        line-height: 1.55;
+      }
+      .bio-exp-box.open {
+        display: block;
+      }
+    `;
+    document.head.appendChild(style);
+  }
+
+  // ==========================================================================
+  // 3. 建立 Bio 分區工作台與自動載入/解析引擎
+  // ==========================================================================
+  function ensureBioWorkspace() {
+    if (document.getElementById('bioAppRootContainer')) return;
+
+    const bioRoot = document.createElement('div');
+    bioRoot.id = 'bioAppRootContainer';
+
+    const optionsHtml = BIO_CHAPTERS.map(
+      ch => `<option value="${ch.id}" data-file="${ch.file}">${ch.title}</option>`
+    ).join('');
+
+    bioRoot.innerHTML = `
+      <div class="bio-header-card">
+        <div class="bio-header-title">
+          <span>HKDSE Biology 題庫分區</span>
+          <span id="bioQuestionCountBadge" style="font-size:12.5px; background:#2E7D32; color:#fff; padding:3px 10px; border-radius:999px;">準備就緒</span>
+        </div>
+        <div style="font-size:13px; color:#33691E;">
+          點擊左上角 <b>「Bio / Chem」</b> 可隨時無縫切換科目；支援直接從 GitHub 讀取或手動匯入生物 <code>.docx</code> 題庫。
+        </div>
+        <div class="bio-toolbar">
+          <select id="bioChapterSelect" class="bio-select">${optionsHtml}</select>
+          <button id="bioLoadRemoteBtn" class="bio-btn">載入本章題庫</button>
+          <label class="bio-btn-outline" style="cursor:pointer;">
+            匯入 .docx
+            <input id="bioLocalDocxInput" type="file" accept=".docx" style="display:none;" />
+          </label>
+        </div>
+      </div>
+      <div id="bioQuestionsFeed"></div>
+    `;
+
+    document.body.appendChild(bioRoot);
+
+    document.getElementById('bioLoadRemoteBtn').addEventListener('click', () => {
+      const sel = document.getElementById('bioChapterSelect');
+      const opt = sel.options[sel.selectedIndex];
+      loadBioChapterFromPath(opt.dataset.file, opt.textContent);
+    });
+
+    document.getElementById('bioLocalDocxInput').addEventListener('change', async e => {
+      const file = e.target.files && e.target.files[0];
+      if (!file) return;
+      const buf = await file.arrayBuffer();
+      await parseAndRenderBioDocx(buf, file.name);
+      e.target.value = '';
+    });
+
+    renderBioWelcomeCard();
+  }
+
+  function renderBioWelcomeCard() {
+    const feed = document.getElementById('bioQuestionsFeed');
+    if (!feed) return;
+    feed.innerHTML = `
+      <div class="bio-q-card" style="text-align:center; padding:28px 20px;">
+        <div style="font-size:17px; font-weight:700; color:#1B5E20; margin-bottom:8px;">
+          已切換至 HKDSE Biology 生物科專區
+        </div>
+        <div style="font-size:14px; color:#475569; line-height:1.6; max-width:460px; margin:0 auto;">
+          你可以把生物科 <code>.docx</code> 題庫上傳至 GitHub 的 <code>docs/bio/</code> 資料夾（命名如 <code>bioqb_ch01_mcq_e.docx</code>），或直接點擊上方 <b>「匯入 .docx」</b> 立即開始刷題。
+        </div>
+      </div>
+    `;
+  }
+
+  async function loadBioChapterFromPath(relPath, titleText) {
+    const feed = document.getElementById('bioQuestionsFeed');
+    const badge = document.getElementById('bioQuestionCountBadge');
+    badge.textContent = '載入中...';
+    feed.innerHTML = `<div class="bio-q-card" style="text-align:center; padding:24px;">正在讀取 <b>${titleText}</b> ...</div>`;
+
+    const candidateUrls = [`docs/${relPath}`, relPath];
+    let arrayBuffer = null;
+
+    for (const url of candidateUrls) {
+      try {
+        const res = await fetch(url);
+        if (res.ok) {
+          arrayBuffer = await res.arrayBuffer();
+          break;
+        }
+      } catch (_) {}
+    }
+
+    if (!arrayBuffer) {
+      badge.textContent = '尚未上傳題庫';
+      feed.innerHTML = `
+        <div class="bio-q-card" style="border-left:4px solid #E65100;">
+          <div style="font-weight:700; color:#E65100; margin-bottom:6px;">找不到遠端檔案：docs/${relPath}</div>
+          <div style="font-size:14px; color:#334155; line-height:1.6;">
+            請確認你已將該章節的 Word 題庫上傳至 GitHub 倉庫的 <code>docs/${relPath}</code>，或直接點擊上方 <b>「匯入 .docx」</b> 從本機開啟。
+          </div>
+        </div>
+      `;
+      return;
+    }
+
+    await parseAndRenderBioDocx(arrayBuffer, titleText);
+  }
+
+  async function parseAndRenderBioDocx(arrayBuffer, labelName) {
+    const feed = document.getElementById('bioQuestionsFeed');
+    const badge = document.getElementById('bioQuestionCountBadge');
+
+    if (typeof mammoth === 'undefined') {
+      feed.innerHTML = `<div class="bio-q-card">找不到 mammoth.js 解析引擎，請確認 index.html 已載入 mammoth。</div>`;
+      return;
+    }
+
+    try {
+      const result = await mammoth.convertToHtml({ arrayBuffer });
+      const tempDiv = document.createElement('div');
+      tempDiv.innerHTML = result.value;
+
+      const blocks = Array.from(tempDiv.children);
+      const questions = [];
+      let currQ = null;
+
+      blocks.forEach(el => {
+        const txt = (el.textContent || '').trim();
+        const codeMatch = txt.match(/^(BioMCQ\d+|Question\s*\d+|\d+\.)/i);
+        if (codeMatch && (txt.startsWith('BioMCQ') || txt.length < 25)) {
+          if (currQ) questions.push(currQ);
+          currQ = { code: codeMatch[1], stemNodes: [], expNodes: [], answer: '', inExp: false };
+          return;
+        }
+        if (!currQ) {
+          currQ = { code: `BioQ-${questions.length + 1}`, stemNodes: [], expNodes: [], answer: '', inExp: false };
+        }
+
+        const ansMatch = txt.match(/^Answer:\s*([A-D])/i);
+        if (ansMatch) {
+          currQ.answer = ansMatch[1].toUpperCase();
+          currQ.inExp = true;
+          currQ.expNodes.push(el.outerHTML);
+        } else if (currQ.inExp) {
+          currQ.expNodes.push(el.outerHTML);
+        } else {
+          currQ.stemNodes.push(el.outerHTML);
+        }
+      });
+      if (currQ && currQ.stemNodes.length > 0) questions.push(currQ);
+
+      if (questions.length === 0) {
+        badge.textContent = '0 題';
+        feed.innerHTML = `<div class="bio-q-card">未能從 <b>${labelName}</b> 識別出標準題目格式。</div>`;
+        return;
+      }
+
+      badge.textContent = `共 ${questions.length} 題`;
+      feed.innerHTML = questions
+        .map(
+          (q, idx) => `
+          <div class="bio-q-card" data-ans="${q.answer}">
+            <div class="bio-q-meta">
+              <span>${q.code}</span>
+              <span>第 ${idx + 1} / ${questions.length} 題</span>
+            </div>
+            <div class="bio-q-body">${q.stemNodes.join('')}</div>
+            <div class="bio-ans-row">
+              ${['A', 'B', 'C', 'D']
+                .map(opt => `<button class="bio-opt-btn" data-opt="${opt}">${opt}</button>`)
+                .join('')}
+            </div>
+            <div class="bio-exp-box">${q.expNodes.join('') || '（本題無附文字解析）'}</div>
+          </div>
+        `
+        )
+        .join('');
+
+      feed.querySelectorAll('.bio-opt-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const card = btn.closest('.bio-q-card');
+          const correctAns = card.dataset.ans;
+          const chosen = btn.dataset.opt;
+          const expBox = card.querySelector('.bio-exp-box');
+
+          card.querySelectorAll('.bio-opt-btn').forEach(b => {
+            b.disabled = true;
+            if (b.dataset.opt === correctAns) b.classList.add('correct');
+          });
+          if (correctAns && chosen !== correctAns) {
+            btn.classList.add('wrong');
+          }
+          if (expBox) expBox.classList.add('open');
+        });
+      });
+    } catch (err) {
+      badge.textContent = '解析失敗';
+      feed.innerHTML = `<div class="bio-q-card">解析檔案時發生錯誤：${err.message}</div>`;
+    }
+  }
+
+  // ==========================================================================
+  // 4. 左上角一鍵切換按鈕邏輯 (Chem <-> Bio)
+  // ==========================================================================
+  let currentSubject = localStorage.getItem('dse_active_subject') || 'chem';
+
+  function applySubjectMode(mode) {
+    currentSubject = mode === 'bio' ? 'bio' : 'chem';
+    localStorage.setItem('dse_active_subject', currentSubject);
+
+    const chemRoot = document.getElementById('chemAppRootContainer');
+    const bioRoot = document.getElementById('bioAppRootContainer');
+    const switchBtn = document.getElementById('dseSubjectSwitchBtn');
+
+    if (currentSubject === 'bio') {
+      if (chemRoot) chemRoot.style.display = 'none';
+      if (bioRoot) bioRoot.classList.add('active');
+      if (switchBtn) {
+        switchBtn.classList.add('is-bio-mode');
+        switchBtn.innerHTML = 'Bio <span style="font-size:11px; opacity:0.85;">| 切 Chem</span>';
+      }
+    } else {
+      if (chemRoot) chemRoot.style.display = '';
+      if (bioRoot) bioRoot.classList.remove('active');
+      if (switchBtn) {
+        switchBtn.classList.remove('is-bio-mode');
+        switchBtn.innerHTML = 'Chem <span style="font-size:11px; opacity:0.75;">| 切 Bio</span>';
+      }
+    }
+    window.scrollTo({ top: 0, behavior: 'instant' });
+  }
+
+  function initTopLeftSubjectButton() {
+    injectSubjectSwitcherStyles();
+    ensureBioWorkspace();
+
+    if (!document.getElementById('dseSubjectSwitchBtn')) {
+      const btn = document.createElement('button');
+      btn.id = 'dseSubjectSwitchBtn';
+      btn.type = 'button';
+      btn.title = '點擊切換 Chemistry / Biology 題庫分區';
+      btn.addEventListener('click', () => {
+        applySubjectMode(currentSubject === 'chem' ? 'bio' : 'chem');
+      });
+      document.body.appendChild(btn);
+    }
+
+    applySubjectMode(currentSubject);
+  }
+
+  // ==========================================================================
+  // 5. 版本號標籤 (v0.1.15)、禁用網頁放大、鎖定目錄開啟時背景滑動
+  // ==========================================================================
+  function initVersionBadge() {
+    localStorage.setItem('chem_app_version', APP_VERSION);
+    if (document.getElementById('chemVersionBadge')) return;
+    const badge = document.createElement('div');
+    badge.id = 'chemVersionBadge';
+    badge.textContent = `v${APP_VERSION}`;
+    badge.style.cssText = [
+      'position: fixed',
+      'left: 12px',
+      'bottom: 12px',
+      'z-index: 9998',
+      'background: rgba(29, 31, 44, 0.72)',
+      'color: #FFFFFF',
+      'font-family: -apple-system, BlinkMacSystemFont, sans-serif',
+      'font-size: 11px',
+      'font-weight: 600',
+      'padding: 4px 10px',
+      'border-radius: 999px',
+      'backdrop-filter: blur(6px)',
+      '-webkit-backdrop-filter: blur(6px)',
+      'user-select: none',
+      'cursor: pointer'
+    ].join(';');
+    badge.addEventListener('click', () => {
+      badge.textContent = `v${APP_VERSION} (最新)`;
+      setTimeout(() => {
+        badge.textContent = `v${APP_VERSION}`;
+      }, 1400);
+    });
+    document.body.appendChild(badge);
+  }
+
+  function disablePageZoomAndLockMenuScroll() {
+    let viewport = document.querySelector('meta[name="viewport"]');
+    if (!viewport) {
+      viewport = document.createElement('meta');
+      viewport.name = 'viewport';
+      document.head.appendChild(viewport);
+    }
+    viewport.setAttribute(
+      'content',
+      'width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no, viewport-fit=cover'
+    );
+
+    if (!document.getElementById('chemLockV0115Style')) {
+      const style = document.createElement('style');
+      style.id = 'chemLockV0115Style';
+      style.textContent = `
+        html, body {
+          touch-action: pan-x pan-y !important;
+          overscroll-behavior: none !important;
+        }
+        * { touch-action: manipulation; }
+        html.chem-dir-locked,
+        body.chem-dir-locked,
+        body.chem-dir-locked #chemAppRootContainer {
+          overflow: hidden !important;
+          overscroll-behavior: none !important;
+        }
+      `;
+      document.head.appendChild(style);
+    }
+
+    ['gesturestart', 'gesturechange', 'gestureend'].forEach(evt => {
+      document.addEventListener(evt, e => e.preventDefault(), { passive: false });
+    });
+
+    let lastTouchEnd = 0;
+    document.addEventListener(
+      'touchend',
+      e => {
+        const now = Date.now();
+        if (now - lastTouchEnd <= 300) e.preventDefault();
+        lastTouchEnd = now;
+      },
+      { passive: false }
+    );
+
+    let isDirOpen = false;
+    function detectDirectoryOpen() {
+      const found = Array.from(document.querySelectorAll('div, aside, nav, dialog, section')).some(el => {
+        if (
+          el === document.body ||
+          el === document.documentElement ||
+          el.id === 'chemVersionBadge' ||
+          el.id === 'dseSubjectSwitchBtn' ||
+          el.id === 'bioAppRootContainer'
+        ) {
+          return false;
+        }
+        const style = window.getComputedStyle(el);
+        if (style.display === 'none' || style.visibility === 'hidden' || parseFloat(style.opacity) === 0) return false;
+        if (style.position !== 'fixed' && style.position !== 'absolute') return false;
+        const txt = el.textContent || '';
+        if (txt.includes('結束當前 MC') && el.getBoundingClientRect().width < 260) return false;
+        const rect = el.getBoundingClientRect();
+        return (
+          (rect.width >= window.innerWidth * 0.85 && rect.height >= window.innerHeight * 0.85) ||
+          (rect.width >= 200 && rect.height >= window.innerHeight * 0.35 && (parseInt(style.zIndex, 10) || 0) >= 10)
+        );
+      });
+
+      if (found !== isDirOpen) {
+        isDirOpen = found;
+        document.documentElement.classList.toggle('chem-dir-locked', isDirOpen);
+        document.body.classList.toggle('chem-dir-locked', isDirOpen);
+      }
+      return isDirOpen;
+    }
+
+    function findMenuScroller(target) {
+      let el = target;
+      const root = document.getElementById('chemAppRootContainer');
+      while (el && el !== document.body && el !== document.documentElement && el !== root) {
+        const oy = window.getComputedStyle(el).overflowY;
+        if ((oy === 'auto' || oy === 'scroll') && el.scrollHeight > el.clientHeight + 1) return el;
+        el = el.parentElement;
+      }
+      return null;
+    }
+
+    let touchStartY = 0;
+    document.addEventListener(
+      'touchstart',
+      e => {
+        if (e.touches && e.touches.length === 1) touchStartY = e.touches[0].clientY;
+      },
+      { passive: true }
+    );
+
+    document.addEventListener(
+      'touchmove',
+      e => {
+        if (e.touches && e.touches.length > 1) {
+          e.preventDefault();
+          return;
+        }
+        if (!detectDirectoryOpen()) return;
+        const scroller = findMenuScroller(e.target);
+        if (!scroller) {
+          e.preventDefault();
+          return;
+        }
+        const deltaY = e.touches[0].clientY - touchStartY;
+        if (
+          (scroller.scrollTop <= 0 && deltaY > 0) ||
+          (scroller.scrollTop + scroller.clientHeight >= scroller.scrollHeight - 1 && deltaY < 0)
+        ) {
+          e.preventDefault();
+        }
+      },
+      { passive: false }
+    );
+
+    document.addEventListener(
+      'wheel',
+      e => {
+        if (e.ctrlKey) {
+          e.preventDefault();
+          return;
+        }
+        if (!detectDirectoryOpen()) return;
+        const scroller = findMenuScroller(e.target);
+        if (!scroller) e.preventDefault();
+      },
+      { passive: false }
+    );
+
+    const observer = new MutationObserver(() => detectDirectoryOpen());
+    observer.observe(document.body, {
+      childList: true,
+      subtree: true,
+      attributes: true,
+      attributeFilter: ['style', 'class', 'hidden', 'open']
+    });
+  }
+
+  function init() {
+    initTopLeftSubjectButton();
+    initVersionBadge();
+    disablePageZoomAndLockMenuScroll();
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+  } else {
+    init();
+  }
+})();
