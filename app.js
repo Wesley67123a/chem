@@ -2410,28 +2410,50 @@ if (document.readyState === 'loading') {
 } else {
   bootChemApp();
 }
-// 在 app.js 的最底部（bootChemApp() 呼叫的下方）加入這段：
-// 放在 app.js 最底部：自動載入當前章節專屬的 patches/patch_chXX.js
+// 自動按需載入當前章節專屬的 patches/patch_chXX.js (例如 Ch40 讀 patch_ch40.js, Ch30 讀 patch_ch30.js)
 (function () {
   const loadedPatches = {};
+
   function loadChapterPatch(chapId) {
     if (!chapId) return;
-    const pad = String(chapId).padStart(2, '0');
-    const files = [`./patches/patch_ch${chapId}.js`, `./patches/patch_ch${pad}.js`];
-    files.forEach(src => {
+    const cleanId = String(chapId).replace(/^0+/, '');
+    if (!cleanId) return;
+    const padId = cleanId.padStart(2, '0');
+    const candidates = Array.from(new Set([
+      `./patches/patch_ch${cleanId}.js`,
+      `./patches/patch_ch${padId}.js`
+    ]));
+
+    candidates.forEach(src => {
       if (loadedPatches[src]) return;
       loadedPatches[src] = true;
       const s = document.createElement('script');
       s.src = `${src}?v=${Date.now()}`;
-      s.onerror = () => {}; // 若該章節沒有 patch 則安靜略過
+      s.onerror = () => {}; // 若該章節目前沒有建立 patch 檔則安靜略過
       document.head.appendChild(s);
     });
   }
-  // 預設載入 Ch41 補丁，並在每次切換章節時自動載入對應章節補丁
-  loadChapterPatch(41);
-  setInterval(() => {
+
+  function detectAndLoadCurrentChapter() {
+    // 1. 優先讀取全域狀態中的當前章節 ID
     if (window.chemApp && window.chemApp.activeChapterId) {
       loadChapterPatch(window.chemApp.activeChapterId);
     }
-  }, 600);
+
+    // 2. 掃描畫面上已渲染的題號 (例如 ChemMCQ40001 -> 自動提取章節 "40")
+    const qNumEls = document.querySelectorAll('.q-number');
+    qNumEls.forEach(el => {
+      const match = (el.textContent || '').trim().match(/Chem[A-Za-z]+(\d{2})\d{3}/i);
+      if (match && match[1]) {
+        loadChapterPatch(match[1]);
+      }
+    });
+  }
+
+  // 監聽 DOM 變化，一旦切換章節或載入新題目即刻觸發對應章節的 Patch
+  const observer = new MutationObserver(detectAndLoadCurrentChapter);
+  const targetNode = document.getElementById('chemAppRootContainer') || document.body;
+  observer.observe(targetNode, { childList: true, subtree: true });
+
+  detectAndLoadCurrentChapter();
 })();
