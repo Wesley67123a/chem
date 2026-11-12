@@ -2752,50 +2752,50 @@ if (document.readyState === 'loading') {
 })();
 /**
  * ============================================================================
- * HKDSE Subject Switcher (Chem / Bio), Version Tracker (v0.1.15),
- * Anti-Zoom & Strict Directory Background Scroll Lock (Clean No-Emoji UI)
+ * HKDSE Subject Switcher (Chem / Bio), Version Tracker (v0.1.16),
+ * Anti-Zoom & Strict Directory Background Scroll Lock (Target Folder: biodocs/)
  * Append this complete module to the very bottom of app.js
  * ============================================================================
  */
 (function () {
   'use strict';
 
-  const APP_VERSION = '0.1.15';
+  const APP_VERSION = '0.1.16';
   window.CHEM_APP_VERSION = APP_VERSION;
 
   // ==========================================================================
-  // 1. HKDSE Biology 完整章節目錄設定
+  // 1. HKDSE Biology 完整章節目錄設定（路徑指向 biodocs/ 資料夾）
   // ==========================================================================
   const BIO_CHAPTERS = [
-    { id: 1, title: 'Ch 1: Introducing Biology (生物學入門)', file: 'bio/bioqb_ch01_mcq_e.docx' },
-    { id: 2, title: 'Ch 2: The Cell as the Basic Unit of Life (細胞)', file: 'bio/bioqb_ch02_mcq_e.docx' },
-    { id: 3, title: 'Ch 3: Movement of Substances across Membrane (物質穿越細胞膜)', file: 'bio/bioqb_ch03_mcq_e.docx' },
-    { id: 4, title: 'Ch 4: Enzymes and Metabolism (酶與新陳代謝)', file: 'bio/bioqb_ch04_mcq_e.docx' },
-    { id: 5, title: 'Ch 5: Food and Humans (食物與人類)', file: 'bio/bioqb_ch05_mcq_e.docx' },
-    { id: 6, title: 'Ch 6: Nutrition in Humans (人的營養)', file: 'bio/bioqb_ch06_mcq_e.docx' },
-    { id: 7, title: 'Ch 7: Gas Exchange in Humans (人的氣體交換)', file: 'bio/bioqb_ch07_mcq_e.docx' },
-    { id: 8, title: 'Ch 8: Transport in Humans (人體內的轉運)', file: 'bio/bioqb_ch08_mcq_e.docx' },
-    { id: 9, title: 'Ch 9: Nutrition and Gas Exchange in Plants (植物的營養與氣體交換)', file: 'bio/bioqb_ch09_mcq_e.docx' },
-    { id: 10, title: 'Ch 10: Transpiration, Transport and Support in Plants (蒸騰、轉運與支持)', file: 'bio/bioqb_ch10_mcq_e.docx' },
-    { id: 11, title: 'Ch 11: Cell Cycle and Division (細胞週期與分裂)', file: 'bio/bioqb_ch11_mcq_e.docx' },
-    { id: 12, title: 'Ch 12: Reproduction in Flowering Plants (有花植物的生殖)', file: 'bio/bioqb_ch12_mcq_e.docx' },
-    { id: 13, title: 'Ch 13: Reproduction in Humans (人的生殖)', file: 'bio/bioqb_ch13_mcq_e.docx' },
-    { id: 14, title: 'Ch 14: Growth and Development (生長與發育)', file: 'bio/bioqb_ch14_mcq_e.docx' },
-    { id: 15, title: 'Ch 15: Detecting the Environment (環境的探測)', file: 'bio/bioqb_ch15_mcq_e.docx' },
-    { id: 16, title: 'Ch 16: Coordination in Humans (人體的協調)', file: 'bio/bioqb_ch16_mcq_e.docx' },
-    { id: 17, title: 'Ch 17: Movement in Humans (人體的運動)', file: 'bio/bioqb_ch17_mcq_e.docx' },
-    { id: 18, title: 'Ch 18: Homeostasis (體內平衡)', file: 'bio/bioqb_ch18_mcq_e.docx' },
-    { id: 19, title: 'Ch 19: Ecosystems (生態系)', file: 'bio/bioqb_ch19_mcq_e.docx' },
-    { id: 20, title: 'Ch 20: Photosynthesis (光合作用)', file: 'bio/bioqb_ch20_mcq_e.docx' },
-    { id: 21, title: 'Ch 21: Respiration (呼吸作用)', file: 'bio/bioqb_ch21_mcq_e.docx' },
-    { id: 22, title: 'Ch 22: Non-infectious Diseases (非傳染病)', file: 'bio/bioqb_ch22_mcq_e.docx' },
-    { id: 23, title: 'Ch 23: Infectious Diseases (傳染病)', file: 'bio/bioqb_ch23_mcq_e.docx' },
-    { id: 24, title: 'Ch 24: Body Defence Mechanisms (身體防禦機制)', file: 'bio/bioqb_ch24_mcq_e.docx' },
-    { id: 25, title: 'Ch 25: Basic Genetics (基礎遺傳學)', file: 'bio/bioqb_ch25_mcq_e.docx' },
-    { id: 26, title: 'Ch 26: Molecular Genetics (分子遺傳學)', file: 'bio/bioqb_ch26_mcq_e.docx' },
-    { id: 27, title: 'Ch 27: Biotechnology (生物工程)', file: 'bio/bioqb_ch27_mcq_e.docx' },
-    { id: 28, title: 'Ch 28: Biodiversity (生物多樣性)', file: 'bio/bioqb_ch28_mcq_e.docx' },
-    { id: 29, title: 'Ch 29: Evolution (進化)', file: 'bio/bioqb_ch29_mcq_e.docx' }
+    { id: 1, title: 'Ch 1: Introducing Biology (生物學入門)', file: 'biodocs/bioqb_ch01_mcq_e.docx' },
+    { id: 2, title: 'Ch 2: The Cell as the Basic Unit of Life (細胞)', file: 'biodocs/bioqb_ch02_mcq_e.docx' },
+    { id: 3, title: 'Ch 3: Movement of Substances across Membrane (物質穿越細胞膜)', file: 'biodocs/bioqb_ch03_mcq_e.docx' },
+    { id: 4, title: 'Ch 4: Enzymes and Metabolism (酶與新陳代謝)', file: 'biodocs/bioqb_ch04_mcq_e.docx' },
+    { id: 5, title: 'Ch 5: Food and Humans (食物與人類)', file: 'biodocs/bioqb_ch05_mcq_e.docx' },
+    { id: 6, title: 'Ch 6: Nutrition in Humans (人的營養)', file: 'biodocs/bioqb_ch06_mcq_e.docx' },
+    { id: 7, title: 'Ch 7: Gas Exchange in Humans (人的氣體交換)', file: 'biodocs/bioqb_ch07_mcq_e.docx' },
+    { id: 8, title: 'Ch 8: Transport in Humans (人體內的轉運)', file: 'biodocs/bioqb_ch08_mcq_e.docx' },
+    { id: 9, title: 'Ch 9: Nutrition and Gas Exchange in Plants (植物的營養與氣體交換)', file: 'biodocs/bioqb_ch09_mcq_e.docx' },
+    { id: 10, title: 'Ch 10: Transpiration, Transport and Support in Plants (蒸騰、轉運與支持)', file: 'biodocs/bioqb_ch10_mcq_e.docx' },
+    { id: 11, title: 'Ch 11: Cell Cycle and Division (細胞週期與分裂)', file: 'biodocs/bioqb_ch11_mcq_e.docx' },
+    { id: 12, title: 'Ch 12: Reproduction in Flowering Plants (有花植物的生殖)', file: 'biodocs/bioqb_ch12_mcq_e.docx' },
+    { id: 13, title: 'Ch 13: Reproduction in Humans (人的生殖)', file: 'biodocs/bioqb_ch13_mcq_e.docx' },
+    { id: 14, title: 'Ch 14: Growth and Development (生長與發育)', file: 'biodocs/bioqb_ch14_mcq_e.docx' },
+    { id: 15, title: 'Ch 15: Detecting the Environment (環境的探測)', file: 'biodocs/bioqb_ch15_mcq_e.docx' },
+    { id: 16, title: 'Ch 16: Coordination in Humans (人體的協調)', file: 'biodocs/bioqb_ch16_mcq_e.docx' },
+    { id: 17, title: 'Ch 17: Movement in Humans (人體的運動)', file: 'biodocs/bioqb_ch17_mcq_e.docx' },
+    { id: 18, title: 'Ch 18: Homeostasis (體內平衡)', file: 'biodocs/bioqb_ch18_mcq_e.docx' },
+    { id: 19, title: 'Ch 19: Ecosystems (生態系)', file: 'biodocs/bioqb_ch19_mcq_e.docx' },
+    { id: 20, title: 'Ch 20: Photosynthesis (光合作用)', file: 'biodocs/bioqb_ch20_mcq_e.docx' },
+    { id: 21, title: 'Ch 21: Respiration (呼吸作用)', file: 'biodocs/bioqb_ch21_mcq_e.docx' },
+    { id: 22, title: 'Ch 22: Non-infectious Diseases (非傳染病)', file: 'biodocs/bioqb_ch22_mcq_e.docx' },
+    { id: 23, title: 'Ch 23: Infectious Diseases (傳染病)', file: 'biodocs/bioqb_ch23_mcq_e.docx' },
+    { id: 24, title: 'Ch 24: Body Defence Mechanisms (身體防禦機制)', file: 'biodocs/bioqb_ch24_mcq_e.docx' },
+    { id: 25, title: 'Ch 25: Basic Genetics (基礎遺傳學)', file: 'biodocs/bioqb_ch25_mcq_e.docx' },
+    { id: 26, title: 'Ch 26: Molecular Genetics (分子遺傳學)', file: 'biodocs/bioqb_ch26_mcq_e.docx' },
+    { id: 27, title: 'Ch 27: Biotechnology (生物工程)', file: 'biodocs/bioqb_ch27_mcq_e.docx' },
+    { id: 28, title: 'Ch 28: Biodiversity (生物多樣性)', file: 'biodocs/bioqb_ch28_mcq_e.docx' },
+    { id: 29, title: 'Ch 29: Evolution (進化)', file: 'biodocs/bioqb_ch29_mcq_e.docx' }
   ];
 
   // ==========================================================================
@@ -3012,7 +3012,7 @@ if (document.readyState === 'loading') {
           <span id="bioQuestionCountBadge" style="font-size:12.5px; background:#2E7D32; color:#fff; padding:3px 10px; border-radius:999px;">準備就緒</span>
         </div>
         <div style="font-size:13px; color:#33691E;">
-          點擊左上角 <b>「Bio / Chem」</b> 可隨時無縫切換科目；支援直接從 GitHub 讀取或手動匯入生物 <code>.docx</code> 題庫。
+          點擊左上角 <b>「Bio / Chem」</b> 可隨時無縫切換科目；支援直接從 GitHub <code>biodocs/</code> 資料夾讀取或手動匯入生物 <code>.docx</code> 題庫。
         </div>
         <div class="bio-toolbar">
           <select id="bioChapterSelect" class="bio-select">${optionsHtml}</select>
@@ -3054,7 +3054,7 @@ if (document.readyState === 'loading') {
           已切換至 HKDSE Biology 生物科專區
         </div>
         <div style="font-size:14px; color:#475569; line-height:1.6; max-width:460px; margin:0 auto;">
-          你可以把生物科 <code>.docx</code> 題庫上傳至 GitHub 的 <code>docs/bio/</code> 資料夾（命名如 <code>bioqb_ch01_mcq_e.docx</code>），或直接點擊上方 <b>「匯入 .docx」</b> 立即開始刷題。
+          你可以把生物科 <code>.docx</code> 題庫上傳至 GitHub 的 <code>biodocs/</code> 資料夾（命名如 <code>bioqb_ch01_mcq_e.docx</code>），或直接點擊上方 <b>「匯入 .docx」</b> 立即開始刷題。
         </div>
       </div>
     `;
@@ -3066,7 +3066,8 @@ if (document.readyState === 'loading') {
     badge.textContent = '載入中...';
     feed.innerHTML = `<div class="bio-q-card" style="text-align:center; padding:24px;">正在讀取 <b>${titleText}</b> ...</div>`;
 
-    const candidateUrls = [`docs/${relPath}`, relPath];
+    // 直接讀取根目錄下的 biodocs/ 資料夾
+    const candidateUrls = [relPath];
     let arrayBuffer = null;
 
     for (const url of candidateUrls) {
@@ -3083,9 +3084,9 @@ if (document.readyState === 'loading') {
       badge.textContent = '尚未上傳題庫';
       feed.innerHTML = `
         <div class="bio-q-card" style="border-left:4px solid #E65100;">
-          <div style="font-weight:700; color:#E65100; margin-bottom:6px;">找不到遠端檔案：docs/${relPath}</div>
+          <div style="font-weight:700; color:#E65100; margin-bottom:6px;">找不到遠端檔案：${relPath}</div>
           <div style="font-size:14px; color:#334155; line-height:1.6;">
-            請確認你已將該章節的 Word 題庫上傳至 GitHub 倉庫的 <code>docs/${relPath}</code>，或直接點擊上方 <b>「匯入 .docx」</b> 從本機開啟。
+            請確認你已在 GitHub 倉庫根目錄建立 <code>biodocs/</code> 資料夾並上傳 <code>${relPath}</code>，或直接點擊上方 <b>「匯入 .docx」</b> 從本機開啟。
           </div>
         </div>
       `;
@@ -3238,7 +3239,7 @@ if (document.readyState === 'loading') {
   }
 
   // ==========================================================================
-  // 5. 版本號標籤 (v0.1.15)、禁用網頁放大、鎖定目錄開啟時背景滑動
+  // 5. 版本號標籤 (v0.1.16)、禁用網頁放大、鎖定目錄開啟時背景滑動
   // ==========================================================================
   function initVersionBadge() {
     localStorage.setItem('chem_app_version', APP_VERSION);
@@ -3284,9 +3285,9 @@ if (document.readyState === 'loading') {
       'width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no, viewport-fit=cover'
     );
 
-    if (!document.getElementById('chemLockV0115Style')) {
+    if (!document.getElementById('chemLockV0116Style')) {
       const style = document.createElement('style');
-      style.id = 'chemLockV0115Style';
+      style.id = 'chemLockV0116Style';
       style.textContent = `
         html, body {
           touch-action: pan-x pan-y !important;
