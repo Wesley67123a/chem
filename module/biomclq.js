@@ -1,15 +1,15 @@
-// 更新時間：2026-11-13 12:47:00 (HKT) | 版本：v0.1.34
+// 更新時間：2026-11-13 12:56:00 (HKT) | 版本：v0.1.35
 // 檔案位置：module/biomclq.js
 // 功能說明：
-//   1. 移除化學首頁綠色 Bio 卡片
-//   2. 左上角三條橫線 (☰) 點開科目切換彈窗，附「確定切換」按鈕
-//   3. 獨立 HKDSE Biology 主頁（與 Chemistry 主頁外觀、配色、功能完全一致，支援 Bio MC 與 Bio LQ）
+//   1. 左上角三條橫線 (☰) 點開背景模糊毛玻璃「切換科目主頁」彈出對話框（附「確定切換」按鈕）
+//   2. 獨立 HKDSE Biology 主頁（與 Chemistry 主頁外觀、配色、功能完全一致，支援 Bio MC 與 Bio LQ）
+//   3. 清除化學首頁多餘的綠色 Bio 卡片
 
 (function () {
   'use strict';
 
-  const MODULE_VERSION = '0.1.34';
-  const UPDATED_AT = '2026-11-13 12:47:00';
+  const MODULE_VERSION = '0.1.35';
+  const UPDATED_AT = '2026-11-13 12:56:00';
 
   const M3_BIO = {
     bg: '#F4F5FA',
@@ -135,18 +135,37 @@
   }
 
   function injectBioStyles() {
-    if (document.getElementById('dseBioSameAsChemStyleV0134')) return;
+    if (document.getElementById('dseBioSameAsChemStyleV0135')) return;
     const style = document.createElement('style');
-    style.id = 'dseBioSameAsChemStyleV0134';
+    style.id = 'dseBioSameAsChemStyleV0135';
     style.textContent = `
-      /* 徹底隱藏化學首頁的綠色 Bio 卡片與舊版頂部膠囊條 */
       #homeBioEntryCard,
       #homeLqEntryCard,
       #dseTopSectionBar {
         display: none !important;
       }
 
-      /* 恢復化學容器正常頂部間距，並保持橫屏水平置中 */
+      /* 彈出對話框毛玻璃背景模糊效果 */
+      .dse-blurred-backdrop {
+        background: rgba(29, 31, 44, 0.28) !important;
+        backdrop-filter: blur(12px) !important;
+        -webkit-backdrop-filter: blur(12px) !important;
+      }
+
+      @keyframes dseDialogPopIn {
+        0% {
+          opacity: 0;
+          transform: scale(0.95) translateY(8px);
+        }
+        100% {
+          opacity: 1;
+          transform: scale(1) translateY(0);
+        }
+      }
+      .dse-dialog-card-anim {
+        animation: dseDialogPopIn 0.18s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+      }
+
       .chem-responsive-container {
         padding-top: 20px !important;
       }
@@ -466,7 +485,7 @@
   }
 
   // ==========================================================================
-  // 3. 左上角三條橫線 (☰) 科目切換彈窗（附「確定切換」按鈕）
+  // 3. 左上角三條橫線 (☰) 背景模糊彈出對話框（附「確定切換」按鈕）
   // ==========================================================================
   function openSubjectSwitchModal() {
     if (typeof SoundFX !== 'undefined') SoundFX.playClick();
@@ -475,12 +494,12 @@
     if (!modal) {
       modal = document.createElement('div');
       modal.id = 'dseSubjectSwitchModal';
+      modal.className = 'dse-blurred-backdrop';
       modal.style.cssText =
-        'display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(29,31,44,0.35); z-index:100002; justify-content:center; align-items:center; padding:18px; box-sizing:border-box; font-family:-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;';
+        'display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(29,31,44,0.28); backdrop-filter:blur(12px); -webkit-backdrop-filter:blur(12px); z-index:100002; justify-content:center; align-items:center; padding:18px; box-sizing:border-box; font-family:-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;';
       document.body.appendChild(modal);
     }
 
-    // 預設選中另一個科目，方便一按「確定切換」即切換過去
     let selectedTarget = activeSubject === 'bio' ? 'chem' : 'bio';
 
     const renderSwitchCard = () => {
@@ -488,7 +507,7 @@
       const isBioSelected = selectedTarget === 'bio';
 
       modal.innerHTML = `
-        <div style="background:${M3_BIO.surface}; width:100%; max-width:360px; padding:26px 26px; border-radius:28px; box-shadow:0 14px 44px rgba(72,84,122,0.16); border:2px solid ${M3_BIO.outline}; box-sizing:border-box;">
+        <div class="dse-dialog-card-anim" style="background:${M3_BIO.surface}; width:100%; max-width:360px; padding:26px 26px; border-radius:28px; box-shadow:0 16px 48px rgba(29,31,44,0.18); border:1.5px solid ${M3_BIO.outline}; box-sizing:border-box;">
           <h3 class="m3-title-medium" style="margin:0 0 6px 0; font-size:17px; color:${M3_BIO.textMain}; text-align:center;">
             切換科目主頁
           </h3>
@@ -716,7 +735,6 @@
             .join('');
 
     homeEl.innerHTML = `
-      <!-- 頂部兩側按鈕：左上三條橫線(切換科目) / 右上三點(Admin) -->
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:18px; padding:0 4px;">
         <button type="button" id="bioTopMenuHamburgerBtn" style="background:none; border:none; color:${M3_BIO.textMain}; cursor:pointer; padding:4px; display:inline-flex; align-items:center;">
           ${ICONS.menu}
@@ -726,13 +744,11 @@
         </button>
       </div>
 
-      <!-- 大標題（與 Chem 主頁完全同款） -->
       <div style="margin-bottom:24px; padding:0 4px;">
         <h1 class="m3-title-medium" style="margin:0 0 6px 0; font-size:32px; color:${M3_BIO.textMain}; letter-spacing:-0.3px;">HKDSE</h1>
         <div style="font-size:15px; color:${M3_BIO.textSub};">Biology Question Bank</div>
       </div>
 
-      <!-- 音效反饋 & 登入學生設定卡片（與 Chem 主頁完全同款） -->
       <div class="bio-m3-card" style="padding:22px 26px; margin-bottom:18px;">
         <div style="display:flex; justify-content:space-between; align-items:center; padding-bottom:18px; border-bottom:1px solid ${M3_BIO.outline};">
           <div style="display:flex; align-items:center; gap:14px;">
@@ -768,7 +784,6 @@
         </div>
       </div>
 
-      <!-- 最近練習章節進度 -->
       <div style="margin-bottom:18px;">
         ${recentHtml}
         ${
@@ -782,7 +797,6 @@
         }
       </div>
 
-      <!-- 每日練習紀錄（與 Chem 主頁完全同款） -->
       <div class="bio-m3-card" style="padding:22px 26px; margin-bottom:18px;">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; flex-wrap:wrap; gap:8px;">
           <div style="display:flex; align-items:center; gap:10px; color:${M3_BIO.primary};">
@@ -799,7 +813,6 @@
         </div>
       </div>
 
-      <!-- 底部總體統計卡片（與 Chem 主頁完全同款） -->
       <div class="bio-m3-card" style="padding:18px 26px; display:flex; justify-content:space-around; align-items:center; text-align:center;">
         <div>
           <div style="font-size:12px; color:${M3_BIO.textSub};">總 Book</div>
@@ -820,23 +833,16 @@
       </div>
     `;
 
-    // 綁定頂部三條橫線 -> 打開科目切換視窗（含確定切換按鈕）
     homeEl.querySelector('#bioTopMenuHamburgerBtn').onclick = () => openSubjectSwitchModal();
-
-    // 綁定頂部三點 -> 打開 Admin
     homeEl.querySelector('#bioTopAdminBtn').onclick = () => {
       if (typeof openDiscreetAdminModal === 'function') openDiscreetAdminModal();
     };
-
-    // 音效開關
     homeEl.querySelector('#bioSoundSwitch').onclick = () => {
       if (typeof SoundFX !== 'undefined') {
         SoundFX.toggleMute();
         renderBioHomeDashboard();
       }
     };
-
-    // 中英文切換
     homeEl.querySelector('#bioLangEnBtn').onclick = () => {
       if (window.chemApp) window.chemApp.currentLang = 'e';
       localStorage.setItem('CHEM_LANG_V47', 'e');
@@ -847,8 +853,6 @@
       localStorage.setItem('CHEM_LANG_V47', 'c');
       renderBioHomeDashboard();
     };
-
-    // 登出
     homeEl.querySelector('#bioHomeLogoutBtn').onclick = () => {
       sessionStorage.removeItem('DSE_UNLOCKED_USER');
       localStorage.removeItem('CHEM_CURRENT_USER_ID');
@@ -892,7 +896,8 @@
     if (!modal) {
       modal = document.createElement('div');
       modal.id = 'bioDailyInspectorModal';
-      modal.style.cssText = 'display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(29,31,44,0.35); z-index:99999; justify-content:center; align-items:center; padding:18px; box-sizing:border-box; font-family:sans-serif;';
+      modal.className = 'dse-blurred-backdrop';
+      modal.style.cssText = 'display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(29,31,44,0.28); backdrop-filter:blur(12px); -webkit-backdrop-filter:blur(12px); z-index:99999; justify-content:center; align-items:center; padding:18px; box-sizing:border-box; font-family:sans-serif;';
       document.body.appendChild(modal);
     }
 
@@ -921,7 +926,7 @@
             .join('');
 
     modal.innerHTML = `
-      <div style="background:${M3_BIO.bg}; width:100%; max-width:440px; max-height:78vh; border-radius:28px; box-shadow:0 14px 44px rgba(72,84,122,0.16); display:flex; flex-direction:column; overflow:hidden; border:1px solid ${M3_BIO.outline};">
+      <div class="dse-dialog-card-anim" style="background:${M3_BIO.bg}; width:100%; max-width:440px; max-height:78vh; border-radius:28px; box-shadow:0 14px 44px rgba(72,84,122,0.16); display:flex; flex-direction:column; overflow:hidden; border:1px solid ${M3_BIO.outline};">
         <div style="padding:18px 22px; background:${M3_BIO.surfaceVariant}; color:${M3_BIO.primary}; display:flex; justify-content:space-between; align-items:center;">
           <div>
             <h3 class="m3-title-medium" style="margin:0; font-size:16px;">${dateStr} 作答明細</h3>
@@ -929,7 +934,7 @@
           </div>
           <button type="button" id="closeBioDailyModalBtn" style="background:${M3_BIO.surface}; border:none; color:${M3_BIO.primary}; width:32px; height:32px; border-radius:16px; font-size:18px; cursor:pointer;">&times;</button>
         </div>
-        <div style="flex:1; overflow-y:auto; padding:14px 18px;">
+        <div class="dse-modal-scroller" style="flex:1; overflow-y:auto; padding:14px 18px; -webkit-overflow-scrolling:touch; overscroll-behavior:contain;">
           ${itemsHtml}
         </div>
       </div>
@@ -945,14 +950,15 @@
   }
 
   // ==========================================================================
-  // 5. 生物科目錄彈窗（內含 MC / LQ 切換，外觀與 Chem 目錄完全同款）
+  // 5. 生物科目錄彈窗（內含 MC / LQ 切換 + 背景模糊）
   // ==========================================================================
   function openBioDirectoryModal() {
     let modal = document.getElementById('bioCenterDirectoryModal');
     if (!modal) {
       modal = document.createElement('div');
       modal.id = 'bioCenterDirectoryModal';
-      modal.style.cssText = 'display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(29,31,44,0.35); z-index:99999; justify-content:center; align-items:center; padding:18px; box-sizing:border-box; font-family:sans-serif;';
+      modal.className = 'dse-blurred-backdrop';
+      modal.style.cssText = 'display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(29,31,44,0.28); backdrop-filter:blur(12px); -webkit-backdrop-filter:blur(12px); z-index:99999; justify-content:center; align-items:center; padding:18px; box-sizing:border-box; font-family:sans-serif;';
       document.body.appendChild(modal);
     }
 
@@ -961,7 +967,7 @@
     const renderDirBody = () => {
       const isMc = activeBioSubMode === 'mc';
       let html = `
-        <div style="background:${M3_BIO.surface}; width:100%; max-width:440px; height:82vh; max-height:640px; border-radius:28px; box-shadow:0 14px 44px rgba(72,84,122,0.15); display:flex; flex-direction:column; overflow:hidden; border:1px solid ${M3_BIO.outline};">
+        <div class="dse-dialog-card-anim" style="background:${M3_BIO.surface}; width:100%; max-width:440px; height:82vh; max-height:640px; border-radius:28px; box-shadow:0 14px 44px rgba(72,84,122,0.15); display:flex; flex-direction:column; overflow:hidden; border:1px solid ${M3_BIO.outline};">
           <div style="padding:18px 22px; background:${M3_BIO.surfaceVariant}; color:${M3_BIO.primary}; display:flex; justify-content:space-between; align-items:center; gap:8px;">
             <div>
               <h2 class="m3-title-medium" style="margin:0; font-size:16px;">選擇 Book / Chapter</h2>
@@ -975,7 +981,7 @@
               <button type="button" id="closeBioDirModalBtn" style="background:${M3_BIO.surface}; border:none; color:${M3_BIO.primary}; width:32px; height:32px; border-radius:16px; font-size:18px; cursor:pointer; line-height:1;">&times;</button>
             </div>
           </div>
-          <div style="flex:1; overflow-y:auto; padding:16px 20px; background:${M3_BIO.bg};">
+          <div class="dse-modal-scroller" style="flex:1; overflow-y:auto; padding:16px 20px; background:${M3_BIO.bg}; -webkit-overflow-scrolling:touch; overscroll-behavior:contain;">
       `;
 
       BIO_SYLLABUS.forEach((book, bIdx) => {
@@ -1677,12 +1683,12 @@
   }
 
   // ==========================================================================
-  // 7. 攔截化學首頁左上角三條橫線 (#topMenuHamburgerBtn) -> 開啟科目切換視窗
+  // 7. 攔截化學首頁左上角三條橫線 (#topMenuHamburgerBtn) -> 開啟毛玻璃切換視窗
   // ==========================================================================
   function bindChemHamburgerSwitcher() {
     const chemHamBtn = document.getElementById('topMenuHamburgerBtn');
-    if (chemHamBtn && chemHamBtn.dataset.v0134SwitchBound !== '1') {
-      chemHamBtn.dataset.v0134SwitchBound = '1';
+    if (chemHamBtn && chemHamBtn.dataset.v0135SwitchBound !== '1') {
+      chemHamBtn.dataset.v0135SwitchBound = '1';
       chemHamBtn.addEventListener(
         'click',
         function (e) {
