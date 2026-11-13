@@ -1,15 +1,14 @@
-// 更新時間：2026-11-13 11:02:00 (HKT) | 版本：v0.1.23
+// 更新時間：2026-11-13 11:12:00 (HKT) | 版本：v0.1.25
 // 檔案位置：module/chemlq.js
-// 功能說明：首頁 LQ 入口卡片、15課題/65章 LQ 專屬目錄彈窗、Long Question 渲染與草稿/Marking Scheme 核對
+// 功能說明：化學首頁 Chem LQ 入口卡片、15課題/65章 Chem LQ 目錄彈窗、長題目作答與 Marking Scheme 核對
 
 (function () {
   'use strict';
 
-  const MODULE_VERSION = '0.1.23';
-  const UPDATED_AT = '2026-11-13 11:02:00';
+  const MODULE_VERSION = '0.1.25';
+  const UPDATED_AT = '2026-11-13 11:12:00';
 
   let activeLqChapterId = null;
-  let currentMode = 'chem_mc'; // 'chem_mc' | 'chem_lq' | 'bio'
 
   const ICONS = {
     docList: `<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>`,
@@ -20,15 +19,15 @@
   // 1. 注入樣式表
   // ==========================================================================
   function injectChemLqStyles() {
-    if (document.getElementById('dseChemLqModuleStyleV0123')) return;
+    if (document.getElementById('dseChemLqModuleStyleV0125')) return;
     const style = document.createElement('style');
-    style.id = 'dseChemLqModuleStyleV0123';
+    style.id = 'dseChemLqModuleStyleV0125';
     style.textContent = `
       .chem-responsive-container {
         padding-top: 58px !important;
       }
 
-      /* 左上角分區切換膠囊 */
+      /* 左上角三段分區切換膠囊 (Chem MC | Chem LQ | Bio) */
       #dseTopSectionBar {
         position: fixed !important;
         top: max(12px, env(safe-area-inset-top)) !important;
@@ -70,7 +69,7 @@
         color: #FFFFFF !important;
       }
 
-      /* 首頁 LQ 入口卡片 */
+      /* 化學首頁 Chem LQ 入口卡片 */
       #homeLqEntryCard {
         background: #FFFFFF;
         border: 2.5px solid #E2E6F3;
@@ -85,7 +84,7 @@
         box-sizing: border-box;
       }
 
-      /* Chem LQ 主容器 (與 MC 容器寬度響應一致) */
+      /* Chem LQ 主容器 */
       #chemLqRootContainer {
         display: none;
         width: 100%;
@@ -279,7 +278,6 @@
         padding-left: 20px;
       }
 
-      /* LQ 專屬懸浮目錄按鈕 */
       #lqFloatingDirBtn {
         position: fixed;
         bottom: 18px;
@@ -307,13 +305,12 @@
   }
 
   // ==========================================================================
-  // 2. 在首頁 (#chemDashboardHome) 自動注入 Long Questions 入口卡片
+  // 2. 在化學首頁 (#chemDashboardHome) 自動注入 Chem LQ 入口卡片
   // ==========================================================================
   function injectHomeLqCard() {
     const dashboard = document.getElementById('chemDashboardHome');
     if (!dashboard || document.getElementById('homeLqEntryCard')) return;
 
-    // 尋找首頁標題區塊 (HKDSE / Chemistry Question Bank) 下方的第一個卡片
     const cards = dashboard.querySelectorAll('.m3-card');
     if (cards.length === 0) return;
 
@@ -325,20 +322,19 @@
           ${ICONS.docList}
         </div>
         <div style="min-width:0; flex:1;">
-          <div class="m3-title-medium" style="font-size:15px; color:#1D1F2C;">Long Questions (LQ)</div>
+          <div class="m3-title-medium" style="font-size:15px; color:#1D1F2C;">Chem LQ</div>
           <div style="font-size:12px; color:#5E6478; margin-top:2px;">
             ${activeLqChapterId && window.CHAPTER_MAP && window.CHAPTER_MAP[activeLqChapterId]
               ? `上次選擇：${window.CHAPTER_MAP[activeLqChapterId].chapter.name}`
-              : '按 15 課題 / 65 章瀏覽結構化長題目與 Marking Scheme'}
+              : '按 15 課題 / 65 章瀏覽化學科長題目與 Marking Scheme'}
           </div>
         </div>
       </div>
       <button type="button" id="homeOpenLqDirBtn" style="background:#48547A; color:#FFFFFF; border:none; padding:9px 16px; border-radius:20px; font-size:12.5px; cursor:pointer; flex-shrink:0; white-space:nowrap;">
-        選擇 LQ 目錄 &rsaquo;
+        選擇 Chem LQ 目錄 &rsaquo;
       </button>
     `;
 
-    // 插入在首頁第一個設定卡片的上方（緊接在 HKDSE 大標題下方）
     cards[0].parentNode.insertBefore(lqCard, cards[0]);
 
     lqCard.querySelector('#homeOpenLqDirBtn').addEventListener('click', () => {
@@ -347,7 +343,7 @@
   }
 
   // ==========================================================================
-  // 3. 15 課題 / 65 章 LQ 專屬目錄彈窗 (與 MC 目錄完全一致的互動體驗)
+  // 3. 15 課題 / 65 章 Chem LQ 專屬目錄彈窗
   // ==========================================================================
   function openLqDirectoryModal() {
     let modal = document.getElementById('lqCenterDirectoryModal');
@@ -365,8 +361,8 @@
       <div style="background:#FFFFFF; width:100%; max-width:440px; height:82vh; max-height:640px; border-radius:28px; box-shadow:0 14px 44px rgba(72,84,122,0.15); display:flex; flex-direction:column; overflow:hidden; border:1px solid #E2E6F3;">
         <div style="padding:18px 24px; background:#DFE3F8; color:#48547A; display:flex; justify-content:space-between; align-items:center;">
           <div>
-            <h2 class="m3-title-medium" style="margin:0; font-size:16px;">Long Questions (LQ) 目錄</h2>
-            <div style="font-size:11px; color:#5E6478; margin-top:2px;">選擇 Topic / Chapter 進入結構化長題目</div>
+            <h2 class="m3-title-medium" style="margin:0; font-size:16px;">Chem LQ 目錄</h2>
+            <div style="font-size:11px; color:#5E6478; margin-top:2px;">選擇 Topic / Chapter 進入化學長題目</div>
           </div>
           <button type="button" id="closeLqDirModalBtn" style="background:#FFFFFF; border:none; color:#48547A; width:32px; height:32px; border-radius:16px; font-size:18px; cursor:pointer; line-height:1;">&times;</button>
         </div>
@@ -374,7 +370,6 @@
     `;
 
     syllabus.forEach(topic => {
-      // 預設展開目前選中的課題，或預設展開 CHEM-10 (包含 Ch 41)
       const isExpanded = activeLqChapterId
         ? topic.chapters.some(c => c.id === activeLqChapterId)
         : topic.topicId === 'CHEM-10';
@@ -452,10 +447,10 @@
         <div style="display:flex; justify-content:space-between; align-items:center; gap:8px; flex-wrap:wrap;">
           <div style="display:flex; align-items:center; gap:10px; min-width:0; flex:1;">
             <button type="button" id="lqBackHomeBtn" style="padding:6px 14px; font-size:12px; border:none; border-radius:18px; background:#DFE3F8; color:#48547A; cursor:pointer; white-space:nowrap;">
-              &lsaquo; 首頁
+              &lsaquo; Chem 首頁
             </button>
             <h2 id="lqCurrentChapterTitle" class="m3-title-medium" style="margin:0; font-size:15px; color:#1D1F2C; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
-              Long Questions
+              Chem LQ
             </h2>
           </div>
           <div style="display:flex; align-items:center; gap:8px; white-space:nowrap;">
@@ -470,12 +465,11 @@
     `;
     document.body.appendChild(lqRoot);
 
-    // 建立 LQ 模式下右下角懸浮「LQ 目錄選單」按鈕
     if (!document.getElementById('lqFloatingDirBtn')) {
       const fBtn = document.createElement('button');
       fBtn.id = 'lqFloatingDirBtn';
       fBtn.type = 'button';
-      fBtn.innerHTML = `${ICONS.list}<span>LQ 目錄選單</span>`;
+      fBtn.innerHTML = `${ICONS.list}<span>Chem LQ 目錄</span>`;
       fBtn.onclick = () => openLqDirectoryModal();
       document.body.appendChild(fBtn);
     }
@@ -506,7 +500,7 @@
     const badgeEl = document.getElementById('lqTotalMarksBadge');
     const feedEl = document.getElementById('chemLqFeed');
 
-    if (titleEl) titleEl.textContent = `${chapTitle} (LQ)`;
+    if (titleEl) titleEl.textContent = `${chapTitle} (Chem LQ)`;
 
     const keyStr = String(chapId);
     if (window.CHEM_LQ_BANK && window.CHEM_LQ_BANK[keyStr]) {
@@ -518,7 +512,7 @@
     if (feedEl) {
       feedEl.innerHTML = `
         <div class="lq-q-card" style="text-align:center; padding:48px 20px; color:#5E6478;">
-          <div style="font-size:15px; color:#48547A; margin-bottom:6px;">正在載入 ${chapTitle} Long Questions ...</div>
+          <div style="font-size:15px; color:#48547A; margin-bottom:6px;">正在載入 ${chapTitle} Chem LQ ...</div>
         </div>
       `;
     }
@@ -556,10 +550,10 @@
       if (feedEl) {
         feedEl.innerHTML = `
           <div class="lq-q-card" style="text-align:center; padding:48px 24px; color:#5E6478;">
-            <div style="font-size:15px; color:#1D1F2C; margin-bottom:8px;">本章節尚未建立 Long Question 題庫 (chemlq_ch${padId}_${lang}.js)</div>
-            <div style="font-size:13px; margin-bottom:18px;">請點擊「LQ 目錄選單」選擇其他已上傳章節（例如第 41 章）。</div>
+            <div style="font-size:15px; color:#1D1F2C; margin-bottom:8px;">本章節尚未建立 Chem LQ 題庫 (chemlq_ch${padId}_${lang}.js)</div>
+            <div style="font-size:13px; margin-bottom:18px;">請點擊「Chem LQ 目錄」選擇其他已上傳章節（例如第 41 章）。</div>
             <button type="button" id="emptyLqOpenDirBtn" style="background:#48547A; color:#FFFFFF; border:none; padding:9px 18px; border-radius:18px; font-size:13px; cursor:pointer;">
-              開啟 LQ 目錄選單
+              開啟 Chem LQ 目錄
             </button>
           </div>
         `;
@@ -631,11 +625,13 @@
       const bioRoot = document.getElementById('bioAppRootContainer');
       const floatingGrp = document.getElementById('floatingActionGroup');
       const lqFloatBtn = document.getElementById('lqFloatingDirBtn');
+      const bioFloatBtn = document.getElementById('bioFloatingDirBtn');
 
       if (chemMcRoot) chemMcRoot.style.display = '';
       if (chemLqRoot) chemLqRoot.classList.remove('active');
       if (bioRoot) bioRoot.classList.remove('active');
       if (lqFloatBtn) lqFloatBtn.style.display = 'none';
+      if (bioFloatBtn) bioFloatBtn.style.display = 'none';
       if (floatingGrp) {
         if (typeof updateFloatingButtonsVisibility === 'function') {
           updateFloatingButtonsVisibility();
@@ -650,18 +646,19 @@
       const bioRoot = document.getElementById('bioAppRootContainer');
       const floatingGrp = document.getElementById('floatingActionGroup');
       const lqFloatBtn = document.getElementById('lqFloatingDirBtn');
+      const bioFloatBtn = document.getElementById('bioFloatingDirBtn');
 
       if (chemMcRoot) chemMcRoot.style.display = 'none';
       if (chemLqRoot) chemLqRoot.classList.add('active');
       if (bioRoot) bioRoot.classList.remove('active');
       if (floatingGrp) floatingGrp.style.display = 'none';
+      if (bioFloatBtn) bioFloatBtn.style.display = 'none';
       if (lqFloatBtn) lqFloatBtn.style.display = 'flex';
     }
   };
 
   function switchDseSection(secId) {
     if (!sectionHandlers[secId]) secId = 'chem_mc';
-    currentMode = secId;
     localStorage.setItem('dse_active_section', secId);
     sectionHandlers[secId]();
 
@@ -744,11 +741,10 @@
     const savedSection = localStorage.getItem('dse_active_section') || 'chem_mc';
     if (savedSection === 'chem_lq' && activeLqChapterId) {
       openLqChapter(activeLqChapterId);
-    } else {
+    } else if (savedSection !== 'bio') {
       switchDseSection('chem_mc');
     }
 
-    // 監聽首頁重新渲染與登入遮罩變化，確保首頁 LQ 按鈕永遠存在
     const observer = new MutationObserver(() => {
       syncOverlayVisibility();
     });
