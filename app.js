@@ -1,11 +1,9 @@
-/**
- * ============================================================================
- * HKDSE Chemistry Question Bank - Main UI & Material You Engine (app.js)
- * Version: 0.0.59 (Equilibrium Symbol Fix & 2x2 Option Grid Layout Guard)
- * ============================================================================
- */
+// 更新時間：2026-11-13 12:02:00 (HKT) | 版本：v0.1.30
+// 更新內容：
+//   1. 修正 1–65 章 SYLLABUS_CONFIG 所有課題歸屬錯位 (Ch4->Topic1, Ch9->Topic2, Ch19->Topic4, Ch42->Topic11, Ch47-48->Topic12, Ch50->Topic13)
+//   2. 徹底移除底部重複的 v0.1.19 / v0.1.22 / v0.1.24 衝突監聽器，根治登入密碼框無法觸控與失焦問題
 
-// 1. 課程 15 課題 / 65 章完整架構
+// 1. 課程 15 課題 / 65 章完整正確架構 (Aristo HKDSE Chemistry)
 const SYLLABUS_CONFIG = [
   { 
     topicId: 'CHEM-01', 
@@ -13,25 +11,25 @@ const SYLLABUS_CONFIG = [
     chapters: [
       { id: 1, name: '第 1 章：化學導論' }, 
       { id: 2, name: '第 2 章：大氣' }, 
-      { id: 3, name: '第 3 章：海洋' }
+      { id: 3, name: '第 3 章：海洋' },
+      { id: 4, name: '第 4 章：岩石和礦物' }
     ] 
   },
   { 
     topicId: 'CHEM-02', 
     topicName: 'CHEM-02 微觀世界 I', 
     chapters: [
-      { id: 4, name: '第 4 章：岩石和礦物' }, 
       { id: 5, name: '第 5 章：原子結構' }, 
       { id: 6, name: '第 6 章：周期表' }, 
       { id: 7, name: '第 7 章：金屬鍵和離子鍵' }, 
-      { id: 8, name: '第 8 章：共價鍵' }
+      { id: 8, name: '第 8 章：共價鍵' },
+      { id: 9, name: '第 9 章：物質的結構和性質' }
     ] 
   },
   { 
     topicId: 'CHEM-03', 
     topicName: 'CHEM-03 金屬', 
     chapters: [
-      { id: 9, name: '第 9 章：物質的結構和性質' }, 
       { id: 10, name: '第 10 章：金屬的存在和提取' }, 
       { id: 11, name: '第 11 章：金屬的活性' }, 
       { id: 12, name: '第 12 章：反應質量' }, 
@@ -46,14 +44,14 @@ const SYLLABUS_CONFIG = [
       { id: 15, name: '第 15 章：溶液的濃度' }, 
       { id: 16, name: '第 16 章：指示劑和pH' }, 
       { id: 17, name: '第 17 章：酸和鹼的強度' }, 
-      { id: 18, name: '第 18 章：鹽和中和作用' }
+      { id: 18, name: '第 18 章：鹽和中和作用' },
+      { id: 19, name: '第 19 章：涉及酸和鹼的容量分析' }
     ] 
   },
   { 
     topicId: 'CHEM-05', 
     topicName: 'CHEM-05 化石燃料', 
     chapters: [
-      { id: 19, name: '第 19 章：涉及酸和鹼的容量分析' }, 
       { id: 20, name: '第 20 章：來自化石燃料的烷' }, 
       { id: 21, name: '第 21 章：同系列、結構式和碳化合物的命名' }, 
       { id: 22, name: '第 22 章：烷烴和烯烴的化學反應' }, 
@@ -105,34 +103,34 @@ const SYLLABUS_CONFIG = [
     topicName: 'CHEM-10 化學平衡', 
     chapters: [
       { id: 40, name: '第 40 章：動態平衡' }, 
-      { id: 41, name: '第 41 章：濃度和溫度的變化對化學平衡的影響' },
-      { id: 42, name: '第 42 章：特定同系列的簡介' }
+      { id: 41, name: '第 41 章：濃度和溫度的變化對化學平衡的影響' }
     ] 
   },
   { 
     topicId: 'CHEM-11', 
     topicName: 'CHEM-11 碳化合物的化學', 
     chapters: [
+      { id: 42, name: '第 42 章：特定同系列的簡介' },
       { id: 43, name: '第 43 章：同分異構' },
       { id: 44, name: '第 44 章：各種官能基的典型化學反應' },
       { id: 45, name: '第 45 章：碳化合物的互換' },
-      { id: 46, name: '第 46 章：重要有機物質' },
-      { id: 47, name: '第 47 章：由Na至Cl各元素物理性質的周期變化' },
-      { id: 48, name: '第 48 章：由Na至Cl各元素氧化物的結合、在水中的習性及酸鹼性質' }
+      { id: 46, name: '第 46 章：重要有機物質' }
     ] 
   },
   { 
     topicId: 'CHEM-12', 
     topicName: 'CHEM-12 化學規律', 
     chapters: [
-      { id: 49, name: '第 49 章：過渡性金屬的一般性質' },
-      { id: 50, name: '第 50 章：工業過程的重要性' }
+      { id: 47, name: '第 47 章：由Na至Cl各元素物理性質的周期變化' },
+      { id: 48, name: '第 48 章：由Na至Cl各元素氧化物的結合、在水中的習性及酸鹼性質' },
+      { id: 49, name: '第 49 章：過渡性金屬的一般性質' }
     ] 
   },
   { 
     topicId: 'CHEM-13', 
     topicName: 'CHEM-13 工業化學', 
     chapters: [
+      { id: 50, name: '第 50 章：工業過程的重要性' },
       { id: 51, name: '第 51 章：速率方程' },
       { id: 52, name: '第 52 章：活化能' },
       { id: 53, name: '第 53 章：催化作用和工業過程' }, 
@@ -204,7 +202,7 @@ const SVG_ICONS = {
 };
 
 window.chemApp = {
-  version: '0.0.59',
+  version: '0.1.30',
   currentLang: localStorage.getItem('CHEM_LANG_V47') || 'e',
   isMuted: localStorage.getItem('CHEM_MUTED_V49') === '1',
   activeChapterId: null,
@@ -230,7 +228,7 @@ const FIREBASE_CONFIG = {
 };
 
 // ============================================================================
-// 動態注入防崩潰護欄與平衡符號防斷行樣式 (v59)
+// 動態注入防崩潰護欄與平衡符號防斷行樣式
 // ============================================================================
 function injectM3AndResponsiveLayoutStyles() {
   if (document.getElementById('chemM3ResponsiveStyleV59')) return;
@@ -242,18 +240,19 @@ function injectM3AndResponsiveLayoutStyles() {
       --md-sys-color-surface: ${M3.surface} !important;
       --md-sys-color-surface-variant: ${M3.bg} !important;
     }
-    html, body, #chemAppRootContainer, #chemDashboardHome, #chemChapterViewWrapper, .question-card, .q-native-body, .q-native-body *, .explanation-panel, .explanation-panel * {
+    #chemAppRootContainer, #chemDashboardHome, #chemChapterViewWrapper, .question-card, .q-native-body, .q-native-body *, .explanation-panel, .explanation-panel * {
       -webkit-user-select: none !important;
       -moz-user-select: none !important;
       -ms-user-select: none !important;
       user-select: none !important;
       -webkit-touch-callout: none !important;
     }
-    input, textarea {
+    input, textarea, #chemAuthOverlay, #chemAuthOverlay *, #chemAdminPassModal, #chemAdminPassModal * {
       -webkit-user-select: text !important;
       -moz-user-select: text !important;
       user-select: text !important;
       -webkit-touch-callout: default !important;
+      pointer-events: auto !important;
     }
     body, #chemAppRootContainer {
       background-color: ${M3.bg} !important;
@@ -275,19 +274,19 @@ function injectM3AndResponsiveLayoutStyles() {
       width: 100% !important;
       max-width: 860px !important;
       margin: 0 auto !important;
-      padding: 20px clamp(20px, 5vw, 48px) 190px clamp(20px, 5vw, 48px) !important;
+      padding: 58px clamp(20px, 5vw, 48px) 190px clamp(20px, 5vw, 48px) !important;
       box-sizing: border-box !important;
     }
     @media (orientation: landscape) and (min-width: 768px) {
       .chem-responsive-container {
         max-width: 980px !important;
-        padding: 24px 160px 160px 56px !important;
+        padding: 58px 160px 160px 56px !important;
       }
     }
     @media (orientation: portrait) {
       .chem-responsive-container {
         max-width: 92vw !important;
-        padding: 16px 4vw 200px 4vw !important;
+        padding: 58px 4vw 200px 4vw !important;
       }
     }
 
@@ -303,7 +302,6 @@ function injectM3AndResponsiveLayoutStyles() {
       padding: 26px clamp(22px, 4vw, 38px) !important;
     }
 
-    /* 永久防止平衡方程式與化學式跑版護欄 */
     .q-native-body, .exp-body {
       width: 100% !important;
       box-sizing: border-box !important;
@@ -316,7 +314,6 @@ function injectM3AndResponsiveLayoutStyles() {
       line-height: 1.7 !important;
     }
 
-    /* 針對多圖選項（A, B, C, D 濃度／速率圖）強制自動排列為美觀的 2x2 柵格或柔和橫向排列 */
     .q-native-body img, .exp-body img {
       max-width: 55% !important;
       max-height: 120px !important;
@@ -327,7 +324,6 @@ function injectM3AndResponsiveLayoutStyles() {
       margin: 4px auto !important;
     }
 
-    /* 特別防護：化學平衡符號與上下行方程式容器不被拆散 */
     .chem-equilibrium-block {
       display: inline-block;
       text-align: center;
@@ -337,12 +333,34 @@ function injectM3AndResponsiveLayoutStyles() {
       border-radius: 12px;
       border: 1px solid ${M3.outline};
     }
+
+    .m3-switch-track {
+      width: 52px;
+      height: 28px;
+      border-radius: 14px;
+      position: relative;
+      cursor: pointer;
+      transition: background-color 0.2s ease;
+    }
+    .m3-switch-thumb {
+      width: 20px;
+      height: 20px;
+      border-radius: 10px;
+      background: #FFFFFF;
+      position: absolute;
+      top: 4px;
+      left: 0;
+      transition: transform 0.2s ease;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.18);
+    }
   `;
   document.head.appendChild(st);
 
   document.addEventListener('selectstart', (e) => {
     const tag = e.target && e.target.tagName;
-    if (tag === 'INPUT' || tag === 'TEXTAREA') return;
+    if (tag === 'INPUT' || tag === 'TEXTAREA' || (e.target.closest && e.target.closest('#chemAuthOverlay, #chemAdminPassModal'))) {
+      return;
+    }
     e.preventDefault();
   });
 
@@ -530,7 +548,7 @@ function openDiscreetAdminModal() {
   pwdModal.innerHTML = `
     <div style="background:${M3.surface}; width:100%; max-width:310px; padding:24px 26px; border-radius:28px; box-shadow:0 12px 36px rgba(72,84,122,0.12); text-align:center; border:1px solid ${M3.outline};">
       <h3 class="m3-title-medium" style="margin:0 0 14px 0; color:${M3.textMain}; font-size:16px;">Admin</h3>
-      <input type="password" id="adminLocalPassInput" placeholder="Password" style="width:100%; padding:10px 14px; border:1px solid ${M3.outline}; border-radius:14px; font-size:14px; box-sizing:border-box; margin-bottom:8px; outline:none; background:${M3.bg}; color:${M3.textMain};" />
+      <input type="password" id="adminLocalPassInput" placeholder="Password" style="width:100%; padding:10px 14px; border:1px solid ${M3.outline}; border-radius:14px; font-size:16px; box-sizing:border-box; margin-bottom:8px; outline:none; background:${M3.bg}; color:${M3.textMain};" />
       <div id="adminLocalPassErr" style="color:${M3.textSub}; font-size:12px; min-height:18px; margin-bottom:10px;"></div>
       <div style="display:flex; gap:10px;">
         <button id="adminPassCancelBtn" style="flex:1; background:${M3.bg}; color:${M3.textSub}; border:1px solid ${M3.outline}; padding:9px; border-radius:14px; font-size:13px; cursor:pointer;">取消</button>
@@ -609,7 +627,7 @@ class ChemChapterCache {
 }
 
 // ============================================================================
-// 6. 深度穿透式 DOM 切題引擎 (修復化學平衡符號斷行與多圖選項排版)
+// 6. 深度穿透式 DOM 切題引擎
 // ============================================================================
 class DocxQuestionParser {
   static cleanInlineNoise(htmlStr) {
@@ -822,14 +840,6 @@ class DocxQuestionParser {
       const expDiv = document.createElement('div');
       let foundAnswer = false;
       let answerLetter = '';
-
-      // 智慧預檢：若區塊內包含平衡符號 `⇌` 或上下行反應物，自動組合成一個防斷行平衡方程式區塊
-      let hasEquilibriumSymbol = false;
-      block.nodes.forEach(n => {
-        if ((n.textContent || '').includes('⇌') || (n.textContent || '').includes('⇋')) {
-          hasEquilibriumSymbol = true;
-        }
-      });
 
       block.nodes.forEach(node => {
         const txt = (node.textContent || '').replace(/[\u25A0-\u25FF\u2610-\u2612\uF06F□☐■▪▫]/g, '').trim();
@@ -1454,7 +1464,7 @@ async function openChapter(chapId) {
   }
 }
 
-// 13. 渲染題目卡片 (升級：平衡方程式防護 + 選擇題多圖自動 2x2 柵格排列 + 圖片縮小 40%)
+// 13. 渲染題目卡片
 function renderQuestions(qList, chapId) {
   const wrapper = switchRightPanelToChapterView();
   const container = wrapper.querySelector('#questionList');
@@ -1503,7 +1513,6 @@ function renderQuestions(qList, chapId) {
       </div>
     `;
 
-    // 智能修復化學平衡方程式（若偵測到 ⇌ 符號，自動加上置中區塊保護）
     const nativeBody = card.querySelector('.q-native-body');
     if (nativeBody && nativeBody.innerHTML.includes('⇌')) {
       nativeBody.innerHTML = nativeBody.innerHTML.replace(
@@ -1512,17 +1521,14 @@ function renderQuestions(qList, chapId) {
       );
     }
 
-    // 針對多圖選項（如 A、B、C、D 速率或濃度圖）自動轉為 2x2 柵格排列
     const imgs = nativeBody ? nativeBody.querySelectorAll('img') : [];
     if (imgs.length >= 3) {
-      const imgContainer = document.createElement('div');
-      imgContainer.style.cssText = 'display:grid; grid-template-columns:repeat(2, minmax(0, 1fr)); gap:12px; margin:14px 0; justify-items:center;';
       imgs.forEach(img => {
         applyExact40PercentShrink(img, false, false);
-        const wrapper = document.createElement('div');
-        wrapper.style.cssText = 'background:#FFFFFF; border:1px solid ' + M3.outline + '; border-radius:16px; padding:8px; text-align:center; width:100%; box-sizing:border-box;';
-        img.parentNode.insertBefore(wrapper, img);
-        wrapper.appendChild(img);
+        const wrapperDiv = document.createElement('div');
+        wrapperDiv.style.cssText = 'background:#FFFFFF; border:1px solid ' + M3.outline + '; border-radius:16px; padding:8px; text-align:center; width:100%; box-sizing:border-box;';
+        img.parentNode.insertBefore(wrapperDiv, img);
+        wrapperDiv.appendChild(img);
       });
     } else {
       imgs.forEach(img => applyExact40PercentShrink(img, false, false));
@@ -2155,44 +2161,44 @@ function renderCenterDirectoryModal() {
   });
 }
 
-// 17. 全屏登入 / 註冊閘道
+// 17. 全屏登入 / 註冊閘道 (針對 iPad 虛擬鍵盤彈出優化，不位移、不攔截觸控)
 function ensureAuthOverlay() {
   let authOverlay = document.getElementById('chemAuthOverlay');
   if (authOverlay) return authOverlay;
 
   authOverlay = document.createElement('div');
   authOverlay.id = 'chemAuthOverlay';
-  authOverlay.style.cssText = `position:fixed; top:0; left:0; width:100vw; height:100vh; background:${M3.bg}; z-index:99999; display:flex; justify-content:center; align-items:center; padding:16px; box-sizing:border-box; font-family:sans-serif;`;
+  authOverlay.style.cssText = `position:fixed; top:0; left:0; width:100vw; height:100vh; background:${M3.bg}; z-index:99999; display:block; overflow-y:auto; -webkit-overflow-scrolling:touch; padding:32px 16px 260px 16px; box-sizing:border-box; font-family:sans-serif;`;
 
   authOverlay.innerHTML = `
-    <div style="background:${M3.surface}; padding:32px 34px; border-radius:28px; box-shadow:0 12px 36px rgba(72,84,122,0.08); width:100%; max-width:390px; text-align:center; border:2.5px solid ${M3.outline};">
+    <div style="background:${M3.surface}; margin:12px auto 0 auto; padding:30px 32px; border-radius:28px; box-shadow:0 12px 36px rgba(72,84,122,0.08); width:100%; max-width:390px; text-align:center; border:2.5px solid ${M3.outline}; box-sizing:border-box;">
       <h2 class="m3-title-medium" style="margin:0 0 6px 0; color:${M3.primary}; font-size:22px; letter-spacing:0.5px;">HKDSE</h2>
       <p style="font-size:13px; color:${M3.textSub}; margin:0 0 22px 0;">請輸入學生 ID 登入或註冊</p>
       
       <div style="display:flex; flex-direction:column; gap:14px; text-align:left;">
         <div>
           <label style="font-size:12px; color:${M3.textSub}; display:block; margin-bottom:4px;">學生 ID (5A / 5B / 5C / 5D + 班號)</label>
-          <input type="text" id="customUserIdInput" placeholder="例如: 5A1" style="width:100%; padding:11px 14px; border:1.5px solid ${M3.outline}; border-radius:14px; font-size:14px; box-sizing:border-box; background:${M3.bg}; color:${M3.textMain}; outline:none;" />
+          <input type="text" id="customUserIdInput" autocomplete="username" autocapitalize="characters" autocorrect="off" spellcheck="false" placeholder="例如: 5A1" style="width:100%; padding:11px 14px; border:1.5px solid ${M3.outline}; border-radius:14px; font-size:16px; box-sizing:border-box; background:${M3.bg}; color:${M3.textMain}; outline:none;" />
         </div>
         <div>
           <label style="font-size:12px; color:${M3.textSub}; display:block; margin-bottom:4px;">密碼</label>
-          <input type="password" id="customUserPassInput" placeholder="輸入密碼" style="width:100%; padding:11px 14px; border:1.5px solid ${M3.outline}; border-radius:14px; font-size:14px; box-sizing:border-box; background:${M3.bg}; color:${M3.textMain}; outline:none;" />
+          <input type="password" id="customUserPassInput" autocomplete="current-password" placeholder="輸入密碼" style="width:100%; padding:11px 14px; border:1.5px solid ${M3.outline}; border-radius:14px; font-size:16px; box-sizing:border-box; background:${M3.bg}; color:${M3.textMain}; outline:none;" />
         </div>
         <div id="confirmPassGroup" style="display:none;">
           <label style="font-size:12px; color:${M3.textSub}; display:block; margin-bottom:4px;">確認密碼</label>
-          <input type="password" id="customUserPassConfirmInput" placeholder="再次輸入相同密碼" style="width:100%; padding:11px 14px; border:1.5px solid ${M3.outline}; border-radius:14px; font-size:14px; box-sizing:border-box; background:${M3.bg}; color:${M3.textMain}; outline:none;" />
+          <input type="password" id="customUserPassConfirmInput" autocomplete="new-password" placeholder="再次輸入相同密碼" style="width:100%; padding:11px 14px; border:1.5px solid ${M3.outline}; border-radius:14px; font-size:16px; box-sizing:border-box; background:${M3.bg}; color:${M3.textMain}; outline:none;" />
         </div>
 
-        <div style="display:flex; gap:10px; margin-top:4px;">
-          <button id="mainLoginBtn" class="sound-trigger" style="flex:1; background:${M3.primary}; color:#fff; border:none; padding:12px; border-radius:16px; font-size:14px; cursor:pointer;">登入</button>
-          <button id="mainToggleRegBtn" class="sound-trigger" style="flex:1; background:${M3.surfaceVariant}; color:${M3.primary}; border:none; padding:12px; border-radius:16px; font-size:14px; cursor:pointer;">切換註冊</button>
+        <div style="display:flex; gap:10px; margin-top:10px;">
+          <button type="button" id="mainLoginBtn" class="sound-trigger" style="flex:1; background:${M3.primary}; color:#fff; border:none; padding:12px; border-radius:16px; font-size:14px; cursor:pointer;">登入</button>
+          <button type="button" id="mainToggleRegBtn" class="sound-trigger" style="flex:1; background:${M3.surfaceVariant}; color:${M3.primary}; border:none; padding:12px; border-radius:16px; font-size:14px; cursor:pointer;">切換註冊</button>
         </div>
       </div>
 
       <div id="authErrorMsg" style="color:${M3.textSub}; font-size:12px; margin-top:14px; min-height:18px; line-height:1.4;"></div>
 
       <div style="margin-top:12px; padding-top:10px; border-top:1px solid ${M3.outline}; display:flex; justify-content:flex-end;">
-        <button id="loginOverlayAdminBtn" class="sound-trigger" style="background:transparent; border:none; color:${M3.textMuted}; font-size:11px; cursor:pointer; padding:2px 6px;">
+        <button type="button" id="loginOverlayAdminBtn" class="sound-trigger" style="background:transparent; border:none; color:${M3.textMuted}; font-size:11px; cursor:pointer; padding:2px 6px;">
           Admin
         </button>
       </div>
@@ -2303,7 +2309,12 @@ function cleanLegacyPageLayout() {
       child.id !== 'inlineConfirmModal' &&
       child.id !== 'chemAdminFullModal' &&
       child.id !== 'chemDailyLogInspectorModal' &&
-      child.id !== 'chemAdminPassModal'
+      child.id !== 'chemAdminPassModal' &&
+      child.id !== 'dseTopSectionBar' &&
+      child.id !== 'chemLqRootContainer' &&
+      child.id !== 'bioAppRootContainer' &&
+      child.id !== 'bioLqRootContainer' &&
+      child.id !== 'chemVersionBadge'
     ) {
       child.style.display = 'none';
     }
@@ -2390,7 +2401,7 @@ async function bootChemApp() {
           window.ChemUserLog.openAdminPanel();
         }
       } else {
-        authOverlay.style.display = 'flex';
+        authOverlay.style.display = 'block';
         updateFloatingButtonsVisibility();
       }
     });
@@ -2410,7 +2421,8 @@ if (document.readyState === 'loading') {
 } else {
   bootChemApp();
 }
-// 自動按需載入當前章節專屬的 patches/patch_chXX.js (例如 Ch40 讀 patch_ch40.js, Ch30 讀 patch_ch30.js)
+
+// 20. 自動按需載入當前章節專屬的 patches/patch_chXX.js
 (function () {
   const loadedPatches = {};
 
@@ -2429,18 +2441,16 @@ if (document.readyState === 'loading') {
       loadedPatches[src] = true;
       const s = document.createElement('script');
       s.src = `${src}?v=${Date.now()}`;
-      s.onerror = () => {}; // 若該章節目前沒有建立 patch 檔則安靜略過
+      s.onerror = () => {};
       document.head.appendChild(s);
     });
   }
 
   function detectAndLoadCurrentChapter() {
-    // 1. 優先讀取全域狀態中的當前章節 ID
     if (window.chemApp && window.chemApp.activeChapterId) {
       loadChapterPatch(window.chemApp.activeChapterId);
     }
 
-    // 2. 掃描畫面上已渲染的題號 (例如 ChemMCQ40001 -> 自動提取章節 "40")
     const qNumEls = document.querySelectorAll('.q-number');
     qNumEls.forEach(el => {
       const match = (el.textContent || '').trim().match(/Chem[A-Za-z]+(\d{2})\d{3}/i);
@@ -2450,381 +2460,27 @@ if (document.readyState === 'loading') {
     });
   }
 
-  // 監聽 DOM 變化，一旦切換章節或載入新題目即刻觸發對應章節的 Patch
   const observer = new MutationObserver(detectAndLoadCurrentChapter);
   const targetNode = document.getElementById('chemAppRootContainer') || document.body;
   observer.observe(targetNode, { childList: true, subtree: true });
 
   detectAndLoadCurrentChapter();
 })();
-/**
- * ============================================================================
- * Version Tracker, Anti-Zoom & Strict Directory Background Scroll Lock
- * Current Version: 0.1.12 (Increment on every new release)
- * Append this snippet to the very bottom of app.js
- * ============================================================================
- */
+
+// ============================================================================
+// 21. 單一乾淨模組載入器、版本號標籤 (v0.1.30)、防縮放與目錄背景鎖定
+//     更新時間：2026-11-13 12:02:00 (HKT) | 版本：v0.1.30
+// ============================================================================
 (function () {
   'use strict';
 
-  const APP_VERSION = '0.1.19';
-  window.CHEM_APP_VERSION = APP_VERSION;
-
-  // --------------------------------------------------------------------------
-  // 1. 版本號檢測與畫面左下角狀態標籤（方便每次更新後即時確認是否載入新版）
-  // --------------------------------------------------------------------------
-  function initVersionBadge() {
-    const prevVersion = localStorage.getItem('chem_app_version');
-    if (prevVersion && prevVersion !== APP_VERSION) {
-      console.log(`[ChemApp] 版本已更新：v${prevVersion} -> v${APP_VERSION}`);
-    } else {
-      console.log(`[ChemApp] 當前版本：v${APP_VERSION}`);
-    }
-    localStorage.setItem('chem_app_version', APP_VERSION);
-
-    if (document.getElementById('chemVersionBadge')) return;
-    const badge = document.createElement('div');
-    badge.id = 'chemVersionBadge';
-    badge.textContent = `v${APP_VERSION}`;
-    badge.title = `當前題庫程式版本 v${APP_VERSION}（點擊檢查版本）`;
-    badge.style.cssText = [
-      'position: fixed',
-      'left: 12px',
-      'bottom: 12px',
-      'z-index: 9998',
-      'background: rgba(29, 31, 44, 0.72)',
-      'color: #FFFFFF',
-      'font-family: -apple-system, BlinkMacSystemFont, sans-serif',
-      'font-size: 11px',
-      'font-weight: 600',
-      'letter-spacing: 0.4px',
-      'padding: 4px 10px',
-      'border-radius: 999px',
-      'backdrop-filter: blur(6px)',
-      '-webkit-backdrop-filter: blur(6px)',
-      'box-shadow: 0 2px 8px rgba(0,0,0,0.12)',
-      'user-select: none',
-      'cursor: pointer'
-    ].join(';');
-
-    badge.addEventListener('click', () => {
-      badge.textContent = `v${APP_VERSION} ✓ 已是最新`;
-      setTimeout(() => {
-        badge.textContent = `v${APP_VERSION}`;
-      }, 1600);
-    });
-
-    document.body.appendChild(badge);
-  }
-
-  // --------------------------------------------------------------------------
-  // 2. 徹底關閉網頁內放大功能（雙指捏合、雙擊放大、觸控板縮放）
-  // --------------------------------------------------------------------------
-  function disablePageZoom() {
-    let viewport = document.querySelector('meta[name="viewport"]');
-    if (!viewport) {
-      viewport = document.createElement('meta');
-      viewport.name = 'viewport';
-      document.head.appendChild(viewport);
-    }
-    viewport.setAttribute(
-      'content',
-      'width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no, viewport-fit=cover'
-    );
-
-    if (!document.getElementById('chemLockV0112Style')) {
-      const style = document.createElement('style');
-      style.id = 'chemLockV0112Style';
-      style.textContent = `
-        html, body {
-          touch-action: pan-x pan-y !important;
-          -ms-touch-action: pan-x pan-y !important;
-          overscroll-behavior: none !important;
-        }
-        * {
-          touch-action: manipulation;
-        }
-        html.chem-dir-locked,
-        body.chem-dir-locked,
-        body.chem-dir-locked #chemAppRootContainer {
-          overflow: hidden !important;
-          overscroll-behavior: none !important;
-        }
-      `;
-      document.head.appendChild(style);
-    }
-
-    // 攔截 iPadOS / iOS Safari 原生縮放手勢
-    ['gesturestart', 'gesturechange', 'gestureend'].forEach(evt => {
-      document.addEventListener(evt, e => e.preventDefault(), { passive: false });
-    });
-
-    // 攔截雙指觸控縮放
-    document.addEventListener(
-      'touchstart',
-      e => {
-        if (e.touches && e.touches.length > 1) {
-          e.preventDefault();
-        }
-      },
-      { passive: false }
-    );
-    document.addEventListener(
-      'touchmove',
-      e => {
-        if (e.touches && e.touches.length > 1) {
-          e.preventDefault();
-        }
-      },
-      { passive: false }
-    );
-
-    // 攔截雙擊放大 (300ms 內連續點擊)
-    let lastTouchEnd = 0;
-    document.addEventListener(
-      'touchend',
-      e => {
-        const now = Date.now();
-        if (now - lastTouchEnd <= 300) {
-          e.preventDefault();
-        }
-        lastTouchEnd = now;
-      },
-      { passive: false }
-    );
-
-    // 攔截觸控板雙指捏合縮放 (Ctrl + Wheel)
-    document.addEventListener(
-      'wheel',
-      e => {
-        if (e.ctrlKey) {
-          e.preventDefault();
-        }
-      },
-      { passive: false }
-    );
-  }
-
-  // --------------------------------------------------------------------------
-  // 3. 打開目錄時徹底鎖死背景滑動（支援觸控手勢與觸控板滾輪）
-  // --------------------------------------------------------------------------
-  let isDirOpen = false;
-
-  // 判斷目前畫面上是否有開啟目錄抽屜或全螢幕遮罩
-  function detectDirectoryOpen() {
-    const candidates = Array.from(document.querySelectorAll('div, aside, nav, dialog, section'));
-    const found = candidates.some(el => {
-      if (el === document.body || el === document.documentElement || el.id === 'chemVersionBadge') {
-        return false;
-      }
-      const style = window.getComputedStyle(el);
-      if (style.display === 'none' || style.visibility === 'hidden' || parseFloat(style.opacity) === 0) {
-        return false;
-      }
-      if (style.position !== 'fixed' && style.position !== 'absolute') {
-        return false;
-      }
-      // 排除右下角常駐的懸浮控制列（包含「結束當前 MC」按鈕的區塊）
-      const txt = el.textContent || '';
-      if (txt.includes('結束當前 MC') && el.getBoundingClientRect().width < 260) {
-        return false;
-      }
-
-      const rect = el.getBoundingClientRect();
-      const isBackdrop = rect.width >= window.innerWidth * 0.85 && rect.height >= window.innerHeight * 0.85;
-      const isDrawer = rect.width >= 200 && rect.height >= window.innerHeight * 0.35 && (parseInt(style.zIndex, 10) || 0) >= 10;
-      return isBackdrop || isDrawer;
-    });
-
-    if (found !== isDirOpen) {
-      isDirOpen = found;
-      document.documentElement.classList.toggle('chem-dir-locked', isDirOpen);
-      document.body.classList.toggle('chem-dir-locked', isDirOpen);
-    }
-    return isDirOpen;
-  }
-
-  // 尋找手指／滑鼠所在位置的可捲動目錄容器
-  function findScrollableMenuContainer(target) {
-    let el = target;
-    const rootContainer = document.getElementById('chemAppRootContainer');
-    while (el && el !== document.body && el !== document.documentElement && el !== rootContainer) {
-      const style = window.getComputedStyle(el);
-      const oy = style.overflowY;
-      if ((oy === 'auto' || oy === 'scroll') && el.scrollHeight > el.clientHeight + 1) {
-        return el;
-      }
-      el = el.parentElement;
-    }
-    return null;
-  }
-
-  let touchStartY = 0;
-  document.addEventListener(
-    'touchstart',
-    e => {
-      if (e.touches && e.touches.length === 1) {
-        touchStartY = e.touches[0].clientY;
-      }
-    },
-    { passive: true }
-  );
-
-  // 攔截觸控滑動：目錄開啟時，非目錄內部捲動區一律禁止移動
-  document.addEventListener(
-    'touchmove',
-    e => {
-      if (!detectDirectoryOpen()) return;
-      if (e.touches && e.touches.length > 1) return;
-
-      const menuScroller = findScrollableMenuContainer(e.target);
-      if (!menuScroller) {
-        // 滑在黑底遮罩或目錄標題列上時，直接阻斷事件防止背景跟著動
-        e.preventDefault();
-        return;
-      }
-
-      menuScroller.style.overscrollBehavior = 'contain';
-      const currentY = e.touches[0].clientY;
-      const deltaY = currentY - touchStartY;
-      const atTop = menuScroller.scrollTop <= 0;
-      const atBottom = menuScroller.scrollTop + menuScroller.clientHeight >= menuScroller.scrollHeight - 1;
-
-      if ((atTop && deltaY > 0) || (atBottom && deltaY < 0)) {
-        e.preventDefault();
-      }
-    },
-    { passive: false }
-  );
-
-  // 攔截 iPad 觸控板／外接滑鼠滾輪 (Wheel)：目錄開啟時禁止背景捲動
-  document.addEventListener(
-    'wheel',
-    e => {
-      if (!detectDirectoryOpen()) return;
-      const menuScroller = findScrollableMenuContainer(e.target);
-      if (!menuScroller) {
-        e.preventDefault();
-        return;
-      }
-      const atTop = menuScroller.scrollTop <= 0;
-      const atBottom = menuScroller.scrollTop + menuScroller.clientHeight >= menuScroller.scrollHeight - 1;
-      if ((atTop && e.deltaY < 0) || (atBottom && e.deltaY > 0)) {
-        e.preventDefault();
-      }
-    },
-    { passive: false }
-  );
-
-  // 點擊「目錄選單」按鈕時立即觸發狀態檢測
-  document.addEventListener(
-    'click',
-    e => {
-      const btn = e.target.closest('button, [role="button"], div');
-      if (btn && (btn.textContent || '').includes('目錄選單')) {
-        setTimeout(detectDirectoryOpen, 30);
-        setTimeout(detectDirectoryOpen, 150);
-      }
-    },
-    true
-  );
-
-  function init() {
-    initVersionBadge();
-    disablePageZoom();
-    const observer = new MutationObserver(() => {
-      detectDirectoryOpen();
-    });
-    observer.observe(document.body, {
-      childList: true,
-      subtree: true,
-      attributes: true,
-      attributeFilter: ['style', 'class', 'hidden', 'open']
-    });
-    detectDirectoryOpen();
-  }
-
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', init);
-  } else {
-    init();
-  }
-})();
-
-
-// 更新時間：2026-11-13 11:00:00 (HKT) | 版本：v0.1.22
-// 功能：自動載入 module/ 資料夾下的獨立功能模組並更新版本號
-(function () {
-  const VER = '0.1.22';
-  const UPDATED_AT = '2026-11-13 11:00:00';
-
-  const modules = [
-    './module/chemlq.js'
-  ];
-
-  modules.forEach(src => {
-    const s = document.createElement('script');
-    s.src = `${src}?v=${VER}`;
-    s.onerror = () => console.warn('[Module Loader] 找不到模組:', src);
-    document.head.appendChild(s);
-  });
-
-  setTimeout(() => {
-    const badge = document.getElementById('chemVersionBadge');
-    if (badge) {
-      badge.textContent = `v${VER}`;
-      badge.title = `版本 v${VER} | 更新於 ${UPDATED_AT}`;
-    }
-  }, 300);
-})();
-
-// 更新時間：2026-11-13 11:04:00 (HKT) | 版本：v0.1.24
-// 功能：載入 module/chemlq.js 與 module/biomclq.js 獨立模組並更新版本號
-(function () {
-  const VER = '0.1.24';
-  const UPDATED_AT = '2026-11-13 11:04:00';
-
-  const modules = [
-    './module/chemlq.js',
-    './module/biomclq.js'
-  ];
-
-  modules.forEach(src => {
-    const s = document.createElement('script');
-    s.src = `${src}?v=${VER}`;
-    s.onerror = () => console.warn('[Module Loader] 找不到模組:', src);
-    document.head.appendChild(s);
-  });
-
-  setTimeout(() => {
-    const badge = document.getElementById('chemVersionBadge');
-    if (badge) {
-      badge.textContent = `v${VER}`;
-      badge.title = `版本 v${VER} | 更新於 ${UPDATED_AT}`;
-    }
-  }, 300);
-})();
-
-// 更新時間：2026-11-13 11:50:00 (HKT) | 版本：v0.1.29
-// 功能說明：修復 iPad Chrome 鍵盤彈出後登入框座標偏移與按鈕遮擋問題、載入 module/chemlq.js 與 module/biomclq.js
-
-(function () {
-  'use strict';
-
-  const APP_VERSION = '0.1.29';
-  const UPDATED_AT = '2026-11-13 11:50:00';
+  const APP_VERSION = '0.1.30';
+  const UPDATED_AT = '2026-11-13 12:02:00';
   window.CHEM_APP_VERSION = APP_VERSION;
   window.CHEM_APP_UPDATED_AT = UPDATED_AT;
 
-  // --------------------------------------------------------------------------
-  // 1. 載入 module/ 資料夾下的獨立功能模組
-  // --------------------------------------------------------------------------
-  const modules = [
-    './module/chemlq.js',
-    './module/biomclq.js'
-  ];
-
-  modules.forEach(src => {
+  // 1. 載入獨立功能模組（只載入一次）
+  ['./module/chemlq.js', './module/biomclq.js'].forEach(src => {
     if (document.querySelector(`script[data-dse-mod="${src}"]`)) return;
     const s = document.createElement('script');
     s.dataset.dseMod = src;
@@ -2833,101 +2489,8 @@ if (document.readyState === 'loading') {
     document.head.appendChild(s);
   });
 
-  // --------------------------------------------------------------------------
-  // 2. 修正 iPad Chrome / Safari 登入視窗在鍵盤彈出時的排版與觸控感應區
-  // --------------------------------------------------------------------------
-  function injectAuthLayoutFixStyles() {
-    if (document.getElementById('chemAuthFixV0129Style')) return;
-    const style = document.createElement('style');
-    style.id = 'chemAuthFixV0129Style';
-    style.textContent = `
-      /* 改用頂部對齊可捲動容器，避免鍵盤彈出時 flex 置中重算造成點擊座標偏移 */
-      #chemAuthOverlay[style*="flex"],
-      #chemAuthOverlay[style*="block"] {
-        display: block !important;
-        position: fixed !important;
-        top: 0 !important;
-        left: 0 !important;
-        right: 0 !important;
-        bottom: 0 !important;
-        width: 100% !important;
-        height: 100% !important;
-        overflow-y: auto !important;
-        -webkit-overflow-scrolling: touch !important;
-        padding: 24px 16px 280px 16px !important;
-        z-index: 2147483640 !important;
-        touch-action: pan-y !important;
-      }
-      #chemAuthOverlay > div {
-        margin: 8px auto 0 auto !important;
-        position: relative !important;
-      }
-      #chemAuthOverlay input,
-      #chemAdminPassModal input {
-        -webkit-user-select: text !important;
-        user-select: text !important;
-        -webkit-touch-callout: default !important;
-        touch-action: manipulation !important;
-        pointer-events: auto !important;
-        font-size: 16px !important;
-        min-height: 44px !important;
-      }
-      /* 加大密碼欄與登入按鈕間距，避免被 iPad Chrome 自動填寫浮動條遮住 */
-      #chemAuthOverlay #mainLoginBtn,
-      #chemAuthOverlay #mainToggleRegBtn {
-        margin-top: 14px !important;
-        min-height: 44px !important;
-        touch-action: manipulation !important;
-        pointer-events: auto !important;
-      }
-    `;
-    document.head.appendChild(style);
-  }
-
-  function enhanceAuthOverlayTouch(container) {
-    if (!container || container.dataset.v0129Bound === '1') return;
-    container.dataset.v0129Bound = '1';
-
-    // 阻止事件向上冒泡到 document 層級的舊版觸控攔截器
-    ['touchstart', 'touchmove', 'touchend', 'pointerdown', 'pointerup', 'click'].forEach(evt => {
-      container.addEventListener(evt, e => e.stopPropagation(), false);
-    });
-
-    // 關閉瀏覽器自動密碼浮動列干擾，並確保輕觸輸入框立即獲得焦點
-    container.querySelectorAll('input').forEach(inp => {
-      inp.setAttribute('autocomplete', 'off');
-      inp.setAttribute('autocorrect', 'off');
-      inp.setAttribute('autocapitalize', 'off');
-      inp.setAttribute('spellcheck', 'false');
-
-      inp.addEventListener('pointerup', () => {
-        if (document.activeElement !== inp) {
-          inp.focus();
-        }
-      });
-    });
-  }
-
-  function applyAuthFixes() {
-    injectAuthLayoutFixStyles();
-    const authOverlay = document.getElementById('chemAuthOverlay');
-    const adminModal = document.getElementById('chemAdminPassModal');
-    if (authOverlay) {
-      enhanceAuthOverlayTouch(authOverlay);
-      if (authOverlay.style.display !== 'none') {
-        document.documentElement.classList.remove('chem-dir-locked');
-        document.body.classList.remove('chem-dir-locked');
-      }
-    }
-    if (adminModal) {
-      enhanceAuthOverlayTouch(adminModal);
-    }
-  }
-
-  // --------------------------------------------------------------------------
-  // 3. 更新左下角版本號標籤 (v0.1.29)
-  // --------------------------------------------------------------------------
-  function updateVersionBadge() {
+  // 2. 左下角版本號標籤
+  function initVersionBadge() {
     localStorage.setItem('chem_app_version', APP_VERSION);
     let badge = document.getElementById('chemVersionBadge');
     if (!badge) {
@@ -2961,20 +2524,73 @@ if (document.readyState === 'loading') {
     };
   }
 
-  function init() {
-    applyAuthFixes();
-    updateVersionBadge();
+  // 3. 精準鎖定「目錄選單彈窗」開啟時的背景滑動（絕不觸碰登入畫面與輸入框）
+  const DIRECTORY_MODAL_IDS = [
+    'centerDirectoryModal',
+    'lqCenterDirectoryModal',
+    'bioCenterDirectoryModal',
+    'chemDailyLogInspectorModal',
+    'bioDailyInspectorModal'
+  ];
 
-    const observer = new MutationObserver(() => {
-      applyAuthFixes();
-      updateVersionBadge();
+  function isAnyDirectoryModalOpen() {
+    return DIRECTORY_MODAL_IDS.some(id => {
+      const el = document.getElementById(id);
+      if (!el) return false;
+      const st = window.getComputedStyle(el);
+      return st.display !== 'none' && st.visibility !== 'hidden';
     });
-    observer.observe(document.body, {
-      childList: true,
-      subtree: true,
-      attributes: true,
-      attributeFilter: ['style', 'class']
+  }
+
+  function findScrollableContainer(target) {
+    let el = target;
+    while (el && el !== document.body && el !== document.documentElement) {
+      const oy = window.getComputedStyle(el).overflowY;
+      if ((oy === 'auto' || oy === 'scroll') && el.scrollHeight > el.clientHeight + 1) {
+        return el;
+      }
+      el = el.parentElement;
+    }
+    return null;
+  }
+
+  function setupAntiZoomAndDirectoryLock() {
+    let viewport = document.querySelector('meta[name="viewport"]');
+    if (!viewport) {
+      viewport = document.createElement('meta');
+      viewport.name = 'viewport';
+      document.head.appendChild(viewport);
+    }
+    viewport.setAttribute(
+      'content',
+      'width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no, viewport-fit=cover'
+    );
+
+    // 僅攔截雙指捏合縮放手勢，完全不干擾單指點擊與輸入框聚焦
+    ['gesturestart', 'gesturechange', 'gestureend'].forEach(evt => {
+      document.addEventListener(evt, e => e.preventDefault(), { passive: false });
     });
+
+    document.addEventListener(
+      'touchmove',
+      e => {
+        if (e.touches && e.touches.length > 1) {
+          e.preventDefault();
+          return;
+        }
+        if (!isAnyDirectoryModalOpen()) return;
+        const scroller = findScrollableContainer(e.target);
+        if (!scroller) {
+          e.preventDefault();
+        }
+      },
+      { passive: false }
+    );
+  }
+
+  function init() {
+    initVersionBadge();
+    setupAntiZoomAndDirectoryLock();
   }
 
   if (document.readyState === 'loading') {
@@ -2983,4 +2599,3 @@ if (document.readyState === 'loading') {
     init();
   }
 })();
-
