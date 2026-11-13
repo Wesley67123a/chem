@@ -2558,3 +2558,59 @@ if (document.readyState === 'loading') {
     initVersionBadge();
   }
 })();
+
+// 更新時間：2026-11-13 12:30:00 (HKT) | 版本：v0.1.33
+// 功能說明：修正 iPad 橫屏模式下主頁與做題卡片向左偏移問題，強制左右對稱水平置中
+
+(function () {
+  'use strict';
+
+  const PATCH_VERSION = '0.1.33';
+  const UPDATED_AT = '2026-11-13 12:30:00';
+  window.CHEM_APP_VERSION = PATCH_VERSION;
+  window.CHEM_APP_UPDATED_AT = UPDATED_AT;
+
+  function injectLandscapeCenterStyle() {
+    if (document.getElementById('dseLandscapeCenterV0133')) return;
+    const style = document.createElement('style');
+    style.id = 'dseLandscapeCenterV0133';
+    style.textContent = `
+      @media (orientation: landscape) and (min-width: 768px) {
+        .chem-responsive-container,
+        #chemDashboardHome,
+        #chemChapterViewWrapper,
+        #chemLqRootContainer,
+        #bioAppRootContainer,
+        #bioLqRootContainer {
+          width: 100% !important;
+          max-width: 780px !important;
+          margin-left: auto !important;
+          margin-right: auto !important;
+          padding-left: 24px !important;
+          padding-right: 24px !important;
+          box-sizing: border-box !important;
+        }
+      }
+    `;
+    document.head.appendChild(style);
+  }
+
+  function updateBadgeV0133() {
+    localStorage.setItem('chem_app_version', PATCH_VERSION);
+    const badge = document.getElementById('chemVersionBadge');
+    if (badge) {
+      badge.textContent = `v${PATCH_VERSION}`;
+      badge.title = `版本 v${PATCH_VERSION} | 更新於 ${UPDATED_AT}`;
+    }
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', () => {
+      injectLandscapeCenterStyle();
+      updateBadgeV0133();
+    });
+  } else {
+    injectLandscapeCenterStyle();
+    updateBadgeV0133();
+  }
+})();
