@@ -2750,3 +2750,31 @@ if (document.readyState === 'loading') {
     init();
   }
 })();
+
+
+// 更新時間：2026-11-13 11:00:00 (HKT) | 版本：v0.1.22
+// 功能：自動載入 module/ 資料夾下的獨立功能模組並更新版本號
+(function () {
+  const VER = '0.1.22';
+  const UPDATED_AT = '2026-11-13 11:00:00';
+
+  const modules = [
+    './module/chemlq.js'
+  ];
+
+  modules.forEach(src => {
+    const s = document.createElement('script');
+    s.src = `${src}?v=${VER}`;
+    s.onerror = () => console.warn('[Module Loader] 找不到模組:', src);
+    document.head.appendChild(s);
+  });
+
+  setTimeout(() => {
+    const badge = document.getElementById('chemVersionBadge');
+    if (badge) {
+      badge.textContent = `v${VER}`;
+      badge.title = `版本 v${VER} | 更新於 ${UPDATED_AT}`;
+    }
+  }, 300);
+})();
+
