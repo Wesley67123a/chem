@@ -1,17 +1,16 @@
-// 更新時間：2026-11-13 11:12:00 (HKT) | 版本：v0.1.25
+// 更新時間：2026-11-13 11:17:00 (HKT) | 版本：v0.1.26
 // 檔案位置：module/chemlq.js
-// 功能說明：化學首頁 Chem LQ 入口卡片、15課題/65章 Chem LQ 目錄彈窗、長題目作答與 Marking Scheme 核對
+// 功能說明：左上角四段分區切換列 (Chem MC / Chem LQ / Bio MC / Bio LQ) 與 Chem LQ 題庫工作台
 
 (function () {
   'use strict';
 
-  const MODULE_VERSION = '0.1.25';
-  const UPDATED_AT = '2026-11-13 11:12:00';
+  const MODULE_VERSION = '0.1.26';
+  const UPDATED_AT = '2026-11-13 11:17:00';
 
   let activeLqChapterId = null;
 
   const ICONS = {
-    docList: `<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>`,
     list: `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><line x1="8" y1="6" x2="20" y2="6"/><line x1="8" y1="12" x2="20" y2="12"/><line x1="8" y1="18" x2="20" y2="18"/><circle cx="4" cy="6" r="1"/><circle cx="4" cy="12" r="1"/><circle cx="4" cy="18" r="1"/></svg>`
   };
 
@@ -19,15 +18,15 @@
   // 1. 注入樣式表
   // ==========================================================================
   function injectChemLqStyles() {
-    if (document.getElementById('dseChemLqModuleStyleV0125')) return;
+    if (document.getElementById('dseChemLqModuleStyleV0126')) return;
     const style = document.createElement('style');
-    style.id = 'dseChemLqModuleStyleV0125';
+    style.id = 'dseChemLqModuleStyleV0126';
     style.textContent = `
       .chem-responsive-container {
         padding-top: 58px !important;
       }
 
-      /* 左上角三段分區切換膠囊 (Chem MC | Chem LQ | Bio) */
+      /* 左上角四段分區切換膠囊 (Chem MC | Chem LQ | Bio MC | Bio LQ) */
       #dseTopSectionBar {
         position: fixed !important;
         top: max(12px, env(safe-area-inset-top)) !important;
@@ -45,13 +44,13 @@
         user-select: none !important;
       }
       .dse-sec-pill {
-        padding: 5px 12px !important;
+        padding: 5px 10px !important;
         border-radius: 999px !important;
         border: none !important;
         background: transparent !important;
         color: #5E6478 !important;
         font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
-        font-size: 12.5px !important;
+        font-size: 12px !important;
         cursor: pointer !important;
         transition: background 0.18s ease, color 0.18s ease !important;
         white-space: nowrap !important;
@@ -64,24 +63,13 @@
         background: #333D5C !important;
         color: #FFFFFF !important;
       }
-      .dse-sec-pill.active[data-sec="bio"] {
+      .dse-sec-pill.active[data-sec="bio_mc"] {
         background: #1B5E20 !important;
         color: #FFFFFF !important;
       }
-
-      /* 化學首頁 Chem LQ 入口卡片 */
-      #homeLqEntryCard {
-        background: #FFFFFF;
-        border: 2.5px solid #E2E6F3;
-        border-radius: 28px;
-        padding: 20px 26px;
-        margin-bottom: 18px;
-        box-shadow: 0 6px 24px rgba(72, 84, 122, 0.05);
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        gap: 12px;
-        box-sizing: border-box;
+      .dse-sec-pill.active[data-sec="bio_lq"] {
+        background: #2E7D32 !important;
+        color: #FFFFFF !important;
       }
 
       /* Chem LQ 主容器 */
@@ -305,41 +293,13 @@
   }
 
   // ==========================================================================
-  // 2. 在化學首頁 (#chemDashboardHome) 自動注入 Chem LQ 入口卡片
+  // 2. 清理化學首頁多餘卡片，保持首頁乾淨
   // ==========================================================================
-  function injectHomeLqCard() {
-    const dashboard = document.getElementById('chemDashboardHome');
-    if (!dashboard || document.getElementById('homeLqEntryCard')) return;
-
-    const cards = dashboard.querySelectorAll('.m3-card');
-    if (cards.length === 0) return;
-
-    const lqCard = document.createElement('div');
-    lqCard.id = 'homeLqEntryCard';
-    lqCard.innerHTML = `
-      <div style="display:flex; align-items:center; gap:14px; min-width:0; flex:1;">
-        <div style="width:40px; height:40px; border-radius:20px; background:#DFE3F8; color:#48547A; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
-          ${ICONS.docList}
-        </div>
-        <div style="min-width:0; flex:1;">
-          <div class="m3-title-medium" style="font-size:15px; color:#1D1F2C;">Chem LQ</div>
-          <div style="font-size:12px; color:#5E6478; margin-top:2px;">
-            ${activeLqChapterId && window.CHAPTER_MAP && window.CHAPTER_MAP[activeLqChapterId]
-              ? `上次選擇：${window.CHAPTER_MAP[activeLqChapterId].chapter.name}`
-              : '按 15 課題 / 65 章瀏覽化學科長題目與 Marking Scheme'}
-          </div>
-        </div>
-      </div>
-      <button type="button" id="homeOpenLqDirBtn" style="background:#48547A; color:#FFFFFF; border:none; padding:9px 16px; border-radius:20px; font-size:12.5px; cursor:pointer; flex-shrink:0; white-space:nowrap;">
-        選擇 Chem LQ 目錄 &rsaquo;
-      </button>
-    `;
-
-    cards[0].parentNode.insertBefore(lqCard, cards[0]);
-
-    lqCard.querySelector('#homeOpenLqDirBtn').addEventListener('click', () => {
-      openLqDirectoryModal();
-    });
+  function cleanHomeExtraCards() {
+    const c1 = document.getElementById('homeLqEntryCard');
+    if (c1) c1.remove();
+    const c2 = document.getElementById('homeBioEntryCard');
+    if (c2) c2.remove();
   }
 
   // ==========================================================================
@@ -447,7 +407,7 @@
         <div style="display:flex; justify-content:space-between; align-items:center; gap:8px; flex-wrap:wrap;">
           <div style="display:flex; align-items:center; gap:10px; min-width:0; flex:1;">
             <button type="button" id="lqBackHomeBtn" style="padding:6px 14px; font-size:12px; border:none; border-radius:18px; background:#DFE3F8; color:#48547A; cursor:pointer; white-space:nowrap;">
-              &lsaquo; Chem 首頁
+              &lsaquo; 首頁
             </button>
             <h2 id="lqCurrentChapterTitle" class="m3-title-medium" style="margin:0; font-size:15px; color:#1D1F2C; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
               Chem LQ
@@ -461,7 +421,15 @@
           </div>
         </div>
       </div>
-      <div id="chemLqFeed"></div>
+      <div id="chemLqFeed">
+        <div class="lq-q-card" style="text-align:center; padding:48px 24px; color:#5E6478;">
+          <div style="font-size:15px; color:#1D1F2C; margin-bottom:8px;">請選擇 Chem LQ 課題與章節</div>
+          <div style="font-size:13px; margin-bottom:18px;">點擊下方按鈕開啟 15 課題 / 65 章目錄。</div>
+          <button type="button" id="initLqOpenDirBtn" style="background:#48547A; color:#FFFFFF; border:none; padding:9px 18px; border-radius:18px; font-size:13px; cursor:pointer;">
+            開啟 Chem LQ 目錄
+          </button>
+        </div>
+      </div>
     `;
     document.body.appendChild(lqRoot);
 
@@ -478,6 +446,9 @@
       switchDseSection('chem_mc');
       if (typeof showHomeView === 'function') showHomeView();
     });
+
+    const initDirBtn = document.getElementById('initLqOpenDirBtn');
+    if (initDirBtn) initDirBtn.onclick = () => openLqDirectoryModal();
 
     let allMsExpanded = false;
     document.getElementById('lqToggleAllMsBtn').addEventListener('click', () => {
@@ -500,7 +471,7 @@
     const badgeEl = document.getElementById('lqTotalMarksBadge');
     const feedEl = document.getElementById('chemLqFeed');
 
-    if (titleEl) titleEl.textContent = `${chapTitle} (Chem LQ)`;
+    if (titleEl) titleEl.textContent = `${chapTitle} (LQ)`;
 
     const keyStr = String(chapId);
     if (window.CHEM_LQ_BANK && window.CHEM_LQ_BANK[keyStr]) {
@@ -512,7 +483,7 @@
     if (feedEl) {
       feedEl.innerHTML = `
         <div class="lq-q-card" style="text-align:center; padding:48px 20px; color:#5E6478;">
-          <div style="font-size:15px; color:#48547A; margin-bottom:6px;">正在載入 ${chapTitle} Chem LQ ...</div>
+          <div style="font-size:15px; color:#48547A; margin-bottom:6px;">正在載入 ${chapTitle} (LQ) ...</div>
         </div>
       `;
     }
@@ -550,8 +521,8 @@
       if (feedEl) {
         feedEl.innerHTML = `
           <div class="lq-q-card" style="text-align:center; padding:48px 24px; color:#5E6478;">
-            <div style="font-size:15px; color:#1D1F2C; margin-bottom:8px;">本章節尚未建立 Chem LQ 題庫 (chemlq_ch${padId}_${lang}.js)</div>
-            <div style="font-size:13px; margin-bottom:18px;">請點擊「Chem LQ 目錄」選擇其他已上傳章節（例如第 41 章）。</div>
+            <div style="font-size:15px; color:#1D1F2C; margin-bottom:8px;">本章節尚未建立 Long Question 題庫 (chemlq_ch${padId}_${lang}.js)</div>
+            <div style="font-size:13px; margin-bottom:18px;">請點擊「Chem LQ 目錄」選擇其他已上傳章節。</div>
             <button type="button" id="emptyLqOpenDirBtn" style="background:#48547A; color:#FFFFFF; border:none; padding:9px 18px; border-radius:18px; font-size:13px; cursor:pointer;">
               開啟 Chem LQ 目錄
             </button>
@@ -616,22 +587,34 @@
   }
 
   // ==========================================================================
-  // 5. 分區切換控制器 (Chem MC / Chem LQ / Bio)
+  // 5. 統一分區切換控制器 (Chem MC / Chem LQ / Bio MC / Bio LQ)
   // ==========================================================================
+  function hideAllWorkspaces() {
+    const chemMcRoot = document.getElementById('chemAppRootContainer');
+    const chemLqRoot = document.getElementById('chemLqRootContainer');
+    const bioMcRoot = document.getElementById('bioAppRootContainer');
+    const bioLqRoot = document.getElementById('bioLqRootContainer');
+    const floatingGrp = document.getElementById('floatingActionGroup');
+    const lqFloatBtn = document.getElementById('lqFloatingDirBtn');
+    const bioMcFloatBtn = document.getElementById('bioMcFloatingDirBtn');
+    const bioLqFloatBtn = document.getElementById('bioLqFloatingDirBtn');
+
+    if (chemMcRoot) chemMcRoot.style.display = 'none';
+    if (chemLqRoot) chemLqRoot.classList.remove('active');
+    if (bioMcRoot) bioMcRoot.classList.remove('active');
+    if (bioLqRoot) bioLqRoot.classList.remove('active');
+    if (floatingGrp) floatingGrp.style.display = 'none';
+    if (lqFloatBtn) lqFloatBtn.style.display = 'none';
+    if (bioMcFloatBtn) bioMcFloatBtn.style.display = 'none';
+    if (bioLqFloatBtn) bioLqFloatBtn.style.display = 'none';
+  }
+
   const sectionHandlers = {
     chem_mc: () => {
+      hideAllWorkspaces();
       const chemMcRoot = document.getElementById('chemAppRootContainer');
-      const chemLqRoot = document.getElementById('chemLqRootContainer');
-      const bioRoot = document.getElementById('bioAppRootContainer');
       const floatingGrp = document.getElementById('floatingActionGroup');
-      const lqFloatBtn = document.getElementById('lqFloatingDirBtn');
-      const bioFloatBtn = document.getElementById('bioFloatingDirBtn');
-
       if (chemMcRoot) chemMcRoot.style.display = '';
-      if (chemLqRoot) chemLqRoot.classList.remove('active');
-      if (bioRoot) bioRoot.classList.remove('active');
-      if (lqFloatBtn) lqFloatBtn.style.display = 'none';
-      if (bioFloatBtn) bioFloatBtn.style.display = 'none';
       if (floatingGrp) {
         if (typeof updateFloatingButtonsVisibility === 'function') {
           updateFloatingButtonsVisibility();
@@ -641,18 +624,10 @@
       }
     },
     chem_lq: () => {
-      const chemMcRoot = document.getElementById('chemAppRootContainer');
+      hideAllWorkspaces();
       const chemLqRoot = document.getElementById('chemLqRootContainer');
-      const bioRoot = document.getElementById('bioAppRootContainer');
-      const floatingGrp = document.getElementById('floatingActionGroup');
       const lqFloatBtn = document.getElementById('lqFloatingDirBtn');
-      const bioFloatBtn = document.getElementById('bioFloatingDirBtn');
-
-      if (chemMcRoot) chemMcRoot.style.display = 'none';
       if (chemLqRoot) chemLqRoot.classList.add('active');
-      if (bioRoot) bioRoot.classList.remove('active');
-      if (floatingGrp) floatingGrp.style.display = 'none';
-      if (bioFloatBtn) bioFloatBtn.style.display = 'none';
       if (lqFloatBtn) lqFloatBtn.style.display = 'flex';
     }
   };
@@ -703,16 +678,17 @@
       const isLoginVisible = authOverlay.style.display !== 'none';
       bar.style.display = isLoginVisible ? 'none' : 'inline-flex';
     }
-    injectHomeLqCard();
+    cleanHomeExtraCards();
   }
 
   window.DseSectionManager = {
     version: MODULE_VERSION,
     updatedAt: UPDATED_AT,
+    hideAllWorkspaces: hideAllWorkspaces,
     switchSection: switchDseSection,
     openLqDirectory: openLqDirectoryModal,
     openLqChapter: openLqChapter,
-    registerSection: function (secId, label, activateFn) {
+    registerSection: function (secId, label, activateFn, onPillClickFn = null) {
       sectionHandlers[secId] = activateFn;
       const bar = ensureTopSectionBar();
       if (!bar.querySelector(`.dse-sec-pill[data-sec="${secId}"]`)) {
@@ -721,11 +697,19 @@
         btn.className = 'dse-sec-pill';
         btn.dataset.sec = secId;
         btn.textContent = label;
-        btn.addEventListener('click', () => switchDseSection(secId));
+        btn.addEventListener('click', () => {
+          if (typeof onPillClickFn === 'function') {
+            onPillClickFn();
+          } else {
+            switchDseSection(secId);
+          }
+        });
         bar.appendChild(btn);
       }
       const saved = localStorage.getItem('dse_active_section');
-      if (saved === secId) switchDseSection(secId);
+      if (saved === secId) {
+        switchDseSection(secId);
+      }
     }
   };
 
@@ -733,15 +717,19 @@
     injectChemLqStyles();
     ensureChemLqWorkspace();
     ensureTopSectionBar();
-    injectHomeLqCard();
+    cleanHomeExtraCards();
 
     const savedChap = parseInt(localStorage.getItem('dse_last_lq_chap') || '0', 10);
     if (savedChap > 0) activeLqChapterId = savedChap;
 
     const savedSection = localStorage.getItem('dse_active_section') || 'chem_mc';
-    if (savedSection === 'chem_lq' && activeLqChapterId) {
-      openLqChapter(activeLqChapterId);
-    } else if (savedSection !== 'bio') {
+    if (savedSection === 'chem_lq') {
+      if (activeLqChapterId) {
+        openLqChapter(activeLqChapterId);
+      } else {
+        switchDseSection('chem_lq');
+      }
+    } else if (savedSection === 'chem_mc') {
       switchDseSection('chem_mc');
     }
 
