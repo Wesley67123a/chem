@@ -3113,13 +3113,19 @@ if (document.readyState === 'loading') {
 (function () {
   'use strict';
 
-  const APP_VERSION = '0.1.28';
-  const UPDATED_AT = '2026-11-13 11:40:00';
+  // 更新時間：2026-11-13 11:50:00 (HKT) | 版本：v0.1.29
+// 功能說明：修復 iPad Chrome 鍵盤彈出後登入框座標偏移與按鈕遮擋問題、載入 module/chemlq.js 與 module/biomclq.js
+
+(function () {
+  'use strict';
+
+  const APP_VERSION = '0.1.29';
+  const UPDATED_AT = '2026-11-13 11:50:00';
   window.CHEM_APP_VERSION = APP_VERSION;
   window.CHEM_APP_UPDATED_AT = UPDATED_AT;
 
   // --------------------------------------------------------------------------
-  // 1. 載入 module/ 資料夾下的獨立功能模組（防重複載入）
+  // 1. 載入 module/ 資料夾下的獨立功能模組
   // --------------------------------------------------------------------------
   const modules = [
     './module/chemlq.js',
@@ -3136,98 +3142,98 @@ if (document.readyState === 'loading') {
   });
 
   // --------------------------------------------------------------------------
-  // 2. 注入登入介面與輸入框觸控解鎖樣式
+  // 2. 修正 iPad Chrome / Safari 登入視窗在鍵盤彈出時的排版與觸控感應區
   // --------------------------------------------------------------------------
-  function injectAuthTouchUnlockStyles() {
-    if (document.getElementById('chemAuthFixV0128Style')) return;
+  function injectAuthLayoutFixStyles() {
+    if (document.getElementById('chemAuthFixV0129Style')) return;
     const style = document.createElement('style');
-    style.id = 'chemAuthFixV0128Style';
+    style.id = 'chemAuthFixV0129Style';
     style.textContent = `
-      #chemAuthOverlay,
-      #chemAdminPassModal {
-        z-index: 2147483640 !important;
-        pointer-events: auto !important;
-        touch-action: auto !important;
-        -webkit-user-select: text !important;
-        user-select: text !important;
-        overflow-y: auto !important;
+      /* 改用頂部對齊可捲動容器，避免鍵盤彈出時 flex 置中重算造成點擊座標偏移 */
+      #chemAuthOverlay[style*="flex"],
+      #chemAuthOverlay[style*="block"] {
+        display: block !important;
+        position: fixed !important;
+        top: 0 !important;
+        left: 0 !important;
+        right: 0 !important;
+        bottom: 0 !important;
+        width: 100% !important;
         height: 100% !important;
-        min-height: 100dvh !important;
+        overflow-y: auto !important;
+        -webkit-overflow-scrolling: touch !important;
+        padding: 24px 16px 280px 16px !important;
+        z-index: 2147483640 !important;
+        touch-action: pan-y !important;
       }
-      #chemAuthOverlay *,
-      #chemAdminPassModal * {
-        pointer-events: auto !important;
-        touch-action: manipulation !important;
+      #chemAuthOverlay > div {
+        margin: 8px auto 0 auto !important;
+        position: relative !important;
       }
       #chemAuthOverlay input,
-      #chemAuthOverlay textarea,
-      #chemAdminPassModal input,
-      input,
-      textarea {
+      #chemAdminPassModal input {
         -webkit-user-select: text !important;
         user-select: text !important;
         -webkit-touch-callout: default !important;
-        touch-action: auto !important;
+        touch-action: manipulation !important;
         pointer-events: auto !important;
         font-size: 16px !important;
+        min-height: 44px !important;
+      }
+      /* 加大密碼欄與登入按鈕間距，避免被 iPad Chrome 自動填寫浮動條遮住 */
+      #chemAuthOverlay #mainLoginBtn,
+      #chemAuthOverlay #mainToggleRegBtn {
+        margin-top: 14px !important;
+        min-height: 44px !important;
+        touch-action: manipulation !important;
+        pointer-events: auto !important;
       }
     `;
     document.head.appendChild(style);
   }
 
-  // --------------------------------------------------------------------------
-  // 3. 隔離登入視窗的觸控事件，防止傳遞給 document 層級的舊版阻斷器
-  // --------------------------------------------------------------------------
-  function bindAuthContainerShield(container) {
-    if (!container || container.dataset.v0128Shielded === '1') return;
-    container.dataset.v0128Shielded = '1';
+  function enhanceAuthOverlayTouch(container) {
+    if (!container || container.dataset.v0129Bound === '1') return;
+    container.dataset.v0129Bound = '1';
 
-    // 在容器冒泡階段截斷傳遞，讓按鈕 onclick 與輸入框預設聚焦正常執行，同時不讓 document 上的舊監聽器介入
-    ['touchstart', 'touchmove', 'touchend', 'pointerdown', 'pointerup', 'mousedown', 'click'].forEach(evtName => {
-      container.addEventListener(
-        evtName,
-        e => {
-          e.stopPropagation();
-        },
-        false
-      );
+    // 阻止事件向上冒泡到 document 層級的舊版觸控攔截器
+    ['touchstart', 'touchmove', 'touchend', 'pointerdown', 'pointerup', 'click'].forEach(evt => {
+      container.addEventListener(evt, e => e.stopPropagation(), false);
     });
 
-    // 針對 iPad Safari 強制在輕觸輸入框時喚起焦點與鍵盤
-    container.querySelectorAll('input, textarea').forEach(inp => {
-      if (inp.dataset.v0128FocusBound === '1') return;
-      inp.dataset.v0128FocusBound = '1';
-      inp.addEventListener(
-        'touchend',
-        () => {
-          if (document.activeElement !== inp) {
-            inp.focus();
-          }
-        },
-        { passive: true }
-      );
+    // 關閉瀏覽器自動密碼浮動列干擾，並確保輕觸輸入框立即獲得焦點
+    container.querySelectorAll('input').forEach(inp => {
+      inp.setAttribute('autocomplete', 'off');
+      inp.setAttribute('autocorrect', 'off');
+      inp.setAttribute('autocapitalize', 'off');
+      inp.setAttribute('spellcheck', 'false');
+
+      inp.addEventListener('pointerup', () => {
+        if (document.activeElement !== inp) {
+          inp.focus();
+        }
+      });
     });
   }
 
-  function unlockAuthInputsNow() {
-    injectAuthTouchUnlockStyles();
+  function applyAuthFixes() {
+    injectAuthLayoutFixStyles();
     const authOverlay = document.getElementById('chemAuthOverlay');
     const adminModal = document.getElementById('chemAdminPassModal');
-
     if (authOverlay) {
-      bindAuthContainerShield(authOverlay);
+      enhanceAuthOverlayTouch(authOverlay);
       if (authOverlay.style.display !== 'none') {
         document.documentElement.classList.remove('chem-dir-locked');
         document.body.classList.remove('chem-dir-locked');
       }
     }
     if (adminModal) {
-      bindAuthContainerShield(adminModal);
+      enhanceAuthOverlayTouch(adminModal);
     }
   }
 
   // --------------------------------------------------------------------------
-  // 4. 更新左下角版本號標籤 (v0.1.28)
+  // 3. 更新左下角版本號標籤 (v0.1.29)
   // --------------------------------------------------------------------------
   function updateVersionBadge() {
     localStorage.setItem('chem_app_version', APP_VERSION);
@@ -3264,11 +3270,11 @@ if (document.readyState === 'loading') {
   }
 
   function init() {
-    unlockAuthInputsNow();
+    applyAuthFixes();
     updateVersionBadge();
 
     const observer = new MutationObserver(() => {
-      unlockAuthInputsNow();
+      applyAuthFixes();
       updateVersionBadge();
     });
     observer.observe(document.body, {
