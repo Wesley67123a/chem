@@ -2778,3 +2778,30 @@ if (document.readyState === 'loading') {
   }, 300);
 })();
 
+// 更新時間：2026-11-13 11:04:00 (HKT) | 版本：v0.1.24
+// 功能：載入 module/chemlq.js 與 module/biomclq.js 獨立模組並更新版本號
+(function () {
+  const VER = '0.1.24';
+  const UPDATED_AT = '2026-11-13 11:04:00';
+
+  const modules = [
+    './module/chemlq.js',
+    './module/biomclq.js'
+  ];
+
+  modules.forEach(src => {
+    const s = document.createElement('script');
+    s.src = `${src}?v=${VER}`;
+    s.onerror = () => console.warn('[Module Loader] 找不到模組:', src);
+    document.head.appendChild(s);
+  });
+
+  setTimeout(() => {
+    const badge = document.getElementById('chemVersionBadge');
+    if (badge) {
+      badge.textContent = `v${VER}`;
+      badge.title = `版本 v${VER} | 更新於 ${UPDATED_AT}`;
+    }
+  }, 300);
+})();
+
