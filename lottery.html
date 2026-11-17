@@ -1,0 +1,1091 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>HKDSE Chem &amp; Bio 每日溫習抽籤</title>
+  <!-- 更新時間：2026-11-15 22:01:00 (HKT) | 獨立單頁版 v1.0.0 -->
+  <style>
+    :root {
+      --bg: #F4F5FA;
+      --surface: #FFFFFF;
+      --surface-variant: #DFE3F8;
+      --surface-muted: #EEF0F8;
+      --primary: #48547A;
+      --primary-dark: #333D5C;
+      --text-main: #1D1F2C;
+      --text-sub: #5E6478;
+      --text-muted: #9AA0B2;
+      --border: #DCE1EE;
+      --drawn-bg: #E6E8EF;
+      --drawn-border: #D5D9E4;
+      --drawn-text: #9BA1B0;
+    }
+
+    * {
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      margin: 0;
+      padding: 0;
+      background-color: var(--bg);
+      color: var(--text-main);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", "Noto Sans TC", sans-serif;
+      font-weight: 400;
+      line-height: 1.5;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 820px;
+      margin: 0 auto;
+      padding: 20px 16px 80px 16px;
+    }
+
+    @media (min-width: 641px) {
+      .container {
+        padding: 28px 24px 96px 24px;
+      }
+    }
+
+    /* 頂部標題區 */
+    .header-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      margin-bottom: 20px;
+      padding: 0 4px;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .header-title {
+      margin: 0;
+      font-size: 26px;
+      font-weight: 500;
+      color: var(--text-main);
+      letter-spacing: -0.3px;
+    }
+
+    .header-sub {
+      font-size: 13.5px;
+      color: var(--text-sub);
+      margin-top: 2px;
+    }
+
+    .date-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 6px 12px;
+      font-size: 12.5px;
+      color: var(--text-sub);
+    }
+
+    /* 扁平細邊框卡片（無陰影） */
+    .flat-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 20px 22px;
+      margin-bottom: 16px;
+    }
+
+    /* 抽籤結果展示雙欄 */
+    .draw-stage {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 12px;
+      margin-bottom: 18px;
+    }
+
+    @media (min-width: 600px) {
+      .draw-stage {
+        grid-template-columns: 1fr 1fr;
+      }
+    }
+
+    .result-box {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 16px 18px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      min-height: 112px;
+      transition: background-color 0.2s ease, border-color 0.2s ease;
+    }
+
+    .result-box.highlighted {
+      background: var(--surface-variant);
+      border-color: #C2CAE6;
+    }
+
+    .result-box-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+
+    .subject-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12px;
+      color: var(--primary);
+      background: var(--surface);
+      border: 1px solid var(--border);
+      padding: 3px 10px;
+      border-radius: 10px;
+    }
+
+    .remain-tag {
+      font-size: 12px;
+      color: var(--text-sub);
+    }
+
+    .result-chapter-name {
+      font-size: 16px;
+      font-weight: 500;
+      color: var(--text-main);
+      margin: 4px 0 2px 0;
+      word-break: break-word;
+    }
+
+    .result-topic-name {
+      font-size: 12px;
+      color: var(--text-sub);
+    }
+
+    /* 控制按鈕列 */
+    .action-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .btn-primary {
+      flex: 2;
+      min-width: 170px;
+      background: var(--primary);
+      color: #FFFFFF;
+      border: none;
+      border-radius: 14px;
+      padding: 12px 18px;
+      font-size: 14px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: background-color 0.15s ease;
+    }
+
+    .btn-primary:active {
+      background: var(--primary-dark);
+    }
+
+    .btn-secondary {
+      flex: 1;
+      min-width: 108px;
+      background: var(--surface-muted);
+      color: var(--primary);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 11px 14px;
+      font-size: 13px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+    }
+
+    .btn-secondary:active {
+      background: var(--surface-variant);
+    }
+
+    .btn-reset {
+      background: var(--surface);
+      color: var(--text-sub);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 11px 14px;
+      font-size: 12.5px;
+      cursor: pointer;
+    }
+
+    .btn-reset.confirming {
+      background: #FEE2E2;
+      color: #B91C1C;
+      border-color: #FCA5A5;
+    }
+
+    /* 科目分頁切換列 */
+    .tab-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 14px;
+      flex-wrap: wrap;
+    }
+
+    .tab-group {
+      display: inline-flex;
+      background: var(--surface-muted);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 3px;
+      gap: 3px;
+    }
+
+    .tab-btn {
+      border: none;
+      background: transparent;
+      color: var(--text-sub);
+      padding: 6px 14px;
+      border-radius: 11px;
+      font-size: 13px;
+      cursor: pointer;
+    }
+
+    .tab-btn.active {
+      background: var(--primary);
+      color: #FFFFFF;
+    }
+
+    .filter-group {
+      display: inline-flex;
+      gap: 6px;
+    }
+
+    .filter-btn {
+      border: 1px solid var(--border);
+      background: var(--surface);
+      color: var(--text-sub);
+      padding: 5px 11px;
+      border-radius: 11px;
+      font-size: 12px;
+      cursor: pointer;
+    }
+
+    .filter-btn.active {
+      background: var(--surface-variant);
+      color: var(--primary);
+      border-color: #C2CAE6;
+    }
+
+    /* 課題與章節網格 */
+    .topic-group {
+      margin-bottom: 16px;
+      padding-bottom: 14px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .topic-group:last-child {
+      margin-bottom: 0;
+      padding-bottom: 0;
+      border-bottom: none;
+    }
+
+    .topic-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 13.5px;
+      color: var(--primary);
+      margin-bottom: 10px;
+      font-weight: 500;
+    }
+
+    .topic-count {
+      font-size: 12px;
+      color: var(--text-sub);
+      font-weight: 400;
+    }
+
+    .chapter-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 8px;
+    }
+
+    @media (min-width: 600px) {
+      .chapter-grid {
+        grid-template-columns: 1fr 1fr;
+      }
+    }
+
+    .chap-pill {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 14px;
+      border-radius: 14px;
+      border: 1px solid var(--border);
+      background: var(--surface);
+      color: var(--text-main);
+      font-size: 13px;
+      cursor: pointer;
+      text-align: left;
+      transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+    }
+
+    .chap-pill:hover {
+      border-color: #BFC7E0;
+    }
+
+    /* 抽到過的章節：灰色狀態 */
+    .chap-pill.drawn {
+      background: var(--drawn-bg);
+      border-color: var(--drawn-border);
+      color: var(--drawn-text);
+    }
+
+    .chap-pill.drawn .chap-title {
+      text-decoration: line-through;
+    }
+
+    .chap-status-badge {
+      flex-shrink: 0;
+      font-size: 11px;
+      padding: 2px 8px;
+      border-radius: 8px;
+      background: var(--surface-muted);
+      color: var(--primary);
+    }
+
+    .chap-pill.drawn .chap-status-badge {
+      background: #DCE0E9;
+      color: #878D9E;
+    }
+
+    /* 抽籤紀錄列表 */
+    .history-title {
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--text-main);
+      margin: 0 0 12px 0;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .history-list {
+      max-height: 210px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .history-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 14px;
+      border-radius: 14px;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      font-size: 12.5px;
+      flex-wrap: wrap;
+    }
+
+    .history-sub-tag {
+      display: inline-block;
+      padding: 2px 7px;
+      border-radius: 7px;
+      font-size: 11px;
+      background: var(--surface-variant);
+      color: var(--primary);
+      margin-right: 6px;
+    }
+
+    .empty-hint {
+      text-align: center;
+      color: var(--text-muted);
+      font-size: 13px;
+      padding: 16px 0;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <!-- 頂部標題 -->
+    <div class="header-bar">
+      <div>
+        <h1 class="header-title">HKDSE 每日溫習抽籤</h1>
+        <div class="header-sub">Chemistry (65 章) &amp; Biology (29 章) · 抽中後自動轉灰不重複</div>
+      </div>
+      <div class="date-pill" id="todayDatePill">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="3" y="5" width="18" height="16" rx="3"></rect>
+          <line x1="16" y1="3" x2="16" y2="7"></line>
+          <line x1="8" y1="3" x2="8" y2="7"></line>
+          <line x1="3" y1="10" x2="21" y2="10"></line>
+        </svg>
+        <span id="todayDateText"></span>
+      </div>
+    </div>
+
+    <!-- 抽籤主控制台 -->
+    <div class="flat-card">
+      <div class="draw-stage">
+        <!-- Chemistry 抽籤結果框 -->
+        <div class="result-box" id="chemResultBox">
+          <div class="result-box-top">
+            <span class="subject-tag">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M9 3h6"></path>
+                <path d="M10 3v5l-4.5 7.5A3 3 0 0 0 8.1 20h7.8a3 3 0 0 0 2.6-4.5L14 8V3"></path>
+              </svg>
+              Chemistry 今日課題
+            </span>
+            <span class="remain-tag" id="chemRemainLabel">剩餘 65 / 65 課</span>
+          </div>
+          <div>
+            <div class="result-chapter-name" id="chemResultChapter">尚未抽籤</div>
+            <div class="result-topic-name" id="chemResultTopic">點擊下方按鈕抽取今日化學溫習章節</div>
+          </div>
+        </div>
+
+        <!-- Biology 抽籤結果框 -->
+        <div class="result-box" id="bioResultBox">
+          <div class="result-box-top">
+            <span class="subject-tag">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M2 15c6.667-6 13.333 0 20-6"></path>
+                <path d="M9 22c1.798-1.998 2.518-3.995 2.807-5.993"></path>
+                <path d="M15 2c-1.798 1.998-2.518 3.995-2.807 5.993"></path>
+              </svg>
+              Biology 今日課題
+            </span>
+            <span class="remain-tag" id="bioRemainLabel">剩餘 29 / 29 課</span>
+          </div>
+          <div>
+            <div class="result-chapter-name" id="bioResultChapter">尚未抽籤</div>
+            <div class="result-topic-name" id="bioResultTopic">點擊下方按鈕抽取今日生物溫習章節</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="action-row">
+        <button type="button" class="btn-primary" id="drawBothBtn">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="16 3 21 3 21 8"></polyline>
+            <line x1="4" y1="20" x2="21" y2="3"></line>
+            <polyline points="21 16 21 21 16 21"></polyline>
+            <line x1="15" y1="15" x2="21" y2="21"></line>
+            <line x1="4" y1="4" x2="9" y2="9"></line>
+          </svg>
+          今日雙科抽籤
+        </button>
+        <button type="button" class="btn-secondary" id="drawChemOnlyBtn">單抽 Chem</button>
+        <button type="button" class="btn-secondary" id="drawBioOnlyBtn">單抽 Bio</button>
+        <button type="button" class="btn-reset" id="resetAllBtn">重置全部</button>
+      </div>
+    </div>
+
+    <!-- 全部章節總覽（點擊可手動切換灰色狀態） -->
+    <div class="flat-card">
+      <div class="tab-bar">
+        <div class="tab-group">
+          <button type="button" class="tab-btn active" data-tab="chem" id="tabChemBtn">Chemistry (65)</button>
+          <button type="button" class="tab-btn" data-tab="bio" id="tabBioBtn">Biology (29)</button>
+        </div>
+        <div class="filter-group">
+          <button type="button" class="filter-btn active" data-filter="all">全部</button>
+          <button type="button" class="filter-btn" data-filter="undrawn">未抽</button>
+          <button type="button" class="filter-btn" data-filter="drawn">已抽 (灰)</button>
+        </div>
+      </div>
+      <div style="font-size: 12px; color: var(--text-sub); margin-bottom: 14px;">
+        提示：已抽中的章節會自動變為灰色且不再重複抽出；直接點擊任何章節可手動切換「已抽／未抽」狀態。
+      </div>
+      <div id="syllabusContainer"></div>
+    </div>
+
+    <!-- 抽籤歷史紀錄 -->
+    <div class="flat-card">
+      <div class="history-title">
+        <span>最近抽籤紀錄</span>
+        <span style="font-size: 12px; color: var(--text-sub); font-weight: 400;" id="historyCountLabel">共 0 筆</span>
+      </div>
+      <div class="history-list" id="historyList"></div>
+    </div>
+  </div>
+
+  <script>
+    (function () {
+      'use strict';
+
+      // 1. HKDSE Chemistry 15 課題 / 65 章完整架構
+      const CHEM_SYLLABUS = [
+        {
+          groupId: 'CHEM-01',
+          groupName: 'CHEM-01 地球',
+          chapters: [
+            { id: 1, name: '第 1 章：化學導論' },
+            { id: 2, name: '第 2 章：大氣' },
+            { id: 3, name: '第 3 章：海洋' },
+            { id: 4, name: '第 4 章：岩石和礦物' }
+          ]
+        },
+        {
+          groupId: 'CHEM-02',
+          groupName: 'CHEM-02 微觀世界 I',
+          chapters: [
+            { id: 5, name: '第 5 章：原子結構' },
+            { id: 6, name: '第 6 章：周期表' },
+            { id: 7, name: '第 7 章：金屬鍵和離子鍵' },
+            { id: 8, name: '第 8 章：共價鍵' },
+            { id: 9, name: '第 9 章：物質的結構和性質' }
+          ]
+        },
+        {
+          groupId: 'CHEM-03',
+          groupName: 'CHEM-03 金屬',
+          chapters: [
+            { id: 10, name: '第 10 章：金屬的存在和提取' },
+            { id: 11, name: '第 11 章：金屬的活性' },
+            { id: 12, name: '第 12 章：反應質量' },
+            { id: 13, name: '第 13 章：金屬的腐蝕和保護' }
+          ]
+        },
+        {
+          groupId: 'CHEM-04',
+          groupName: 'CHEM-04 酸和鹽基',
+          chapters: [
+            { id: 14, name: '第 14 章：酸和鹼的簡介' },
+            { id: 15, name: '第 15 章：溶液的濃度' },
+            { id: 16, name: '第 16 章：指示劑和pH' },
+            { id: 17, name: '第 17 章：酸和鹼的強度' },
+            { id: 18, name: '第 18 章：鹽和中和作用' },
+            { id: 19, name: '第 19 章：涉及酸和鹼的容量分析' }
+          ]
+        },
+        {
+          groupId: 'CHEM-05',
+          groupName: 'CHEM-05 化石燃料',
+          chapters: [
+            { id: 20, name: '第 20 章：來自化石燃料的烷' },
+            { id: 21, name: '第 21 章：同系列、結構式和碳化合物的命名' },
+            { id: 22, name: '第 22 章：烷烴和烯烴的化學反應' },
+            { id: 23, name: '第 23 章：加成聚合物' }
+          ]
+        },
+        {
+          groupId: 'CHEM-06',
+          groupName: 'CHEM-06 微觀世界 II',
+          chapters: [
+            { id: 24, name: '第 24 章：具有非八隅體結構的簡單分子及簡單分子的形狀' },
+            { id: 25, name: '第 25 章：鍵與分子的極性' },
+            { id: 26, name: '第 26 章：分子間作用力' },
+            { id: 27, name: '第 27 章：結構與物理性質' }
+          ]
+        },
+        {
+          groupId: 'CHEM-07',
+          groupName: 'CHEM-07 氧化還原與電解',
+          chapters: [
+            { id: 28, name: '第 28 章：氧化和還原' },
+            { id: 29, name: '第 29 章：化學電池' },
+            { id: 30, name: '第 30 章：氧化劑和還原劑' },
+            { id: 31, name: '第 31 章：電解' },
+            { id: 32, name: '第 32 章：工業電解' }
+          ]
+        },
+        {
+          groupId: 'CHEM-08',
+          groupName: 'CHEM-08 化學反應與能量',
+          chapters: [
+            { id: 33, name: '第 33 章：化學反應中的能量變化' },
+            { id: 34, name: '第 34 章：標準反應焓變' },
+            { id: 35, name: '第 35 章：赫斯定律' }
+          ]
+        },
+        {
+          groupId: 'CHEM-09',
+          groupName: 'CHEM-09 反應速率',
+          chapters: [
+            { id: 36, name: '第 36 章：化學反應的速率' },
+            { id: 37, name: '第 37 章：影響反應速率的因素' },
+            { id: 38, name: '第 38 章：碰撞理論' },
+            { id: 39, name: '第 39 章：催化劑' }
+          ]
+        },
+        {
+          groupId: 'CHEM-10',
+          groupName: 'CHEM-10 化學平衡',
+          chapters: [
+            { id: 40, name: '第 40 章：動態平衡' },
+            { id: 41, name: '第 41 章：濃度和溫度的變化對化學平衡的影響' }
+          ]
+        },
+        {
+          groupId: 'CHEM-11',
+          groupName: 'CHEM-11 碳化合物的化學',
+          chapters: [
+            { id: 42, name: '第 42 章：特定同系列的簡介' },
+            { id: 43, name: '第 43 章：同分異構' },
+            { id: 44, name: '第 44 章：各種官能基的典型化學反應' },
+            { id: 45, name: '第 45 章：碳化合物的互換' },
+            { id: 46, name: '第 46 章：重要有機物質' }
+          ]
+        },
+        {
+          groupId: 'CHEM-12',
+          groupName: 'CHEM-12 化學規律',
+          chapters: [
+            { id: 47, name: '第 47 章：由Na至Cl各元素物理性質的周期變化' },
+            { id: 48, name: '第 48 章：由Na至Cl各元素氧化物的結合、在水中的習性及酸鹼性質' },
+            { id: 49, name: '第 49 章：過渡性金屬的一般性質' }
+          ]
+        },
+        {
+          groupId: 'CHEM-13',
+          groupName: 'CHEM-13 工業化學',
+          chapters: [
+            { id: 50, name: '第 50 章：工業過程的重要性' },
+            { id: 51, name: '第 51 章：速率方程' },
+            { id: 52, name: '第 52 章：活化能' },
+            { id: 53, name: '第 53 章：催化作用和工業過程' },
+            { id: 54, name: '第 54 章：工業過程' },
+            { id: 55, name: '第 55 章：有關工業過程的綠色化學' }
+          ]
+        },
+        {
+          groupId: 'CHEM-14',
+          groupName: 'CHEM-14 物料化學',
+          chapters: [
+            { id: 56, name: '第 56 章：合金' },
+            { id: 57, name: '第 57 章：高分子材料' },
+            { id: 58, name: '第 58 章：現代材料' },
+            { id: 59, name: '第 59 章：納米材料' },
+            { id: 60, name: '第 60 章：物料回收' }
+          ]
+        },
+        {
+          groupId: 'CHEM-15',
+          groupName: 'CHEM-15 分析化學',
+          chapters: [
+            { id: 61, name: '第 61 章：檢測物質中的化學物種' },
+            { id: 62, name: '第 62 章：分離和提純的方法' },
+            { id: 63, name: '第 63 章：定量分析方法' },
+            { id: 64, name: '第 64 章：儀器分析方法' },
+            { id: 65, name: '第 65 章：分析化學對社會的貢獻' }
+          ]
+        }
+      ];
+
+      // 2. HKDSE Biology 5 冊 / 29 章完整架構
+      const BIO_SYLLABUS = [
+        {
+          groupId: 'BOOK-1A',
+          groupName: 'Book 1A 細胞與生命分子 (Ch 1 – 4)',
+          chapters: [
+            { id: 1, name: '第 1 章：生物學入門 (Introducing Biology)' },
+            { id: 2, name: '第 2 章：細胞 (The Cell as the Basic Unit of Life)' },
+            { id: 3, name: '第 3 章：物質穿越細胞膜 (Movement of Substances across Membrane)' },
+            { id: 4, name: '第 4 章：酶與新陳代謝 (Enzymes and Metabolism)' }
+          ]
+        },
+        {
+          groupId: 'BOOK-1B',
+          groupName: 'Book 1B 營養與氣體交換及轉運 (Ch 5 – 10)',
+          chapters: [
+            { id: 5, name: '第 5 章：食物與人類 (Food and Humans)' },
+            { id: 6, name: '第 6 章：人的營養 (Nutrition in Humans)' },
+            { id: 7, name: '第 7 章：人的氣體交換 (Gas Exchange in Humans)' },
+            { id: 8, name: '第 8 章：人體內的轉運 (Transport in Humans)' },
+            { id: 9, name: '第 9 章：植物的營養與氣體交換 (Nutrition and Gas Exchange in Plants)' },
+            { id: 10, name: '第 10 章：蒸騰、轉運與支持 (Transpiration, Transport and Support in Plants)' }
+          ]
+        },
+        {
+          groupId: 'BOOK-2',
+          groupName: 'Book 2 生物與環境：生殖、協調與體內平衡 (Ch 11 – 18)',
+          chapters: [
+            { id: 11, name: '第 11 章：細胞週期與分裂 (Cell Cycle and Division)' },
+            { id: 12, name: '第 12 章：有花植物的生殖 (Reproduction in Flowering Plants)' },
+            { id: 13, name: '第 13 章：人的生殖 (Reproduction in Humans)' },
+            { id: 14, name: '第 14 章：生長與發育 (Growth and Development)' },
+            { id: 15, name: '第 15 章：環境的探測 (Detecting the Environment)' },
+            { id: 16, name: '第 16 章：人體的協調 (Coordination in Humans)' },
+            { id: 17, name: '第 17 章：人體的運動 (Movement in Humans)' },
+            { id: 18, name: '第 18 章：體內平衡 (Homeostasis)' }
+          ]
+        },
+        {
+          groupId: 'BOOK-3',
+          groupName: 'Book 3 生態系、能量轉換與健康及疾病 (Ch 19 – 24)',
+          chapters: [
+            { id: 19, name: '第 19 章：生態系 (Ecosystems)' },
+            { id: 20, name: '第 20 章：光合作用 (Photosynthesis)' },
+            { id: 21, name: '第 21 章：呼吸作用 (Respiration)' },
+            { id: 22, name: '第 22 章：非傳染病 (Non-infectious Diseases)' },
+            { id: 23, name: '第 23 章：傳染病 (Infectious Diseases)' },
+            { id: 24, name: '第 24 章：身體防禦機制 (Body Defence Mechanisms)' }
+          ]
+        },
+        {
+          groupId: 'BOOK-4',
+          groupName: 'Book 4 遺傳與進化 (Ch 25 – 29)',
+          chapters: [
+            { id: 25, name: '第 25 章：基礎遺傳學 (Basic Genetics)' },
+            { id: 26, name: '第 26 章：分子遺傳學 (Molecular Genetics)' },
+            { id: 27, name: '第 27 章：生物工程 (Biotechnology)' },
+            { id: 28, name: '第 28 章：生物多樣性 (Biodiversity)' },
+            { id: 29, name: '第 29 章：進化 (Evolution)' }
+          ]
+        }
+      ];
+
+      const STORAGE_KEY = 'HKDSE_CHEM_BIO_LOTTERY_V1';
+
+      let state = {
+        drawnChem: [], // [1, 4, 41, ...]
+        drawnBio: [],  // [2, 15, ...]
+        todayChem: null, // { id, name, groupName, date }
+        todayBio: null,
+        history: [] // [{ date, time, subject, chapterName, groupName }]
+      };
+
+      let currentTab = 'chem'; // 'chem' | 'bio'
+      let currentFilter = 'all'; // 'all' | 'undrawn' | 'drawn'
+      let isAnimating = false;
+      let resetConfirmTimer = null;
+
+      function loadState() {
+        try {
+          const raw = localStorage.getItem(STORAGE_KEY);
+          if (raw) {
+            const parsed = JSON.parse(raw);
+            state.drawnChem = Array.isArray(parsed.drawnChem) ? parsed.drawnChem : [];
+            state.drawnBio = Array.isArray(parsed.drawnBio) ? parsed.drawnBio : [];
+            state.todayChem = parsed.todayChem || null;
+            state.todayBio = parsed.todayBio || null;
+            state.history = Array.isArray(parsed.history) ? parsed.history : [];
+          }
+        } catch (e) {}
+      }
+
+      function saveState() {
+        try {
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+        } catch (e) {}
+      }
+
+      function flattenChapters(syllabus) {
+        const list = [];
+        syllabus.forEach(g => {
+          g.chapters.forEach(c => {
+            list.push({ id: c.id, name: c.name, groupName: g.groupName });
+          });
+        });
+        return list;
+      }
+
+      const ALL_CHEM = flattenChapters(CHEM_SYLLABUS);
+      const ALL_BIO = flattenChapters(BIO_SYLLABUS);
+
+      function getTodayDateString() {
+        const now = new Date();
+        const y = now.getFullYear();
+        const m = String(now.getMonth() + 1).padStart(2, '0');
+        const d = String(now.getDate()).padStart(2, '0');
+        return `${y}-${m}-${d}`;
+      }
+
+      function getCurrentTimeString() {
+        return new Date().toTimeString().slice(0, 5);
+      }
+
+      function renderTopStatus() {
+        document.getElementById('todayDateText').textContent = getTodayDateString();
+
+        const chemRemain = ALL_CHEM.length - state.drawnChem.length;
+        const bioRemain = ALL_BIO.length - state.drawnBio.length;
+        document.getElementById('chemRemainLabel').textContent = `剩餘 ${chemRemain} / ${ALL_CHEM.length} 課`;
+        document.getElementById('bioRemainLabel').textContent = `剩餘 ${bioRemain} / ${ALL_BIO.length} 課`;
+
+        const chemBox = document.getElementById('chemResultBox');
+        const chemChapEl = document.getElementById('chemResultChapter');
+        const chemTopicEl = document.getElementById('chemResultTopic');
+        if (state.todayChem) {
+          chemBox.classList.add('highlighted');
+          chemChapEl.textContent = state.todayChem.name;
+          chemTopicEl.textContent = `${state.todayChem.groupName} · 抽籤日期 ${state.todayChem.date}`;
+        } else {
+          chemBox.classList.remove('highlighted');
+          chemChapEl.textContent = chemRemain === 0 ? '全部 65 課已抽完' : '尚未抽籤';
+          chemTopicEl.textContent = chemRemain === 0 ? '可點擊「重置全部」開始新一輪' : '點擊下方按鈕抽取今日化學溫習章節';
+        }
+
+        const bioBox = document.getElementById('bioResultBox');
+        const bioChapEl = document.getElementById('bioResultChapter');
+        const bioTopicEl = document.getElementById('bioResultTopic');
+        if (state.todayBio) {
+          bioBox.classList.add('highlighted');
+          bioChapEl.textContent = state.todayBio.name;
+          bioTopicEl.textContent = `${state.todayBio.groupName} · 抽籤日期 ${state.todayBio.date}`;
+        } else {
+          bioBox.classList.remove('highlighted');
+          bioChapEl.textContent = bioRemain === 0 ? '全部 29 課已抽完' : '尚未抽籤';
+          bioTopicEl.textContent = bioRemain === 0 ? '可點擊「重置全部」開始新一輪' : '點擊下方按鈕抽取今日生物溫習章節';
+        }
+      }
+
+      function renderSyllabusList() {
+        const container = document.getElementById('syllabusContainer');
+        const isChem = currentTab === 'chem';
+        const syllabus = isChem ? CHEM_SYLLABUS : BIO_SYLLABUS;
+        const drawnSet = new Set(isChem ? state.drawnChem : state.drawnBio);
+
+        let html = '';
+        syllabus.forEach(group => {
+          const drawnInGroup = group.chapters.filter(c => drawnSet.has(c.id)).length;
+          const filteredChapters = group.chapters.filter(c => {
+            const isDrawn = drawnSet.has(c.id);
+            if (currentFilter === 'undrawn') return !isDrawn;
+            if (currentFilter === 'drawn') return isDrawn;
+            return true;
+          });
+
+          if (filteredChapters.length === 0) return;
+
+          html += `
+            <div class="topic-group">
+              <div class="topic-header">
+                <span>${group.groupName}</span>
+                <span class="topic-count">已抽 ${drawnInGroup} / ${group.chapters.length}</span>
+              </div>
+              <div class="chapter-grid">
+                ${filteredChapters
+                  .map(ch => {
+                    const isDrawn = drawnSet.has(ch.id);
+                    return `
+                      <button type="button" class="chap-pill ${isDrawn ? 'drawn' : ''}" data-sub="${currentTab}" data-chid="${ch.id}">
+                        <span class="chap-title">${ch.name}</span>
+                        <span class="chap-status-badge">${isDrawn ? '已抽過' : '待溫習'}</span>
+                      </button>
+                    `;
+                  })
+                  .join('')}
+              </div>
+            </div>
+          `;
+        });
+
+        if (!html) {
+          html = `<div class="empty-hint">目前篩選條件下沒有符合的章節。</div>`;
+        }
+
+        container.innerHTML = html;
+
+        container.querySelectorAll('.chap-pill').forEach(btn => {
+          btn.addEventListener('click', () => {
+            if (isAnimating) return;
+            const sub = btn.getAttribute('data-sub');
+            const chId = parseInt(btn.getAttribute('data-chid'), 10);
+            toggleChapterDrawnState(sub, chId);
+          });
+        });
+      }
+
+      function toggleChapterDrawnState(subject, chapId) {
+        const arr = subject === 'chem' ? state.drawnChem : state.drawnBio;
+        const idx = arr.indexOf(chapId);
+        if (idx >= 0) {
+          arr.splice(idx, 1);
+          if (subject === 'chem' && state.todayChem && state.todayChem.id === chapId) {
+            state.todayChem = null;
+          }
+          if (subject === 'bio' && state.todayBio && state.todayBio.id === chapId) {
+            state.todayBio = null;
+          }
+        } else {
+          arr.push(chapId);
+        }
+        saveState();
+        renderAll();
+      }
+
+      function renderHistory() {
+        const listEl = document.getElementById('historyList');
+        const countEl = document.getElementById('historyCountLabel');
+        countEl.textContent = `共 ${state.history.length} 筆`;
+
+        if (state.history.length === 0) {
+          listEl.innerHTML = `<div class="empty-hint">尚無抽籤紀錄。</div>`;
+          return;
+        }
+
+        listEl.innerHTML = state.history
+          .slice(0, 40)
+          .map(
+            item => `
+            <div class="history-item">
+              <div>
+                <span class="history-sub-tag">${item.subject === 'chem' ? 'Chem' : 'Bio'}</span>
+                <span>${item.chapterName}</span>
+              </div>
+              <span style="color: var(--text-sub); font-size: 11.5px;">${item.date} ${item.time}</span>
+            </div>
+          `
+          )
+          .join('');
+      }
+
+      function renderAll() {
+        renderTopStatus();
+        renderSyllabusList();
+        renderHistory();
+      }
+
+      // 執行抽籤動畫與抽選邏輯
+      function runLotteryDraw(drawChem, drawBio) {
+        if (isAnimating) return;
+
+        const availableChem = ALL_CHEM.filter(c => !state.drawnChem.includes(c.id));
+        const availableBio = ALL_BIO.filter(c => !state.drawnBio.includes(c.id));
+
+        const canChem = drawChem && availableChem.length > 0;
+        const canBio = drawBio && availableBio.length > 0;
+
+        if (!canChem && !canBio) {
+          renderTopStatus();
+          return;
+        }
+
+        isAnimating = true;
+        let step = 0;
+        const maxSteps = 14;
+
+        const interval = setInterval(() => {
+          step++;
+          if (canChem) {
+            const randC = availableChem[Math.floor(Math.random() * availableChem.length)];
+            document.getElementById('chemResultChapter').textContent = randC.name;
+            document.getElementById('chemResultTopic').textContent = randC.groupName;
+          }
+          if (canBio) {
+            const randB = availableBio[Math.floor(Math.random() * availableBio.length)];
+            document.getElementById('bioResultChapter').textContent = randB.name;
+            document.getElementById('bioResultTopic').textContent = randB.groupName;
+          }
+
+          if (step >= maxSteps) {
+            clearInterval(interval);
+            const todayStr = getTodayDateString();
+            const timeStr = getCurrentTimeString();
+
+            if (canChem) {
+              const chosenChem = availableChem[Math.floor(Math.random() * availableChem.length)];
+              state.drawnChem.push(chosenChem.id);
+              state.todayChem = {
+                id: chosenChem.id,
+                name: chosenChem.name,
+                groupName: chosenChem.groupName,
+                date: todayStr
+              };
+              state.history.unshift({
+                date: todayStr,
+                time: timeStr,
+                subject: 'chem',
+                chapterName: chosenChem.name,
+                groupName: chosenChem.groupName
+              });
+            }
+
+            if (canBio) {
+              const chosenBio = availableBio[Math.floor(Math.random() * availableBio.length)];
+              state.drawnBio.push(chosenBio.id);
+              state.todayBio = {
+                id: chosenBio.id,
+                name: chosenBio.name,
+                groupName: chosenBio.groupName,
+                date: todayStr
+              };
+              state.history.unshift({
+                date: todayStr,
+                time: timeStr,
+                subject: 'bio',
+                chapterName: chosenBio.name,
+                groupName: chosenBio.groupName
+              });
+            }
+
+            saveState();
+            isAnimating = false;
+            renderAll();
+          }
+        }, 45);
+      }
+
+      // 綁定互動事件
+      document.getElementById('drawBothBtn').addEventListener('click', () => runLotteryDraw(true, true));
+      document.getElementById('drawChemOnlyBtn').addEventListener('click', () => runLotteryDraw(true, false));
+      document.getElementById('drawBioOnlyBtn').addEventListener('click', () => runLotteryDraw(false, true));
+
+      document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          currentTab = btn.getAttribute('data-tab');
+          document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b === btn));
+          renderSyllabusList();
+        });
+      });
+
+      document.querySelectorAll('.filter-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          currentFilter = btn.getAttribute('data-filter');
+          document.querySelectorAll('.filter-btn').forEach(b => b.classList.toggle('active', b === btn));
+          renderSyllabusList();
+        });
+      });
+
+      // 重置全部（需連按兩次確認，防止誤觸）
+      const resetBtn = document.getElementById('resetAllBtn');
+      resetBtn.addEventListener('click', () => {
+        if (isAnimating) return;
+        if (!resetBtn.classList.contains('confirming')) {
+          resetBtn.classList.add('confirming');
+          resetBtn.textContent = '再按一次確認重置';
+          clearTimeout(resetConfirmTimer);
+          resetConfirmTimer = setTimeout(() => {
+            resetBtn.classList.remove('confirming');
+            resetBtn.textContent = '重置全部';
+          }, 2500);
+        } else {
+          clearTimeout(resetConfirmTimer);
+          resetBtn.classList.remove('confirming');
+          resetBtn.textContent = '重置全部';
+          state = {
+            drawnChem: [],
+            drawnBio: [],
+            todayChem: null,
+            todayBio: null,
+            history: []
+          };
+          saveState();
+          renderAll();
+        }
+      });
+
+      loadState();
+      renderAll();
+    })();
+  </script>
+</body>
+</html>
