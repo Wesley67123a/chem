@@ -1883,6 +1883,7 @@ function renderHomeDashboard() {
       <button id="topMenuHamburgerBtn" class="sound-trigger" style="background:none; border:none; color:${M3.textMain}; cursor:pointer; padding:4px; display:inline-flex; align-items:center;">
         ${SVG_ICONS.menu}
       </button>
+      <a href="lottery.html" class="sound-trigger" style="display:inline-flex; align-items:center; gap:6px; padding:6px 14px; border-radius:999px; background:${M3.surfaceVariant}; color:${M3.primary}; text-decoration:none; font-size:13px; font-weight:600; border:1px solid ${M3.outline};">🎋 每日抽籤</a>
       <button id="topAdminBtn" class="sound-trigger" style="background:none; border:none; color:${M3.textSub}; cursor:pointer; padding:4px; display:inline-flex; align-items:center;" title="Admin">
         ${SVG_ICONS.moreVert}
       </button>
