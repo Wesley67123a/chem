@@ -1877,110 +1877,14 @@ function renderHomeDashboard() {
       `
           )
           .join('');
-
+  const _now = new Date(); const _wd = ['週日','週一','週二','週三','週四','週五','週六']; const pixelDateStr = (_now.getMonth() + 1) + '月' + _now.getDate() + '日 ' + _wd[_now.getDay()]; const pixelStreak = summary.currentStreak || 0; const pixelTotalQ = summary.totalAppQuestions || (typeof TOTAL_APP_QUESTIONS !== 'undefined' ? TOTAL_APP_QUESTIONS : 0); const pixelIsEn = window.chemApp.currentLang === 'e';
   dashboardEl.innerHTML = `
-    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:18px; padding:0 4px;">
-      <button id="topMenuHamburgerBtn" class="sound-trigger" style="background:none; border:none; color:${M3.textMain}; cursor:pointer; padding:4px; display:inline-flex; align-items:center;">
-        ${SVG_ICONS.menu}
-      </button>
-      <a href="lottery.html" class="sound-trigger" style="display:inline-flex; align-items:center; gap:6px; padding:6px 14px; border-radius:999px; background:${M3.surfaceVariant}; color:${M3.primary}; text-decoration:none; font-size:13px; font-weight:600; border:1px solid ${M3.outline};">🎋 每日抽籤</a>
-      <button id="topAdminBtn" class="sound-trigger" style="background:none; border:none; color:${M3.textSub}; cursor:pointer; padding:4px; display:inline-flex; align-items:center;" title="Admin">
-        ${SVG_ICONS.moreVert}
-      </button>
-    </div>
-
-    <div style="margin-bottom:24px; padding:0 4px;">
-      <h1 class="m3-title-medium" style="margin:0 0 6px 0; font-size:32px; color:${M3.textMain}; letter-spacing:-0.3px;">HKDSE</h1>
-      <div style="font-size:15px; color:${M3.textSub};">Chemistry Question Bank</div>
-    </div>
-
-    <div class="m3-card" style="padding:22px 26px; margin-bottom:18px;">
-      <div style="display:flex; justify-content:space-between; align-items:center; padding-bottom:18px; border-bottom:1px solid ${M3.outline};">
-        <div style="display:flex; align-items:center; gap:14px;">
-          <div style="width:36px; height:36px; border-radius:18px; background:${M3.bg}; display:flex; align-items:center; justify-content:center; color:${M3.primary};">
-            ${!muted ? SVG_ICONS.volumeOn : SVG_ICONS.volumeOff}
-          </div>
-          <span style="font-size:15px; color:${M3.textMain};">音效反饋 (Sound FX)</span>
-        </div>
-        <div id="m3SoundSwitch" class="m3-switch-track" style="background-color:${!muted ? M3.primary : M3.surfaceTrack};">
-          <div class="m3-switch-thumb" style="transform:${!muted ? 'translateX(26px)' : 'translateX(4px)'};"></div>
-        </div>
-      </div>
-
-      <div style="display:flex; justify-content:space-between; align-items:center; padding-top:18px; flex-wrap:wrap; gap:10px;">
-        <div style="display:flex; align-items:center; gap:14px;">
-          <div style="width:36px; height:36px; border-radius:18px; background:${M3.bg}; display:flex; align-items:center; justify-content:center; color:${M3.primary};">
-            ${SVG_ICONS.person}
-          </div>
-          <div>
-            <div style="font-size:15px; color:${M3.textMain};">登入學生</div>
-            <div style="font-size:12px; color:${M3.textSub}; margin-top:2px;">${summary.studentId} · Streak ${summary.currentStreak || 0}</div>
-          </div>
-        </div>
-        <div style="display:flex; align-items:center; gap:10px;">
-          <div style="display:flex; background:${M3.surfaceVariant}; border-radius:16px; padding:3px; gap:2px;">
-            <button id="langEnBtn" class="sound-trigger" style="border:none; background:${window.chemApp.currentLang === 'e' ? M3.primary : 'transparent'}; color:${window.chemApp.currentLang === 'e' ? '#fff' : M3.textSub}; padding:4px 12px; border-radius:14px; font-size:12px; cursor:pointer;">英</button>
-            <button id="langZhBtn" class="sound-trigger" style="border:none; background:${window.chemApp.currentLang === 'c' ? M3.primary : 'transparent'}; color:${window.chemApp.currentLang === 'c' ? '#fff' : M3.textSub}; padding:4px 12px; border-radius:14px; font-size:12px; cursor:pointer;">中</button>
-          </div>
-          <button id="homeLogoutBtn" class="sound-trigger" style="background:${M3.surfaceMuted}; border:none; color:${M3.textSub}; font-size:12px; cursor:pointer; padding:6px 12px; border-radius:14px;">
-            登出
-          </button>
-        </div>
-      </div>
-    </div>
-
-    <div style="margin-bottom:18px;">
-      ${recentTopicsHtml}
-      ${
-        recentTopicsList.length > 3
-          ? `<div style="text-align:center; margin-top:-4px; margin-bottom:12px;">
-              <button id="toggleMoreRecentBtn" class="sound-trigger" style="background:${M3.surface}; color:${M3.primary}; border:1.5px solid ${M3.outline}; padding:6px 16px; border-radius:16px; font-size:12px; cursor:pointer;">
-                ${window.chemApp.showAllRecentTopics ? '收起部分' : `顯示全部 (${recentTopicsList.length} 個章節)`}
-              </button>
-            </div>`
-          : ''
-      }
-    </div>
-
-    <div class="m3-card" style="padding:22px 26px; margin-bottom:18px;">
-      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; flex-wrap:wrap; gap:8px;">
-        <div style="display:flex; align-items:center; gap:10px; color:${M3.primary};">
-          ${SVG_ICONS.calendar}
-          <span class="m3-title-medium" style="font-size:15px; color:${M3.textMain};">每日練習紀錄</span>
-        </div>
-        <div style="display:flex; align-items:center; gap:6px;">
-          <input type="date" id="homeQuickDatePicker" value="${todayStr}" style="padding:4px 8px; border:1px solid ${M3.outline}; border-radius:12px; font-size:12px; cursor:pointer; background:${M3.bg}; color:${M3.textMain};" />
-          <button id="openFullDailyInspectorBtn" class="sound-trigger" style="background:${M3.surfaceVariant}; color:${M3.primary}; border:none; padding:5px 12px; border-radius:12px; font-size:11px; cursor:pointer;">明細</button>
-        </div>
-      </div>
-      <div style="max-height:170px; overflow-y:auto;">
-        ${dailyListHtml}
-      </div>
-    </div>
-
-    <div class="m3-card" style="padding:18px 26px; display:flex; justify-content:space-around; align-items:center; text-align:center;">
-      <div>
-        <div style="font-size:12px; color:${M3.textSub};">總 Topic</div>
-        <div style="font-size:18px; color:${M3.textMain}; margin-top:2px;">15</div>
-      </div>
-      <div>
-        <div style="font-size:12px; color:${M3.textSub};">總 Chapter</div>
-        <div style="font-size:18px; color:${M3.textMain}; margin-top:2px;">65</div>
-      </div>
-      <div>
-        <div style="font-size:12px; color:${M3.textSub};">總題目數</div>
-        <div style="font-size:18px; color:${M3.textMain}; margin-top:2px;">${summary.totalUniqueAnswered} <span style="font-size:12px; color:${M3.textMuted};">/ ${TOTAL_APP_QUESTIONS}</span></div>
-      </div>
-      <div>
-        <div style="font-size:12px; color:${M3.textSub};">完成率</div>
-        <div style="font-size:18px; color:${M3.primary}; margin-top:2px;">${summary.overallCompletionText}</div>
-      </div>
-    </div>
+   <style>#homeDashboard .m3-card,#homeDashboard .pixel-widget{border-radius:24px!important;border:1px solid ${M3.outline}!important;box-shadow:none!important;font-weight:400}#homeDashboard .pixel-app-tile{display:flex;flex-direction:column;align-items:center;gap:6px;background:none;border:none;padding:4px 0;cursor:pointer;text-decoration:none;color:${M3.textMain}}#homeDashboard .pixel-app-icon{width:56px;height:56px;border-radius:18px;background:${M3.surfaceVariant};border:1px solid ${M3.outline};box-shadow:none;display:flex;align-items:center;justify-content:center;color:${M3.primary};transition:transform .14s ease}#homeDashboard .pixel-app-tile:active .pixel-app-icon{transform:scale(0.93)}#homeDashboard .pixel-app-label{font-size:12px;font-weight:500;color:${M3.textMain};line-height:1.2;text-align:center}</style><div class="m3-dashboard-container" style="max-width:720px;margin:0 auto;padding:16px 14px 36px;"><div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:18px;padding:4px 2px;"><div><div style="font-size:24px;font-weight:500;color:${M3.textMain};letter-spacing:-0.01em;line-height:1.2;">${pixelDateStr}</div><div style="display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-top:8px;font-size:13px;font-weight:400;color:${M3.textSub};"><span style="background:${M3.surfaceVariant};color:${M3.primary};border:1px solid ${M3.outline};border-radius:999px;padding:2px 10px;font-weight:500;">${summary.studentId}</span><span>Streak ${pixelStreak} 天</span><span>·</span><span>已答 ${summary.totalUniqueAnswered} / ${pixelTotalQ} 題</span></div></div><div style="display:flex;align-items:center;gap:6px;flex-shrink:0;"><button id="topAdminBtn" class="sound-trigger" style="background:${M3.surface};color:${M3.textSub};border:1px solid ${M3.outline};border-radius:999px;padding:6px 12px;font-size:12px;font-weight:500;cursor:pointer;box-shadow:none;">管理</button><button id="homeLogoutBtn" class="sound-trigger" style="background:${M3.surfaceMuted};color:${M3.primary};border:1px solid ${M3.outline};border-radius:999px;padding:6px 12px;font-size:12px;font-weight:500;cursor:pointer;box-shadow:none;">登出</button></div></div><div style="display:flex;align-items:center;gap:10px;background:${M3.surface};border:1px solid ${M3.outline};border-radius:999px;padding:10px 16px;margin-bottom:20px;box-shadow:none;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="${M3.textSub}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg><input id="pixelSearchInput" type="text" placeholder="搜尋章節或最近練習..." style="flex:1;border:none;outline:none;background:transparent;font-size:14px;font-weight:400;color:${M3.textMain};min-width:0;" /><button id="pixelSearchClear" style="display:none;background:${M3.surfaceMuted};border:1px solid ${M3.outline};border-radius:999px;width:22px;height:22px;align-items:center;justify-content:center;cursor:pointer;padding:0;color:${M3.textSub};"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button></div> <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:14px 10px;margin-bottom:22px;"><button id="topMenuHamburgerBtn" class="pixel-app-tile sound-trigger"><div class="pixel-app-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 6h16M4 12h16M4 18h10"/></svg></div><span class="pixel-app-label">目錄選單</span></button><a href="lottery.html" class="pixel-app-tile sound-trigger"><div class="pixel-app-icon" style="background:${M3.surfaceMuted};"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="8" width="18" height="13" rx="2"/><path d="M12 8v13M3 12h18M12 8c-2 0-4-1.5-4-3.2C8 3.5 9.2 3 10.2 3c1.3 0 1.8 1.5 1.8 5zm0 0c2 0 4-1.5 4-3.2C16 3.5 14.8 3 13.8 3c-1.3 0-1.8 1.5-1.8 5z"/></svg></div><span class="pixel-app-label">每日抽籤</span></a><button id="pixelGridDailyBtn" class="pixel-app-tile sound-trigger"><div class="pixel-app-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="3"/><path d="M16 2v4M8 2v4M3 10h18M8 14h.01M12 14h.01M16 14h.01M8 18h.01M12 18h.01"/></svg></div><span class="pixel-app-label">每日紀錄</span></button><button id="m3SoundSwitch" class="pixel-app-tile sound-trigger"><div class="pixel-app-icon" style="background:${muted ? M3.surfaceMuted : M3.surfaceVariant};">${muted ? '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5 6 9H2v6h4l5 4V5z"/><path d="m22 9-6 6M16 9l6 6"/></svg>' : '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5 6 9H2v6h4l5 4V5z"/><path d="M15.5 8.5a5 5 0 0 1 0 7M19 5a9 9 0 0 1 0 14"/></svg>'}</div><span class="pixel-app-label">${muted ? '已靜音' : '音效開啟'}</span></button><button id="pixelGridLangBtn" class="pixel-app-tile sound-trigger"><div class="pixel-app-icon" style="background:${M3.surfaceMuted};"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M3.6 9h16.8M3.6 15h16.8M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"/></svg></div><span class="pixel-app-label">${pixelIsEn ? 'EN / 中文' : '中文 / EN'}</span></button><button id="pixelGridAdminBtn" class="pixel-app-tile sound-trigger"><div class="pixel-app-icon" style="background:${M3.surfaceMuted};"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></div><span class="pixel-app-label">管理設定</span></button></div> <div class="pixel-widget" style="background:${M3.surface};border:1px solid ${M3.outline};border-radius:24px;box-shadow:none;padding:20px;margin-bottom:16px;"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;"><div style="display:flex;align-items:center;gap:8px;font-size:15px;font-weight:500;color:${M3.textMain};"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="${M3.primary}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg><span>最近練習</span></div>${recentTopicsList.length > 3 ? `<button id="toggleMoreRecentBtn" class="sound-trigger" style="background:${M3.surfaceMuted};color:${M3.primary};border:1px solid ${M3.outline};border-radius:999px;padding:4px 12px;font-size:12px;font-weight:500;cursor:pointer;box-shadow:none;">${window.chemApp.showAllRecentTopics ? '收起' : `顯示全部 (${recentTopicsList.length})`}</button>` : ''}</div><div id="pixelRecentList" style="display:flex;flex-direction:column;gap:10px;">${recentTopicsHtml}</div><div id="pixelSearchEmpty" style="display:none;text-align:center;padding:18px 8px;color:${M3.textMuted};font-size:13px;font-weight:400;">找不到符合搜尋關鍵字的章節或練習</div></div><div class="pixel-widget" style="background:${M3.surface};border:1px solid ${M3.outline};border-radius:24px;box-shadow:none;padding:20px;margin-bottom:16px;"><div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:14px;"><div style="display:flex;align-items:center;gap:8px;font-size:15px;font-weight:500;color:${M3.textMain};"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="${M3.primary}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="3"/><path d="M16 2v4M8 2v4M3 10h18"/></svg><span>每日溫習紀錄</span></div><div style="display:flex;align-items:center;gap:6px;"><input type="date" id="homeQuickDatePicker" value="${todayStr}" style="border:1px solid ${M3.outline};border-radius:999px;padding:4px 10px;font-size:12px;color:${M3.textMain};background:${M3.surfaceMuted};font-weight:400;outline:none;" /><button id="openFullDailyInspectorBtn" class="sound-trigger" style="background:${M3.surfaceVariant};color:${M3.primary};border:1px solid ${M3.outline};border-radius:999px;padding:5px 12px;font-size:12px;font-weight:500;cursor:pointer;box-shadow:none;">全部紀錄</button></div></div><div style="display:flex;flex-direction:column;gap:8px;">${dailyListHtml}</div></div><div style="display:none;"><button id="langEnBtn"></button><button id="langZhBtn"></button></div></div>
   `;
 
   const switchEl = dashboardEl.querySelector('#m3SoundSwitch');
   if (switchEl) switchEl.onclick = () => SoundFX.toggleMute();
-
+  if (switchEl) switchEl.onclick = () => { SoundFX.toggleMute(); renderHomeDashboard(); }; const pSearch = dashboardEl.querySelector('#pixelSearchInput'); const pClear = dashboardEl.querySelector('#pixelSearchClear'); const pEmpty = dashboardEl.querySelector('#pixelSearchEmpty'); const applyPixelFilter = () => { const q = (pSearch ? pSearch.value : '').trim().toLowerCase(); if (pClear) pClear.style.display = q ? 'flex' : 'none'; const cards = Array.from(dashboardEl.querySelectorAll('#pixelRecentList .m3-card')).filter(c => c.querySelector('.recent-chap-jump-btn')); let vis = 0; cards.forEach(c => { const ok = !q || (c.textContent || '').toLowerCase().includes(q); c.style.display = ok ? '' : 'none'; if (ok) vis++; }); if (pEmpty) pEmpty.style.display = (cards.length > 0 && vis === 0) ? 'block' : 'none'; }; if (pSearch) pSearch.oninput = applyPixelFilter; if (pClear) pClear.onclick = () => { if (pSearch) { pSearch.value = ''; pSearch.focus(); } applyPixelFilter(); }; const pDailyBtn = dashboardEl.querySelector('#pixelGridDailyBtn'); if (pDailyBtn) pDailyBtn.onclick = () => { SoundFX.playClick(); dashboardEl.querySelector('#openFullDailyInspectorBtn')?.click(); }; const pAdminBtn = dashboardEl.querySelector('#pixelGridAdminBtn'); if (pAdminBtn) pAdminBtn.onclick = () => { SoundFX.playClick(); dashboardEl.querySelector('#topAdminBtn')?.click(); }; const pLangBtn = dashboardEl.querySelector('#pixelGridLangBtn'); if (pLangBtn) pLangBtn.onclick = () => { SoundFX.playClick(); const targetId = window.chemApp.currentLang === 'e' ? '#langZhBtn' : '#langEnBtn'; dashboardEl.querySelector(targetId)?.click(); };
   const toggleMoreBtn = dashboardEl.querySelector('#toggleMoreRecentBtn');
   if (toggleMoreBtn) {
     toggleMoreBtn.onclick = () => {
